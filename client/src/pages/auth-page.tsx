@@ -27,11 +27,12 @@ export default function PasscodeAuthPage() {
     countdown: 0
   });
 
-  // Redirect if already logged in
-  if (user) {
-    navigate('/admin/studios');
-    return null;
-  }
+  // Redirect if already logged in - use useEffect to avoid early return
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   // Countdown timer for lockout
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function PasscodeAuthPage() {
       
       // Attempt login
       await passcodeLoginMutation.mutateAsync({ code: passcode });
-      navigate('/admin/studios');
+      navigate('/');
     } catch (error: any) {
       // Handle rate limiting
       if (error.status === 429 && error.retryAfter) {
@@ -154,9 +155,9 @@ export default function PasscodeAuthPage() {
           <div className="text-center space-y-4">
             <Shield className="w-16 h-16 mx-auto text-primary" />
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold">OBTV Admin</h1>
+              <h1 className="text-3xl font-bold">OBTV Streaming</h1>
               <p className="text-xl text-muted-foreground">
-                Enter 4-digit passcode
+                Enter 4-digit passcode to access streams
               </p>
             </div>
           </div>
@@ -166,7 +167,7 @@ export default function PasscodeAuthPage() {
             <CardHeader className="text-center pb-4">
               <CardTitle className="flex items-center justify-center gap-3 text-2xl">
                 <Monitor className="w-6 h-6" />
-                Admin Access
+                Stream Access
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-8">
