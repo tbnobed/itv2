@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Home, Video, Radio, Tv, Monitor } from 'lucide-react';
 
 import {
@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar
 } from "@/components/ui/sidebar";
 
 // Navigation sections
@@ -43,10 +44,19 @@ interface AppSidebarProps {
 
 export function AppSidebar({ activeSection = "featured", onSectionChange }: AppSidebarProps) {
   const [selectedSection, setSelectedSection] = useState(activeSection);
+  const { setOpenMobile } = useSidebar();
+
+  // Sync with parent activeSection changes
+  useEffect(() => {
+    setSelectedSection(activeSection);
+  }, [activeSection]);
 
   const handleSectionSelect = (sectionId: string) => {
     setSelectedSection(sectionId);
     onSectionChange?.(sectionId);
+    
+    // Auto-hide sidebar on mobile/tablet after selection
+    setOpenMobile(false);
   };
 
   return (
@@ -82,3 +92,6 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
     </Sidebar>
   );
 }
+
+// Also export as default for better module resolution
+export default AppSidebar;
