@@ -80,6 +80,11 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
     setSelectedSection(sectionId);
     onSectionChange?.(sectionId);
     
+    // Navigate to root path to show streaming interface if currently on admin pages
+    if (location.startsWith('/admin')) {
+      navigate('/');
+    }
+    
     // Auto-hide sidebar on mobile/tablet after selection
     setOpenMobile(false);
   };
