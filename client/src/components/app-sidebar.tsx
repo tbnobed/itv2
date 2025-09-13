@@ -76,6 +76,7 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
   }, [activeSection]);
 
   const handleSectionSelect = (sectionId: string) => {
+    console.log('Sidebar section clicked:', sectionId);
     setSelectedSection(sectionId);
     onSectionChange?.(sectionId);
     
@@ -98,21 +99,29 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
             OBTV Streams
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => handleSectionSelect(item.id)}
-                    isActive={selectedSection === item.id && !location.startsWith('/admin')}
+            <div className="space-y-1">
+              {navigationItems.map((item) => {
+                const isActive = selectedSection === item.id && !location.startsWith('/admin');
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      console.log('Direct button clicked:', item.id);
+                      handleSectionSelect(item.id);
+                    }}
                     data-testid={`nav-${item.id}`}
-                    className="flex items-center gap-3 w-full text-left"
+                    className={`
+                      flex items-center gap-3 w-full text-left p-2 rounded-md transition-colors
+                      hover:bg-accent hover:text-accent-foreground
+                      ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}
+                    `}
                   >
                     <item.icon className="w-5 h-5" />
                     <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+                  </button>
+                );
+              })}
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -121,21 +130,29 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
             Administration
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {adminItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => handleAdminNavigate(item.path)}
-                    isActive={location === item.path}
+            <div className="space-y-1">
+              {adminItems.map((item) => {
+                const isActive = location === item.path;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      console.log('Direct admin button clicked:', item.id);
+                      handleAdminNavigate(item.path);
+                    }}
                     data-testid={`nav-${item.id}`}
-                    className="flex items-center gap-3 w-full text-left"
+                    className={`
+                      flex items-center gap-3 w-full text-left p-2 rounded-md transition-colors
+                      hover:bg-accent hover:text-accent-foreground
+                      ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}
+                    `}
                   >
                     <item.icon className="w-4 h-4" />
                     <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+                  </button>
+                );
+              })}
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
