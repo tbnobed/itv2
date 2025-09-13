@@ -26,7 +26,8 @@ const SALT_ROUNDS = 12;
 
 // TV-friendly passcode authentication constants
 const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
-const UNIVERSAL_PASSCODE = process.env.UNIVERSAL_PASSCODE || '1234';
+const ADMIN_PASSCODE = process.env.ADMIN_PASSCODE || '1234';  // Admin-only passcode
+const USER_PASSCODE = process.env.USER_PASSCODE || '1111';    // Regular user passcode
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION = 5 * 60 * 1000; // 5 minutes
 const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
@@ -66,10 +67,22 @@ async function hashPasscode(code: string): Promise<string> {
   return await bcrypt.hash(pepperedCode, SALT_ROUNDS);
 }
 
-async function verifyPasscode(suppliedCode: string): Promise<boolean> {
+async function verifyPasscode(suppliedCode: string): Promise<{ isValid: boolean; role?: 'admin' | 'user' }> {
   const pepperedCode = suppliedCode + PASSCODE_PEPPER;
-  const hashedExpected = await hashPasscode(UNIVERSAL_PASSCODE);
-  return await bcrypt.compare(pepperedCode, hashedExpected);
+  
+  // Check admin passcode
+  const hashedAdminCode = await hashPasscode(ADMIN_PASSCODE);
+  if (await bcrypt.compare(pepperedCode, hashedAdminCode)) {
+    return { isValid: true, role: 'admin' };
+  }
+  
+  // Check user passcode
+  const hashedUserCode = await hashPasscode(USER_PASSCODE);
+  if (await bcrypt.compare(pepperedCode, hashedUserCode)) {
+    return { isValid: true, role: 'user' };
+  }
+  
+  return { isValid: false };
 }
 
 // Rate limiting for passcode attempts
@@ -131,11 +144,23 @@ function recordAttempt(identifier: string, success: boolean): void {
   }
 }
 
-// Synthetic authenticated user for passcode authentication
-const AUTHENTICATED_USER: SelectUser = {
+// Synthetic authenticated users for passcode access
+const ADMIN_USER: SelectUser = {
+  id: 'admin',
+  username: 'obtv-admin',
+  password: '', // Not used for passcode auth
+  role: 'admin',
+  isActive: 'true',
+  createdAt: new Date().toISOString()
+};
+
+const REGULAR_USER: SelectUser = {
   id: 'user',
-  username: 'obtv-user',
-  password: '' // Not used for passcode auth
+  username: 'obtv-user', 
+  password: '', // Not used for passcode auth
+  role: 'user',
+  isActive: 'true',
+  createdAt: new Date().toISOString()
 };
 
 // CSRF token generation and validation
@@ -203,9 +228,13 @@ export function setupAuth(app: Express) {
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: string, done) => {
     try {
-      // Handle synthetic authenticated user for passcode auth
+      // Handle synthetic authenticated users for passcode auth
+      if (id === 'admin') {
+        done(null, ADMIN_USER);
+        return;
+      }
       if (id === 'user') {
-        done(null, AUTHENTICATED_USER);
+        done(null, REGULAR_USER);
         return;
       }
       
@@ -249,23 +278,30 @@ export function setupAuth(app: Express) {
       }
       
       // Verify passcode
-      const isValid = await verifyPasscode(code);
-      recordAttempt(identifier, isValid);
+      const passcodeResult = await verifyPasscode(code);
+      recordAttempt(identifier, passcodeResult.isValid);
       
-      if (!isValid) {
+      if (!passcodeResult.isValid) {
         console.log(`Invalid passcode attempt from ${identifier}`);
         return res.status(401).json({ error: "Invalid passcode" });
       }
       
+      // Select appropriate user based on role
+      const authenticatedUser = passcodeResult.role === 'admin' ? ADMIN_USER : REGULAR_USER;
+      
       // Successful authentication - log in authenticated user
-      req.login(AUTHENTICATED_USER, (loginErr) => {
+      req.login(authenticatedUser, (loginErr) => {
         if (loginErr) {
           console.error("User login error:", loginErr);
           return res.status(500).json({ error: "Authentication failed" });
         }
         
-        console.log(`Successful user login from ${identifier}`);
-        res.status(200).json({ id: AUTHENTICATED_USER.id, username: AUTHENTICATED_USER.username });
+        console.log(`Successful ${passcodeResult.role} login from ${identifier}`);
+        res.status(200).json({ 
+          id: authenticatedUser.id, 
+          username: authenticatedUser.username,
+          role: authenticatedUser.role
+        });
       });
       
     } catch (error) {
@@ -316,5 +352,17 @@ export function requireAuth(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Authentication required" });
   }
+  next();
+}
+
+export function requireAdmin(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+  
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  
   next();
 }

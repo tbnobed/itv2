@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Home, Video, Radio, Tv, Settings, Plus, Edit3 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 
 import {
   Sidebar,
@@ -69,6 +70,10 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
   const [selectedSection, setSelectedSection] = useState(activeSection);
   const { setOpenMobile } = useSidebar();
   const [location, navigate] = useLocation();
+  const { user } = useAuth();
+  
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin';
 
   // Sync with parent activeSection changes
   useEffect(() => {
@@ -130,36 +135,39 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground font-semibold text-sm">
-            Administration
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <div className="space-y-1">
-              {adminItems.map((item) => {
-                const isActive = location === item.path;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      console.log('Direct admin button clicked:', item.id);
-                      handleAdminNavigate(item.path);
-                    }}
-                    data-testid={`nav-${item.id}`}
-                    className={`
-                      flex items-center gap-3 w-full text-left p-2 rounded-md transition-colors
-                      hover:bg-accent hover:text-accent-foreground
-                      ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}
-                    `}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.title}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Admin Section - Only show for admin users */}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-muted-foreground font-semibold text-sm">
+              Administration
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="space-y-1">
+                {adminItems.map((item) => {
+                  const isActive = location === item.path;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        console.log('Direct admin button clicked:', item.id);
+                        handleAdminNavigate(item.path);
+                      }}
+                      data-testid={`nav-${item.id}`}
+                      className={`
+                        flex items-center gap-3 w-full text-left p-2 rounded-md transition-colors
+                        hover:bg-accent hover:text-accent-foreground
+                        ${isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}
+                      `}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );

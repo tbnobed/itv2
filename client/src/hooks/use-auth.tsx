@@ -122,7 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], {
         id: user.id,
         username: user.username,
-        password: ''
+        password: '',
+        role: (user as any).role || 'user',  // Include role from response
+        isActive: 'true',
+        createdAt: new Date().toISOString()
       });
       toast({
         title: "Access granted",
