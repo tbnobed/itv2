@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Home, Video, Radio, Tv, Monitor } from 'lucide-react';
+import { Home, Video, Radio, Tv, Settings, Plus, Edit3 } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 import {
   Sidebar,
@@ -37,6 +38,28 @@ const navigationItems = [
   },
 ];
 
+// Admin navigation items
+const adminItems = [
+  {
+    title: "Manage Streams",
+    icon: Edit3,
+    id: "admin-streams",
+    path: "/admin/streams"
+  },
+  {
+    title: "Manage Studios",
+    icon: Settings,
+    id: "admin-studios", 
+    path: "/admin/studios"
+  },
+  {
+    title: "Add Stream",
+    icon: Plus,
+    id: "admin-add-stream",
+    path: "/admin/streams/new"
+  }
+];
+
 interface AppSidebarProps {
   activeSection?: string;
   onSectionChange?: (sectionId: string) => void;
@@ -45,6 +68,7 @@ interface AppSidebarProps {
 export function AppSidebar({ activeSection = "featured", onSectionChange }: AppSidebarProps) {
   const [selectedSection, setSelectedSection] = useState(activeSection);
   const { setOpenMobile } = useSidebar();
+  const [location, navigate] = useLocation();
 
   // Sync with parent activeSection changes
   useEffect(() => {
@@ -54,6 +78,13 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
   const handleSectionSelect = (sectionId: string) => {
     setSelectedSection(sectionId);
     onSectionChange?.(sectionId);
+    
+    // Auto-hide sidebar on mobile/tablet after selection
+    setOpenMobile(false);
+  };
+
+  const handleAdminNavigate = (path: string) => {
+    navigate(path);
     
     // Auto-hide sidebar on mobile/tablet after selection
     setOpenMobile(false);
@@ -72,7 +103,7 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     asChild
-                    isActive={selectedSection === item.id}
+                    isActive={selectedSection === item.id && !location.startsWith('/admin')}
                     data-testid={`nav-${item.id}`}
                   >
                     <button 
@@ -80,6 +111,33 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
                       className="flex items-center gap-3 w-full text-left"
                     >
                       <item.icon className="w-5 h-5" />
+                      <span>{item.title}</span>
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-muted-foreground font-semibold text-sm">
+            Administration
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {adminItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.path}
+                    data-testid={`nav-${item.id}`}
+                  >
+                    <button 
+                      onClick={() => handleAdminNavigate(item.path)}
+                      className="flex items-center gap-3 w-full text-left"
+                    >
+                      <item.icon className="w-4 h-4" />
                       <span>{item.title}</span>
                     </button>
                   </SidebarMenuButton>

@@ -1,10 +1,15 @@
 import { type User, type InsertUser, type Stream, type InsertStream, type Studio, type InsertStudio } from "@shared/schema";
 import { randomUUID } from "crypto";
+import session from "express-session";
+import createMemoryStore from "memorystore";
 
 // modify the interface with any CRUD methods
 // you might need
 
 export interface IStorage {
+  // Session store
+  sessionStore: session.SessionStore;
+  
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -27,12 +32,18 @@ export interface IStorage {
   deleteStudio(id: string): Promise<boolean>;
 }
 
+const MemoryStore = createMemoryStore(session);
+
 export class MemStorage implements IStorage {
+  public sessionStore: session.SessionStore;
   private users: Map<string, User>;
   private streams: Map<string, Stream>;
   private studios: Map<string, Studio>;
 
   constructor() {
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    });
     this.users = new Map();
     this.streams = new Map();
     this.studios = new Map();
