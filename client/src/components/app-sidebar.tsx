@@ -102,17 +102,13 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    asChild
+                    onClick={() => handleSectionSelect(item.id)}
                     isActive={selectedSection === item.id && !location.startsWith('/admin')}
                     data-testid={`nav-${item.id}`}
+                    className="flex items-center gap-3 w-full text-left"
                   >
-                    <button 
-                      onClick={() => handleSectionSelect(item.id)}
-                      className="flex items-center gap-3 w-full text-left"
-                    >
-                      <item.icon className="w-5 h-5" />
-                      <span>{item.title}</span>
-                    </button>
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -129,17 +125,13 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
               {adminItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    asChild
+                    onClick={() => handleAdminNavigate(item.path)}
                     isActive={location === item.path}
                     data-testid={`nav-${item.id}`}
+                    className="flex items-center gap-3 w-full text-left"
                   >
-                    <button 
-                      onClick={() => handleAdminNavigate(item.path)}
-                      className="flex items-center gap-3 w-full text-left"
-                    >
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                    </button>
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
