@@ -87,7 +87,7 @@ export default function CategoryRow({
       {/* Section Title */}
       <h2 
         className={cn(
-          "text-white font-bold mb-4 px-6",
+          "text-white font-bold mb-4 px-6 text-center",
           featured ? "text-2xl" : "text-xl"
         )}
         data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}
