@@ -10,7 +10,7 @@ import StreamingInterface from "@/components/StreamingInterface";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import { AuthProvider } from "@/hooks/use-auth";
-import { AdminProtectedRoute } from "@/lib/protected-route";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 // Admin page imports
 import StreamsListPage from "@/pages/admin/streams-list";
@@ -18,12 +18,14 @@ import StreamFormPage from "@/pages/admin/stream-form";
 import StudiosListPage from "@/pages/admin/studios-list";
 import StudioFormPage from "@/pages/admin/studio-form";
 
-// Wrapper component to make StreamingInterface compatible with wouter
-const Home = ({ activeSection }: { activeSection: string }) => <StreamingInterface activeSection={activeSection} />;
+// Protected wrapper for streaming interface
+const ProtectedStreamingInterface = ({ activeSection }: { activeSection: string }) => {
+  return <ProtectedRoute path="" component={() => <StreamingInterface activeSection={activeSection} />} />;
+};
 
-// Protected admin route wrapper
+// Protected route wrapper for admin components
 const AdminRoute = ({ component: Component }: { component: React.ComponentType }) => {
-  return <AdminProtectedRoute path="" component={Component} />;
+  return <ProtectedRoute path="" component={() => <Component />} />;
 };
 
 function Router({ activeSection }: { activeSection: string }) {
@@ -52,8 +54,8 @@ function Router({ activeSection }: { activeSection: string }) {
         {() => <AdminRoute component={StudioFormPage} />}
       </Route>
       
-      {/* Main Routes */}
-      <Route path="/">{() => <Home activeSection={activeSection} />}</Route>
+      {/* Protected Main Routes - Require authentication for all users */}
+      <Route path="/">{() => <ProtectedStreamingInterface activeSection={activeSection} />}</Route>
       <Route component={NotFound} />
     </Switch>
   );

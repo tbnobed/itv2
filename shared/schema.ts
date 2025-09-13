@@ -37,6 +37,27 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// Passcode authentication schemas
+export const passcodeLoginSchema = z.object({
+  code: z.string()
+    .length(4, "Passcode must be exactly 4 digits")
+    .regex(/^\d{4}$/, "Passcode must contain only numbers"),
+});
+
+export const passcodeLoginResponseSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+});
+
+export const passcodeErrorResponseSchema = z.object({
+  error: z.string(),
+  retryAfter: z.number().optional(),
+});
+
+export type PasscodeLoginRequest = z.infer<typeof passcodeLoginSchema>;
+export type PasscodeLoginResponse = z.infer<typeof passcodeLoginResponseSchema>;
+export type PasscodeErrorResponse = z.infer<typeof passcodeErrorResponseSchema>;
+
 // Stream schemas
 export const insertStreamSchema = createInsertSchema(streams).omit({
   id: true,

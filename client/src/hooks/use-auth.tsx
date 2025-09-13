@@ -4,7 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
+import { insertUserSchema, User as SelectUser, InsertUser, PasscodeLoginRequest, PasscodeLoginResponse } from "@shared/schema";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +15,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  passcodeLoginMutation: UseMutationResult<PasscodeLoginResponse, Error, PasscodeLoginRequest>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -109,6 +110,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const passcodeLoginMutation = useMutation({
+    mutationFn: async (request: PasscodeLoginRequest): Promise<PasscodeLoginResponse> => {
+      const response = await apiRequest("/api/passcode-login", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      return response;
+    },
+    onSuccess: (user: PasscodeLoginResponse) => {
+      queryClient.setQueryData(["/api/user"], {
+        id: user.id,
+        username: user.username,
+        password: ''
+      });
+      toast({
+        title: "Access granted",
+        description: "Welcome to OBTV!",
+      });
+    },
+    onError: (error: any) => {
+      // Don't show toast here - let the component handle specific error messages
+      // This allows for better rate limiting and lockout UX
+    },
+  });
+
   return (
     <AuthContext.Provider
       value={{
@@ -118,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        passcodeLoginMutation,
       }}
     >
       {children}

@@ -32,12 +32,10 @@ export function ProtectedRoute({
   return <Route path={path}><Component /></Route>;
 }
 
-// Higher-order component for protecting multiple admin routes
-export function AdminProtectedRoute({
-  path,
+// Higher-order component for protecting routes without path wrapper
+export function UniversalProtectedRoute({
   component: Component,
 }: {
-  path: string;
   component: () => React.JSX.Element;
 }) {
   const { user, isLoading } = useAuth();
