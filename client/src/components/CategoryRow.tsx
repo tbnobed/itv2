@@ -30,6 +30,7 @@ export default function CategoryRow({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
 
   const updateScrollButtons = () => {
     const container = scrollContainerRef.current;
@@ -39,6 +40,8 @@ export default function CategoryRow({
     setCanScrollRight(
       container.scrollLeft < container.scrollWidth - container.clientWidth - 1
     );
+    // Check if content overflows to determine centering
+    setIsOverflowing(container.scrollWidth > container.clientWidth);
   };
 
   useEffect(() => {
@@ -46,7 +49,11 @@ export default function CategoryRow({
     const container = scrollContainerRef.current;
     if (container) {
       container.addEventListener('scroll', updateScrollButtons);
-      return () => container.removeEventListener('scroll', updateScrollButtons);
+      window.addEventListener('resize', updateScrollButtons);
+      return () => {
+        container.removeEventListener('scroll', updateScrollButtons);
+        window.removeEventListener('resize', updateScrollButtons);
+      };
     }
   }, [streams]);
 
@@ -124,6 +131,7 @@ export default function CategoryRow({
       >
         <div className={cn(
           "flex gap-6 px-6",
+          !isOverflowing && "justify-center",
           featured ? "pb-8" : "pb-4"
         )}>
           {streams.map((stream) => (
