@@ -49,9 +49,9 @@ export default function StreamTile({
   return (
     <div
       className={cn(
-        "relative cursor-pointer transition-all duration-300 rounded-md overflow-hidden group focus-visible:ring-4 focus-visible:ring-primary focus-visible:outline-none",
+        "relative cursor-pointer transition-all duration-300 rounded-md overflow-hidden group focus-visible:ring-4 focus-visible:ring-primary focus-visible:outline-none shadow-lg hover:shadow-2xl hover:shadow-primary/20",
         tileSize,
-        isHovered && "scale-105 z-10",
+        isHovered && "scale-105 z-10 shadow-2xl shadow-primary/30",
         isLoading && "opacity-50",
         className
       )}

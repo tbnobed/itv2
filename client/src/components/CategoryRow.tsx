@@ -76,17 +76,19 @@ export default function CategoryRow({
   if (!streams.length) return null;
 
   return (
-    <div className={cn("relative mb-8", className)}>
+    <div className={cn("relative mb-12", className)}>
       {/* Section Title */}
-      <h2 
-        className={cn(
-          "text-white font-bold mb-4 px-6",
-          featured ? "text-2xl" : "text-xl"
-        )}
-        data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}
-      >
-        {title}
-      </h2>
+      <div className="text-center mb-6">
+        <h2 
+          className={cn(
+            "text-white font-bold",
+            featured ? "text-3xl" : "text-2xl"
+          )}
+          data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}
+        >
+          {title}
+        </h2>
+      </div>
 
       {/* Navigation Buttons */}
       {canScrollLeft && (
@@ -123,8 +125,8 @@ export default function CategoryRow({
         data-testid="scroll-container"
       >
         <div className={cn(
-          "flex gap-4 px-6",
-          featured ? "pb-4" : "pb-2"
+          "flex gap-6 px-6",
+          featured ? "pb-8" : "pb-4"
         )}>
           {streams.map((stream) => (
             <StreamTile

@@ -212,7 +212,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
         onLogoClick={handleLogoClick}
       />
       
-      <main className="pb-8">
+      <main className="pb-8 max-w-7xl mx-auto">
         {/* Featured Section */}
         <CategoryRow
           title="Featured"
