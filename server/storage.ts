@@ -8,12 +8,15 @@ import createMemoryStore from "memorystore";
 
 export interface IStorage {
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any;
   
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUserRole(id: string, role: string): Promise<boolean>;
+  updateUserStatus(id: string, isActive: string): Promise<boolean>;
   
   // Stream operations
   getAllStreams(): Promise<Stream[]>;
@@ -35,7 +38,7 @@ export interface IStorage {
 const MemoryStore = createMemoryStore(session);
 
 export class MemStorage implements IStorage {
-  public sessionStore: session.SessionStore;
+  public sessionStore: any;
   private users: Map<string, User>;
   private streams: Map<string, Stream>;
   private studios: Map<string, Studio>;
@@ -62,9 +65,38 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      username: insertUser.username,
+      password: insertUser.password,
+      role: insertUser.role || 'user',
+      id,
+      isActive: 'true',
+      createdAt: new Date().toISOString()
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUserRole(id: string, role: string): Promise<boolean> {
+    const user = this.users.get(id);
+    if (!user) return false;
+    
+    user.role = role as "admin" | "user";
+    this.users.set(id, user);
+    return true;
+  }
+
+  async updateUserStatus(id: string, isActive: string): Promise<boolean> {
+    const user = this.users.get(id);
+    if (!user) return false;
+    
+    user.isActive = isActive;
+    this.users.set(id, user);
+    return true;
   }
 
   // Stream operations

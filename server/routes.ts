@@ -181,6 +181,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin-only user management endpoints
+  app.get('/api/admin/users', requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Remove password field for security
+      const safeUsers = users.map(user => ({
+        ...user,
+        password: undefined,
+        createdAt: user.createdAt || new Date().toISOString(),
+        lastActive: new Date().toISOString()
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.put('/api/admin/users/:id/role', requireAdmin, csrfProtection, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+      
+      if (!['admin', 'user'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role' });
+      }
+      
+      const updated = await storage.updateUserRole(id, role);
+      if (!updated) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      res.status(500).json({ error: 'Failed to update user role' });
+    }
+  });
+
+  app.put('/api/admin/users/:id/status', requireAdmin, csrfProtection, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isActive } = req.body;
+      
+      const updated = await storage.updateUserStatus(id, isActive);
+      if (!updated) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      res.status(500).json({ error: 'Failed to update user status' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

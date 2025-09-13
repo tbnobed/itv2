@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: user.id,
         username: user.username,
         password: '',
-        role: (user as any).role || 'user',  // Include role from response
+        role: user.role,  // Role is now properly typed
         isActive: 'true',
         createdAt: new Date().toISOString()
       });

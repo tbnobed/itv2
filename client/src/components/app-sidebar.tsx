@@ -42,6 +42,12 @@ const navigationItems = [
 // Admin navigation items
 const adminItems = [
   {
+    title: "Manage Users",
+    icon: Settings,
+    id: "admin-users",
+    path: "/admin/users"
+  },
+  {
     title: "Manage Streams",
     icon: Edit3,
     id: "admin-streams",
@@ -70,10 +76,10 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
   const [selectedSection, setSelectedSection] = useState(activeSection);
   const { setOpenMobile } = useSidebar();
   const [location, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   
-  // Check if user is admin
-  const isAdmin = user?.role === 'admin';
+  // Check if user is admin - wait for loading to complete
+  const isAdmin = !isLoading && user?.role === 'admin';
 
   // Sync with parent activeSection changes
   useEffect(() => {

@@ -72,6 +72,7 @@ export const passcodeLoginSchema = z.object({
 export const passcodeLoginResponseSchema = z.object({
   id: z.string(),
   username: z.string(),
+  role: z.enum(["admin", "user"]),
 });
 
 export const passcodeErrorResponseSchema = z.object({

@@ -13,6 +13,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 
 // Admin page imports
+import UserManagement from "@/pages/admin/user-management";
 import StreamsListPage from "@/pages/admin/streams-list";
 import StreamFormPage from "@/pages/admin/stream-form";
 import StudiosListPage from "@/pages/admin/studios-list";
@@ -35,6 +36,9 @@ function Router({ activeSection }: { activeSection: string }) {
       <Route path="/auth" component={AuthPage} />
       
       {/* Protected Admin Routes */}
+      <Route path="/admin/users">
+        {() => <AdminRoute component={UserManagement} />}
+      </Route>
       <Route path="/admin/streams">
         {() => <AdminRoute component={StreamsListPage} />}
       </Route>
