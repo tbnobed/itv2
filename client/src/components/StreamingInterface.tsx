@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import Header from './Header';
 import CategoryRow from './CategoryRow';
 import StreamModal from './StreamModal';
 
@@ -19,6 +18,7 @@ interface StreamData {
 
 interface StreamingInterfaceProps {
   className?: string;
+  activeSection?: string;
 }
 
 // todo: remove mock functionality - load from configuration API
@@ -159,7 +159,7 @@ const mockStreamData: Record<string, StreamData[]> = {
   ]
 };
 
-export default function StreamingInterface({ className }: StreamingInterfaceProps) {
+export default function StreamingInterface({ className, activeSection = 'featured' }: StreamingInterfaceProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStream, setSelectedStream] = useState<{
     id: string;
@@ -203,42 +203,32 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     setSelectedStream(null);
   };
 
+  // Function to get current section data
+  const getCurrentSectionData = () => {
+    switch (activeSection) {
+      case 'featured':
+        return { title: 'Featured', streams: mockStreamData.featured, featured: true };
+      case 'studios':
+        return { title: 'Studios', streams: mockStreamData.studios, featured: false };
+      case 'overTheAir':
+        return { title: 'Over The Air', streams: mockStreamData.overTheAir, featured: false };
+      case 'liveFeeds':
+        return { title: 'Live Feeds', streams: mockStreamData.liveFeeds, featured: false };
+      default:
+        return { title: 'Featured', streams: mockStreamData.featured, featured: true };
+    }
+  };
+
+  const currentSection = getCurrentSectionData();
+
   return (
-    <div className={`min-h-screen bg-background ${className}`}>
-      <Header
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-        onLogoClick={handleLogoClick}
-      />
-      
-      <main className="pb-8">
-        {/* Featured Section */}
+    <div className={`h-full bg-background ${className}`}>
+      <main className="p-6">
+        {/* Current Section */}
         <CategoryRow
-          title="Featured"
-          streams={mockStreamData.featured}
-          featured={true}
-          onStreamSelect={handleStreamSelect}
-        />
-        
-        {/* Studios Section */}
-        <CategoryRow
-          title="Studios"
-          streams={mockStreamData.studios}
-          onStreamSelect={handleStreamSelect}
-        />
-        
-        {/* Over The Air Section */}
-        <CategoryRow
-          title="Over The Air"
-          streams={mockStreamData.overTheAir}
-          onStreamSelect={handleStreamSelect}
-        />
-        
-        {/* Live Feeds Section */}
-        <CategoryRow
-          title="Live Feeds"
-          streams={mockStreamData.liveFeeds}
+          title={currentSection.title}
+          streams={currentSection.streams}
+          featured={currentSection.featured}
           onStreamSelect={handleStreamSelect}
         />
       </main>
