@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import CategoryRow from './CategoryRow';
 import StreamModal from './StreamModal';
-import StudioCard, { Studio } from './StudioCard';
-
-// todo: remove mock functionality - replace with real stream configuration
-import studioImg from '@assets/generated_images/Studio_A_control_room_42819489.png';
-import dallasImg from '@assets/generated_images/Dallas_Control_newsroom_45c1dfb2.png';
-import towerImg from '@assets/generated_images/Over-the-air_broadcast_tower_04c20672.png';
-import featuredImg from '@assets/generated_images/Featured_live_production_15b7d8b1.png';
+import StudioCard from './StudioCard';
+import type { Stream, Studio } from '@shared/schema';
 
 interface StreamData {
   id: string;
@@ -17,253 +13,26 @@ interface StreamData {
   url: string;
 }
 
+interface GroupedStreams {
+  featured: Stream[];
+  overTheAir: Stream[];
+  liveFeeds: Stream[];
+  studios: Stream[];
+}
+
 interface StreamingInterfaceProps {
   className?: string;
   activeSection?: string;
 }
 
-// todo: remove mock functionality - load from configuration API
-const mockStreamData: Record<string, StreamData[]> = {
-  featured: [
-    {
-      id: 'featured-main',
-      title: 'Featured Live Production',
-      thumbnail: featuredImg,
-      streamId: 'FP001',
-      url: 'webrtc://localhost:1985/live/featured'
-    },
-    {
-      id: 'featured-prime',
-      title: 'Prime Time Broadcast',
-      thumbnail: studioImg,
-      streamId: 'PT001',
-      url: 'webrtc://localhost:1985/live/primetime'
-    },
-    {
-      id: 'featured-special',
-      title: 'Special Event Coverage',
-      thumbnail: dallasImg,
-      streamId: 'SE001',
-      url: 'webrtc://localhost:1985/live/special'
-    }
-  ],
-  overTheAir: [
-    {
-      id: 'main-tower',
-      title: 'Main Transmission Tower',
-      thumbnail: towerImg,
-      streamId: 'MT001',
-      url: 'webrtc://localhost:1985/live/main-tower'
-    },
-    {
-      id: 'backup-tower',
-      title: 'Backup Tower Feed',
-      thumbnail: towerImg,
-      streamId: 'BT001',
-      url: 'webrtc://localhost:1985/live/backup-tower'
-    },
-    {
-      id: 'repeater-1',
-      title: 'Repeater Station 1',
-      thumbnail: towerImg,
-      streamId: 'RS001',
-      url: 'webrtc://localhost:1985/live/repeater-1'
-    },
-    {
-      id: 'repeater-2',
-      title: 'Repeater Station 2',
-      thumbnail: towerImg,
-      streamId: 'RS002',
-      url: 'webrtc://localhost:1985/live/repeater-2'
-    }
-  ],
-  liveFeeds: [
-    {
-      id: 'dallas-control',
-      title: 'Dallas Control Center',
-      thumbnail: dallasImg,
-      streamId: 'DC001',
-      url: 'webrtc://localhost:1985/live/dallas-control'
-    },
-    {
-      id: 'houston-backup',
-      title: 'Houston Backup Center',
-      thumbnail: dallasImg,
-      streamId: 'HB001',
-      url: 'webrtc://localhost:1985/live/houston-backup'
-    },
-    {
-      id: 'monitoring-feed',
-      title: 'System Monitoring',
-      thumbnail: dallasImg,
-      streamId: 'SM001',
-      url: 'webrtc://localhost:1985/live/monitoring'
-    },
-    {
-      id: 'emergency-feed',
-      title: 'Emergency Broadcast',
-      thumbnail: dallasImg,
-      streamId: 'EB001',
-      url: 'webrtc://localhost:1985/live/emergency'
-    },
-    {
-      id: 'weather-feed',
-      title: 'Weather Station',
-      thumbnail: towerImg,
-      streamId: 'WS001',
-      url: 'webrtc://localhost:1985/live/weather'
-    },
-    {
-      id: 'traffic-feed',
-      title: 'Traffic Camera Feed',
-      thumbnail: dallasImg,
-      streamId: 'TC001',
-      url: 'webrtc://localhost:1985/live/traffic'
-    }
-  ]
-};
-
-// Mock studio data for two-level navigation
-const mockStudios: Studio[] = [
-  {
-    id: 'studio-a',
-    name: 'Studio A Control Room',
-    thumbnail: studioImg,
-    description: 'Primary broadcast control room with full production capabilities',
-    status: 'online',
-    feedCount: 4
-  },
-  {
-    id: 'studio-b', 
-    name: 'Studio B Production',
-    thumbnail: studioImg,
-    description: 'Secondary production studio for live programming',
-    status: 'online',
-    feedCount: 3
-  },
-  {
-    id: 'studio-c',
-    name: 'Studio C Backup',
-    thumbnail: studioImg,
-    description: 'Backup studio for emergency broadcasts',
-    status: 'maintenance',
-    feedCount: 2
-  },
-  {
-    id: 'mobile-unit',
-    name: 'Mobile Unit 1',
-    thumbnail: featuredImg,
-    description: 'On-location broadcast unit for field reporting',
-    status: 'online',
-    feedCount: 2
-  },
-  {
-    id: 'rehearsal-room',
-    name: 'Rehearsal Room',
-    thumbnail: studioImg,
-    description: 'Practice and rehearsal space for productions',
-    status: 'offline',
-    feedCount: 1
-  }
-];
-
-// Studio feeds mapping
-const mockStudioFeeds: Record<string, StreamData[]> = {
-  'studio-a': [
-    {
-      id: 'sa-main',
-      title: 'Main Camera Feed',
-      thumbnail: studioImg,
-      streamId: 'SA001',
-      url: 'webrtc://localhost:1985/live/studio-a-main'
-    },
-    {
-      id: 'sa-wide',
-      title: 'Wide Angle Shot',
-      thumbnail: studioImg,
-      streamId: 'SA002',
-      url: 'webrtc://localhost:1985/live/studio-a-wide'
-    },
-    {
-      id: 'sa-close',
-      title: 'Close Up Camera',
-      thumbnail: studioImg,
-      streamId: 'SA003',
-      url: 'webrtc://localhost:1985/live/studio-a-close'
-    },
-    {
-      id: 'sa-overhead',
-      title: 'Overhead View',
-      thumbnail: studioImg,
-      streamId: 'SA004',
-      url: 'webrtc://localhost:1985/live/studio-a-overhead'
-    }
-  ],
-  'studio-b': [
-    {
-      id: 'sb-main',
-      title: 'Main Production Feed',
-      thumbnail: studioImg,
-      streamId: 'SB001',
-      url: 'webrtc://localhost:1985/live/studio-b-main'
-    },
-    {
-      id: 'sb-alt',
-      title: 'Alternate Angle',
-      thumbnail: studioImg,
-      streamId: 'SB002',
-      url: 'webrtc://localhost:1985/live/studio-b-alt'
-    },
-    {
-      id: 'sb-guest',
-      title: 'Guest Camera',
-      thumbnail: studioImg,
-      streamId: 'SB003',
-      url: 'webrtc://localhost:1985/live/studio-b-guest'
-    }
-  ],
-  'studio-c': [
-    {
-      id: 'sc-backup',
-      title: 'Backup Feed',
-      thumbnail: studioImg,
-      streamId: 'SC001',
-      url: 'webrtc://localhost:1985/live/studio-c-backup'
-    },
-    {
-      id: 'sc-monitor',
-      title: 'Monitoring Camera',
-      thumbnail: studioImg,
-      streamId: 'SC002',
-      url: 'webrtc://localhost:1985/live/studio-c-monitor'
-    }
-  ],
-  'mobile-unit': [
-    {
-      id: 'mu-field',
-      title: 'Field Reporter Feed',
-      thumbnail: featuredImg,
-      streamId: 'MU001',
-      url: 'webrtc://localhost:1985/live/mobile-field'
-    },
-    {
-      id: 'mu-wide',
-      title: 'Mobile Wide Shot',
-      thumbnail: featuredImg,
-      streamId: 'MU002',
-      url: 'webrtc://localhost:1985/live/mobile-wide'
-    }
-  ],
-  'rehearsal-room': [
-    {
-      id: 'rr-practice',
-      title: 'Rehearsal Feed',
-      thumbnail: studioImg,
-      streamId: 'RR001',
-      url: 'webrtc://localhost:1985/live/rehearsal'
-    }
-  ]
-};
+// Helper function to convert Stream to StreamData format for CategoryRow
+const convertStreamToStreamData = (stream: Stream): StreamData => ({
+  id: stream.id,
+  title: stream.title,
+  thumbnail: stream.thumbnail,
+  streamId: stream.streamId,
+  url: stream.url,
+});
 
 export default function StreamingInterface({ className, activeSection = 'featured' }: StreamingInterfaceProps) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -273,6 +42,24 @@ export default function StreamingInterface({ className, activeSection = 'feature
     url: string;
   } | null>(null);
   const [selectedStudio, setSelectedStudio] = useState<string | null>(null);
+
+  // Fetch streams data
+  const { data: streamData, isLoading: streamsLoading, error: streamsError } = useQuery<GroupedStreams>({
+    queryKey: ['/api/streams'],
+    enabled: true,
+  });
+
+  // Fetch studios data
+  const { data: studiosData, isLoading: studiosLoading, error: studiosError } = useQuery<Studio[]>({
+    queryKey: ['/api/studios'],
+    enabled: true,
+  });
+
+  // Fetch studio feeds when a studio is selected
+  const { data: studioFeeds, isLoading: studioFeedsLoading } = useQuery<Stream[]>({
+    queryKey: ['/api/streams/studio', selectedStudio],
+    enabled: !!selectedStudio && activeSection === 'studios',
+  });
 
   // Reset selected studio when section changes away from studios
   useEffect(() => {
@@ -284,21 +71,37 @@ export default function StreamingInterface({ className, activeSection = 'feature
   const totalPages = 3; // todo: calculate based on actual stream count
 
   const handleStreamSelect = (streamId: string, url: string) => {
-    const allStreams = [
-      ...mockStreamData.featured,
-      ...mockStreamData.overTheAir,
-      ...mockStreamData.liveFeeds,
-      ...Object.values(mockStudioFeeds).flat()
-    ];
-    
-    const stream = allStreams.find(s => s.streamId === streamId);
-    if (stream) {
-      setSelectedStream({
-        id: stream.streamId,
-        title: stream.title,
-        url: stream.url
-      });
-      console.log(`Opening stream modal for: ${stream.title} (${streamId})`);
+    // Find stream from all available streams
+    if (streamData) {
+      const allStreams = [
+        ...streamData.featured,
+        ...streamData.overTheAir,
+        ...streamData.liveFeeds,
+        ...streamData.studios,
+      ];
+      
+      const stream = allStreams.find(s => s.streamId === streamId);
+      if (stream) {
+        setSelectedStream({
+          id: stream.streamId,
+          title: stream.title,
+          url: stream.url
+        });
+        console.log(`Opening stream modal for: ${stream.title} (${streamId})`);
+      }
+    }
+
+    // Also check studio feeds if applicable
+    if (studioFeeds) {
+      const stream = studioFeeds.find(s => s.streamId === streamId);
+      if (stream) {
+        setSelectedStream({
+          id: stream.streamId,
+          title: stream.title,
+          url: stream.url
+        });
+        console.log(`Opening stream modal for: ${stream.title} (${streamId})`);
+      }
     }
   };
 
@@ -328,19 +131,66 @@ export default function StreamingInterface({ className, activeSection = 'feature
 
   // Function to get current section data
   const getCurrentSectionData = () => {
+    if (!streamData) return { title: 'Loading...', streams: [], featured: false };
+
     switch (activeSection) {
       case 'featured':
-        return { title: 'Featured', streams: mockStreamData.featured, featured: true };
+        return { 
+          title: 'Featured', 
+          streams: streamData.featured.map(convertStreamToStreamData), 
+          featured: true 
+        };
       case 'overTheAir':
-        return { title: 'Over The Air', streams: mockStreamData.overTheAir, featured: false };
+        return { 
+          title: 'Over The Air', 
+          streams: streamData.overTheAir.map(convertStreamToStreamData), 
+          featured: false 
+        };
       case 'liveFeeds':
-        return { title: 'Live Feeds', streams: mockStreamData.liveFeeds, featured: false };
+        return { 
+          title: 'Live Feeds', 
+          streams: streamData.liveFeeds.map(convertStreamToStreamData), 
+          featured: false 
+        };
       default:
-        return { title: 'Featured', streams: mockStreamData.featured, featured: true };
+        return { 
+          title: 'Featured', 
+          streams: streamData.featured.map(convertStreamToStreamData), 
+          featured: true 
+        };
     }
   };
 
   const currentSection = getCurrentSectionData();
+
+  // Show loading state
+  if (streamsLoading || (activeSection === 'studios' && studiosLoading)) {
+    return (
+      <div className={`h-full bg-background ${className}`}>
+        <main className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-white text-lg">Loading streaming data...</div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (streamsError || (activeSection === 'studios' && studiosError)) {
+    const error = streamsError || studiosError;
+    return (
+      <div className={`h-full bg-background ${className}`}>
+        <main className="p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-red-400 text-lg">
+              Failed to load streaming data: {error?.message || 'Unknown error'}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   // Render studios section with two-level navigation
   const renderStudiosSection = () => {
@@ -352,7 +202,7 @@ export default function StreamingInterface({ className, activeSection = 'feature
             Studios
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-6">
-            {mockStudios.map((studio) => (
+            {studiosData?.map((studio) => (
               <StudioCard
                 key={studio.id}
                 studio={studio}
@@ -364,9 +214,27 @@ export default function StreamingInterface({ className, activeSection = 'feature
         </div>
       );
     } else {
-      // Show studio feeds
-      const studioFeeds = mockStudioFeeds[selectedStudio] || [];
-      const selectedStudioData = mockStudios.find(s => s.id === selectedStudio);
+      // Show studio feeds with loading state
+      const selectedStudioData = studiosData?.find(s => s.id === selectedStudio);
+      
+      if (studioFeedsLoading) {
+        return (
+          <div>
+            <div className="flex items-center gap-4 mb-6 px-6">
+              <button
+                onClick={handleBackToStudios}
+                className="text-primary hover:text-primary/80 font-medium"
+                data-testid="button-back-to-studios"
+              >
+                ← Back to Studios
+              </button>
+            </div>
+            <div className="flex items-center justify-center h-32">
+              <div className="text-white text-lg">Loading studio feeds...</div>
+            </div>
+          </div>
+        );
+      }
       
       return (
         <div>
@@ -381,7 +249,7 @@ export default function StreamingInterface({ className, activeSection = 'feature
           </div>
           <CategoryRow
             title={`${selectedStudioData?.name} - Camera Feeds`}
-            streams={studioFeeds}
+            streams={(studioFeeds || []).map(convertStreamToStreamData)}
             featured={false}
             onStreamSelect={handleStreamSelect}
           />
