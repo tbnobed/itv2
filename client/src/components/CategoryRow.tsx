@@ -78,17 +78,15 @@ export default function CategoryRow({
   return (
     <div className={cn("relative mb-12", className)}>
       {/* Section Title */}
-      <div className="text-center mb-6">
-        <h2 
-          className={cn(
-            "text-white font-bold",
-            featured ? "text-3xl" : "text-2xl"
-          )}
-          data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}
-        >
-          {title}
-        </h2>
-      </div>
+      <h2 
+        className={cn(
+          "text-white font-bold mb-4 px-6",
+          featured ? "text-2xl" : "text-xl"
+        )}
+        data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}
+      >
+        {title}
+      </h2>
 
       {/* Navigation Buttons */}
       {canScrollLeft && (
