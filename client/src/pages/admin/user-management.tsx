@@ -1,14 +1,19 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { User, Shield, UserPlus, Search, Settings } from 'lucide-react';
-import { User as UserType } from '@shared/schema';
+import { User, Shield, UserPlus, Search, Settings, X } from 'lucide-react';
+import { User as UserType, insertUserSchema } from '@shared/schema';
+import { z } from 'zod';
 
 interface UserWithDetails extends UserType {
   createdAt: string;
@@ -18,7 +23,26 @@ interface UserWithDetails extends UserType {
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  // Form for creating new users
+  const createUserSchema = insertUserSchema.extend({
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+  const form = useForm({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+      confirmPassword: '',
+      role: 'user' as const,
+    },
+  });
 
   const { data: users = [], isLoading, error } = useQuery<UserWithDetails[]>({
     queryKey: ['/api/admin/users'],
@@ -71,6 +95,31 @@ export default function UserManagement() {
     },
   });
 
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      return apiRequest('/api/admin/users', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setIsCreateDialogOpen(false);
+      form.reset();
+      toast({
+        title: "User created",
+        description: "New user account has been created successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Creation failed",
+        description: error.message || "Failed to create user account.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRoleChange = (userId: string, newRole: string) => {
     updateUserRoleMutation.mutate({ userId, role: newRole });
   };
@@ -78,6 +127,11 @@ export default function UserManagement() {
   const handleToggleStatus = (userId: string, currentStatus: string) => {
     const isActive = currentStatus !== 'true';
     toggleUserStatusMutation.mutate({ userId, isActive });
+  };
+
+  const handleCreateUser = (data: any) => {
+    const { confirmPassword, ...userData } = data;
+    createUserMutation.mutate(userData);
   };
 
   const filteredUsers = users.filter(user => {
@@ -146,9 +200,122 @@ export default function UserManagement() {
             Manage user accounts, roles, and permissions
           </p>
         </div>
-        <Badge variant="outline" className="text-sm">
-          {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-sm">
+            {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
+          </Badge>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-user">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create New User</DialogTitle>
+                <DialogDescription>
+                  Add a new user account to the system. They will be able to log in with their username and password.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleCreateUser)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter username"
+                            data-testid="input-new-username"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-new-role">
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password"
+                            placeholder="Enter password"
+                            data-testid="input-new-password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="password"
+                            placeholder="Confirm password"
+                            data-testid="input-confirm-password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsCreateDialogOpen(false)}
+                      data-testid="button-cancel-user"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={createUserMutation.isPending}
+                      data-testid="button-create-user"
+                    >
+                      {createUserMutation.isPending ? 'Creating...' : 'Create User'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filters */}

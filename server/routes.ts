@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertStreamSchema, updateStreamSchema, insertStudioSchema, updateStudioSchema } from "@shared/schema";
+import { insertStreamSchema, updateStreamSchema, insertStudioSchema, updateStudioSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
 
@@ -182,6 +182,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin-only user management endpoints
+  app.post('/api/admin/users', requireAdmin, csrfProtection, async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(validatedData.username);
+      if (existingUser) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+      
+      // Hash the password before storing
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(validatedData.password, 12);
+      
+      const userData = {
+        ...validatedData,
+        password: hashedPassword
+      };
+      
+      const user = await storage.createUser(userData);
+      
+      // Remove password field for security
+      const safeUser = {
+        ...user,
+        password: undefined,
+        createdAt: user.createdAt || new Date().toISOString(),
+        lastActive: new Date().toISOString()
+      };
+      
+      res.status(201).json(safeUser);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: 'Invalid user data', details: error.errors });
+      } else {
+        console.error('Error creating user:', error);
+        res.status(500).json({ error: 'Failed to create user' });
+      }
+    }
+  });
+
   app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
