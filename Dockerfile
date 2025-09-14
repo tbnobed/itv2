@@ -27,14 +27,15 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Copy package files and install production dependencies only
+# Copy package files and install production dependencies plus tsx
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --only=production && npm install tsx && npm cache clean --force
 
 # Copy built application and necessary files from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/client/public ./client/public
 COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/server ./server
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder /app/seed.js ./seed.js
 
@@ -51,5 +52,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:5000/api/health || exit 1
 
-# Start the application
-CMD ["npm", "start"]
+# Start the production server directly (no vite imports)
+CMD ["tsx", "server/production.ts"]
