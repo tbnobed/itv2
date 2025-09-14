@@ -7,6 +7,7 @@ interface StreamTileProps {
   title: string;
   thumbnail: string;
   streamId: string;
+  streamUrl?: string;
   size?: 'featured' | 'regular';
   onSelect?: (streamId: string) => void;
   className?: string;
@@ -16,13 +17,16 @@ export default function StreamTile({
   id, 
   title, 
   thumbnail, 
-  streamId, 
+  streamId,
+  streamUrl,
   size = 'regular', 
   onSelect,
   className 
 }: StreamTileProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   const handleClick = async () => {
     console.log(`Opening stream: ${streamId} - ${title}`);
@@ -62,15 +66,40 @@ export default function StreamTile({
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
     >
-      {/* Thumbnail Image */}
-      <img
-        src={thumbnail}
-        alt={title}
-        className="w-full h-full object-cover bg-card"
-        onError={(e) => {
-          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9CVFYgTG9nbzwvdGV4dD48L3N2Zz4=';
-        }}
-      />
+      {/* Live Video Preview or Thumbnail Fallback */}
+      {streamUrl && !videoError ? (
+        <>
+          <video
+            className={`w-full h-full object-cover bg-card ${
+              videoLoaded ? 'block' : 'hidden'
+            }`}
+            autoPlay
+            muted
+            loop
+            playsInline
+            onLoadedData={() => setVideoLoaded(true)}
+            onError={() => setVideoError(true)}
+            data-testid={`video-preview-${streamId}`}
+          >
+            <source src={streamUrl} type="application/x-mpegURL" />
+            <source src={streamUrl} type="video/mp4" />
+          </video>
+          {!videoLoaded && (
+            <div className="w-full h-full bg-card flex items-center justify-center">
+              <div className="text-gray-400 text-sm">Loading preview...</div>
+            </div>
+          )}
+        </>
+      ) : (
+        <img
+          src={thumbnail}
+          alt={title}
+          className="w-full h-full object-cover bg-card"
+          onError={(e) => {
+            e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9CVFYgTG9nbzwvdGV4dD48L3N2Zz4=';
+          }}
+        />
+      )}
       
       {/* Overlay Gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

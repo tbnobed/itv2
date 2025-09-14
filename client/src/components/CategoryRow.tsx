@@ -141,6 +141,7 @@ export default function CategoryRow({
               title={stream.title}
               thumbnail={stream.thumbnail}
               streamId={stream.streamId}
+              streamUrl={stream.url}
               size={featured ? 'featured' : 'regular'}
               onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
               className="flex-shrink-0"
