@@ -212,14 +212,14 @@ export function setupAuth(app: Express) {
     cookie: {
       httpOnly: true,
       sameSite: 'lax', // Use lax for same-origin requests (frontend and backend on same port)
-      secure: isSecureContext, // true for HTTPS contexts
+      secure: 'auto', // Let express-session detect HTTPS via X-Forwarded-Proto
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',
       // DO NOT set domain - use host-only cookies
     },
   };
 
-  app.set("trust proxy", 1);
+  app.set("trust proxy", true); // Trust all proxies (Replit uses multiple proxies)
   
   app.use(session(sessionSettings));
   app.use(passport.initialize());
