@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage, seedDatabase } from "./storage";
 import { insertStreamSchema, updateStreamSchema, insertStudioSchema, updateStudioSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import { setupAuth, requireAuth, requireAdmin } from "./auth";
+import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes first
@@ -79,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/streams', requireAdmin, async (req, res) => {
+  app.post('/api/streams', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const validatedData = insertStreamSchema.parse(req.body);
       const stream = await storage.createStream(validatedData);
@@ -94,7 +94,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/streams/:id', requireAdmin, async (req, res) => {
+  app.put('/api/streams/:id', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = updateStreamSchema.parse(req.body);
@@ -115,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/streams/:id', requireAdmin, async (req, res) => {
+  app.delete('/api/streams/:id', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await storage.deleteStream(id);
@@ -158,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/studios', requireAdmin, async (req, res) => {
+  app.post('/api/studios', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const validatedData = insertStudioSchema.parse(req.body);
       const studio = await storage.createStudio(validatedData);
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/studios/:id', requireAdmin, async (req, res) => {
+  app.put('/api/studios/:id', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = updateStudioSchema.parse(req.body);
@@ -194,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/studios/:id', requireAdmin, async (req, res) => {
+  app.delete('/api/studios/:id', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const { id } = req.params;
       const deleted = await storage.deleteStudio(id);
@@ -211,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin-only user management endpoints
-  app.post('/api/admin/users', requireAdmin, async (req, res) => {
+  app.post('/api/admin/users', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
       
@@ -268,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/users/:id/role', requireAdmin, async (req, res) => {
+  app.put('/api/admin/users/:id/role', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const { id } = req.params;
       const { role } = req.body;
@@ -289,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/users/:id/status', requireAdmin, async (req, res) => {
+  app.put('/api/admin/users/:id/status', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const { id } = req.params;
       const { isActive } = req.body;
