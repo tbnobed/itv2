@@ -205,15 +205,16 @@ export function setupAuth(app: Express) {
   
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'obtv-admin-secret-key-change-in-production',
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Force session save even if unmodified
+    saveUninitialized: true, // Save uninitialized sessions
     store: storage.sessionStore,
     cookie: {
-      secure: isProduction && !process.env.DOCKER_ENV, // Only require HTTPS in production when not in Docker
-      httpOnly: true,
-      sameSite: 'strict', // CSRF protection
+      secure: false, // Disable HTTPS requirement for debugging
+      httpOnly: false, // Allow client-side access for debugging
+      sameSite: 'lax', // More permissive cross-site cookie policy
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
+    name: 'obtv.session', // Custom session name
   };
 
   app.set("trust proxy", 1);
@@ -236,22 +237,30 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user, done) => {
+    console.log('Serializing user:', { id: user.id, username: user.username, role: user.role });
+    done(null, user.id);
+  });
   passport.deserializeUser(async (id: string, done) => {
+    console.log('Deserializing user with ID:', id);
     try {
       // Handle fallback synthetic users for passcode auth
       if (id === 'fallback-admin') {
+        console.log('Deserializing fallback admin user');
         done(null, createSyntheticUser('admin'));
         return;
       }
       if (id === 'fallback-user') {
+        console.log('Deserializing fallback user');
         done(null, createSyntheticUser('user'));
         return;
       }
       
       const user = await storage.getUser(id);
+      console.log('Found user during deserialization:', user ? { id: user.id, username: user.username, role: user.role } : 'USER NOT FOUND');
       done(null, user);
     } catch (error) {
+      console.error('Error during user deserialization:', error);
       done(error);
     }
   });
@@ -314,6 +323,7 @@ export function setupAuth(app: Express) {
       }
       
       // Successful authentication - log in authenticated user
+      console.log('About to call req.login with user:', { id: authenticatedUser.id, username: authenticatedUser.username, role: authenticatedUser.role });
       req.login(authenticatedUser, (loginErr) => {
         if (loginErr) {
           console.error("User login error:", loginErr);
@@ -321,6 +331,8 @@ export function setupAuth(app: Express) {
         }
         
         console.log(`Successful ${passcodeResult.role} login from ${identifier}`);
+        console.log('Session after login:', req.session.id);
+        console.log('isAuthenticated after login:', req.isAuthenticated());
         res.status(200).json({ 
           id: authenticatedUser.id, 
           username: authenticatedUser.username,
@@ -380,13 +392,20 @@ export function requireAuth(req: any, res: any, next: any) {
 }
 
 export function requireAdmin(req: any, res: any, next: any) {
+  console.log('RequireAdmin check - isAuthenticated():', req.isAuthenticated());
+  console.log('RequireAdmin check - session ID:', req.session?.id);
+  console.log('RequireAdmin check - user object:', req.user ? { id: req.user.id, username: req.user.username, role: req.user.role } : 'NO USER');
+  
   if (!req.isAuthenticated()) {
+    console.log('Authentication failed - user not authenticated');
     return res.status(401).json({ error: "Authentication required" });
   }
   
   if (req.user?.role !== 'admin') {
+    console.log('Authorization failed - user role is:', req.user?.role, 'but admin required');
     return res.status(403).json({ error: "Admin access required" });
   }
   
+  console.log('Admin access granted for user:', req.user.username);
   next();
 }
