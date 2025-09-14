@@ -11,8 +11,22 @@ import bcrypt from 'bcrypt';
 
 const SALT_ROUNDS = 12;
 const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
+
+// Safe seeding configuration
+const SAFE_SEED_USERS = process.env.SAFE_SEED_USERS === 'true';
+const REMOVE_DEFAULT_DEMOS = process.env.REMOVE_DEFAULT_DEMOS === 'true';
+
+// Configurable user accounts
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'obtv-admin';
 const ADMIN_PASSCODE = process.env.ADMIN_PASSCODE || '1234';
+const USER_USERNAME = process.env.USER_USERNAME || 'obtv-user';
 const USER_PASSCODE = process.env.USER_PASSCODE || '1111';
+
+// Production safety checks
+if (process.env.NODE_ENV === 'production' && !SAFE_SEED_USERS) {
+  console.error('❌ CRITICAL: SAFE_SEED_USERS must be true in production to prevent data loss');
+  process.exit(1);
+}
 
 async function seedDatabase() {
   const pool = new Pool({ 
@@ -24,54 +38,76 @@ async function seedDatabase() {
 
   try {
     console.log('🌱 Starting database seeding...');
+    
+    if (SAFE_SEED_USERS) {
+      console.log('🔒 Safe seeding mode enabled - preserving existing users');
+    }
+    
+    if (REMOVE_DEFAULT_DEMOS) {
+      console.log('🗑️ Removing default demo accounts...');
+      await pool.query(`DELETE FROM users WHERE username IN ('obtv-admin', 'obtv-user') AND role IN ('admin', 'user')`);
+      console.log('✅ Default demo accounts removed');
+    }
 
     // Create admin account
-    console.log('👑 Creating admin account...');
+    console.log(`👑 Creating admin account: ${ADMIN_USERNAME}...`);
     const adminHashedPasscode = await bcrypt.hash(ADMIN_PASSCODE + PASSCODE_PEPPER, SALT_ROUNDS);
+    
+    const adminConflictAction = SAFE_SEED_USERS ? 'DO NOTHING' : `DO UPDATE SET
+        password = EXCLUDED.password,
+        role = EXCLUDED.role,
+        is_active = EXCLUDED.is_active`;
     
     const adminQuery = `
       INSERT INTO users (id, username, password, role, is_active, created_at)
       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
-      ON CONFLICT (username) DO UPDATE SET
-        password = EXCLUDED.password,
-        role = EXCLUDED.role,
-        is_active = EXCLUDED.is_active
+      ON CONFLICT (username) ${adminConflictAction}
       RETURNING id, username, role;
     `;
     
     const adminResult = await pool.query(adminQuery, [
-      'obtv-admin',
+      ADMIN_USERNAME,
       adminHashedPasscode,
       'admin',
       'true',
       new Date().toISOString()
     ]);
     
-    console.log(`✅ Admin user: ${adminResult.rows[0].username} (ID: ${adminResult.rows[0].id})`);
+    if (adminResult.rows.length > 0) {
+      console.log(`✅ Admin user: ${adminResult.rows[0].username} (ID: ${adminResult.rows[0].id})`);
+    } else {
+      console.log(`⚠️ Admin user ${ADMIN_USERNAME} already exists - preserved`);
+    }
 
     // Create regular user account
-    console.log('👤 Creating regular user account...');
+    console.log(`👤 Creating regular user account: ${USER_USERNAME}...`);
     const userHashedPasscode = await bcrypt.hash(USER_PASSCODE + PASSCODE_PEPPER, SALT_ROUNDS);
+    
+    const userConflictAction = SAFE_SEED_USERS ? 'DO NOTHING' : `DO UPDATE SET
+        password = EXCLUDED.password,
+        role = EXCLUDED.role,
+        is_active = EXCLUDED.is_active`;
     
     const userQuery = `
       INSERT INTO users (id, username, password, role, is_active, created_at)
       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
-      ON CONFLICT (username) DO UPDATE SET
-        password = EXCLUDED.password,
-        role = EXCLUDED.role,
-        is_active = EXCLUDED.is_active
+      ON CONFLICT (username) ${userConflictAction}
       RETURNING id, username, role;
     `;
     
     const userResult = await pool.query(userQuery, [
-      'obtv-user',
+      USER_USERNAME,
       userHashedPasscode,
       'user',
       'true',
       new Date().toISOString()
     ]);
     
-    console.log(`✅ Regular user: ${userResult.rows[0].username} (ID: ${userResult.rows[0].id})`);
+    if (userResult.rows.length > 0) {
+      console.log(`✅ Regular user: ${userResult.rows[0].username} (ID: ${userResult.rows[0].id})`);
+    } else {
+      console.log(`⚠️ Regular user ${USER_USERNAME} already exists - preserved`);
+    }
 
     // Check if studios exist, if not, create initial data
     const studioCheck = await pool.query('SELECT COUNT(*) FROM studios');
