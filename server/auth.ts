@@ -193,6 +193,7 @@ export function setupAuth(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
   
   const sessionSettings: session.SessionOptions = {
+    name: 'connect.sid', // Explicitly set to default to avoid conflicts
     secret: process.env.SESSION_SECRET || 'obtv-admin-secret-key-change-in-production',
     resave: false, // Don't force session save if unmodified
     saveUninitialized: false, // Don't save uninitialized sessions
@@ -203,7 +204,6 @@ export function setupAuth(app: Express) {
       sameSite: 'lax', // Cross-site cookie policy
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
-    // Remove custom session name - use default 'connect.sid'
   };
 
   app.set("trust proxy", 1);
@@ -221,6 +221,7 @@ export function setupAuth(app: Express) {
       console.log('Session data keys:', Object.keys(req.session || {}));
       console.log('Passport user data:', req.session?.passport);
       console.log('isAuthenticated():', req.isAuthenticated ? req.isAuthenticated() : 'NO AUTH METHOD');
+      console.log('Cookie header received:', req.headers.cookie || 'NONE');
       console.log('==========================');
     }
     next();
@@ -334,6 +335,11 @@ export function setupAuth(app: Express) {
             console.log('Session after login:', req.session.id);
             console.log('isAuthenticated after login:', req.isAuthenticated());
             console.log('Set-Cookie will be sent with session ID:', req.session.id);
+            
+            // Add debugging header to see what cookie gets set
+            res.setHeader('X-Debug-Session-ID', req.session.id);
+            res.setHeader('X-Debug-Set-Cookie', 'connect.sid=' + req.session.id);
+            
             res.status(200).json({ 
               id: authenticatedUser.id, 
               username: authenticatedUser.username,
