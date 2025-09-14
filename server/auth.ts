@@ -5,7 +5,6 @@ import { storage } from "./storage";
 
 // Database-stored users with passcode authentication
 // Each user in the database has a hashed passcode as their password
-const sessionUsers = new Map<string, { id: string; username: string; role: 'admin' | 'user' }>();
 
 export function setupAuth(app: Express) {
   // Simple session configuration
@@ -38,15 +37,17 @@ export function setupAuth(app: Express) {
         const isValid = await bcrypt.compare(code, user.password);
         
         if (isValid && user.isActive === 'true') {
-          // Store user in session
-          const sessionUser = { 
+          // Store user directly in session
+          req.session.user = { 
             id: user.id, 
             username: user.username, 
             role: user.role 
           };
-          sessionUsers.set(req.session.id, sessionUser);
           
-          return res.json(sessionUser);
+          console.log('Login - storing user in session:', req.session.id);
+          console.log('Login - user data:', req.session.user);
+          
+          return res.json(req.session.user);
         }
       }
       
@@ -61,18 +62,14 @@ export function setupAuth(app: Express) {
 
   // Check current user
   app.get('/api/user', (req, res) => {
-    const user = sessionUsers.get(req.session.id || '');
-    if (user) {
-      return res.json(user);
+    if (req.session.user) {
+      return res.json(req.session.user);
     }
     return res.status(401).json({ error: 'Not authenticated' });
   });
 
   // Logout endpoint
   app.post('/api/logout', (req, res) => {
-    if (req.session.id) {
-      sessionUsers.delete(req.session.id);
-    }
     req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ error: 'Logout failed' });
@@ -84,19 +81,24 @@ export function setupAuth(app: Express) {
 
 // Middleware to require admin authentication
 export function requireAdmin(req: any, res: any, next: any) {
-  const user = sessionUsers.get(req.session?.id || '');
+  console.log('Admin middleware - session ID:', req.session?.id);
+  console.log('Admin middleware - session user:', req.session?.user);
+  
+  const user = req.session?.user;
   
   if (!user || user.role !== 'admin') {
+    console.log('Admin middleware - FAILED - user:', user, 'role:', user?.role);
     return res.status(401).json({ error: 'Admin authentication required' });
   }
   
+  console.log('Admin middleware - SUCCESS - user has admin role');
   req.user = user;
   next();
 }
 
 // Middleware to require any authentication
 export function requireAuth(req: any, res: any, next: any) {
-  const user = sessionUsers.get(req.session?.id || '');
+  const user = req.session?.user;
   
   if (!user) {
     return res.status(401).json({ error: 'Authentication required' });
