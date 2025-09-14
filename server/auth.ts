@@ -162,17 +162,6 @@ function recordAttempt(identifier: string, success: boolean): void {
   }
 }
 
-// Helper function to create synthetic user objects for fallback authentication
-function createSyntheticUser(role: 'admin' | 'user'): SelectUser {
-  return {
-    id: role === 'admin' ? 'fallback-admin' : 'fallback-user',
-    username: role === 'admin' ? 'obtv-admin-fallback' : 'obtv-user-fallback',
-    password: '', // Not used for passcode auth
-    role: role,
-    isActive: 'true',
-    createdAt: new Date().toISOString()
-  };
-}
 
 // CSRF token generation and validation
 function generateCSRFToken(): string {
@@ -221,6 +210,21 @@ export function setupAuth(app: Express) {
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  // Debug middleware to track session persistence (after session setup)
+  app.use((req: any, res: any, next: any) => {
+    if (req.url.startsWith('/api/')) {
+      console.log('=== API REQUEST DEBUG ===');
+      console.log('URL:', req.url);
+      console.log('Method:', req.method);
+      console.log('Session ID:', req.session?.id);
+      console.log('Session data keys:', Object.keys(req.session || {}));
+      console.log('Passport user data:', req.session?.passport);
+      console.log('isAuthenticated():', req.isAuthenticated ? req.isAuthenticated() : 'NO AUTH METHOD');
+      console.log('==========================');
+    }
+    next();
+  });
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
@@ -244,18 +248,7 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: string, done) => {
     console.log('Deserializing user with ID:', id);
     try {
-      // Handle fallback synthetic users for passcode auth
-      if (id === 'fallback-admin') {
-        console.log('Deserializing fallback admin user');
-        done(null, createSyntheticUser('admin'));
-        return;
-      }
-      if (id === 'fallback-user') {
-        console.log('Deserializing fallback user');
-        done(null, createSyntheticUser('user'));
-        return;
-      }
-      
+      // Only use database users - no static fallbacks
       const user = await storage.getUser(id);
       console.log('Found user during deserialization:', user ? { id: user.id, username: user.username, role: user.role } : 'USER NOT FOUND');
       done(null, user);
@@ -306,21 +299,19 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ error: "Invalid passcode" });
       }
       
-      // Select appropriate user based on role
-      let authenticatedUser;
-      if (passcodeResult.user) {
-        // Database user with individual code
-        authenticatedUser = {
-          id: passcodeResult.user.id,
-          username: passcodeResult.user.username,
-          role: passcodeResult.user.role,
-          isActive: passcodeResult.user.isActive,
-          createdAt: passcodeResult.user.createdAt
-        };
-      } else {
-        // Fallback synthetic user for hardcoded admin/user passcode
-        authenticatedUser = createSyntheticUser(passcodeResult.role as 'admin' | 'user');
+      // Only use database users - no synthetic fallbacks
+      if (!passcodeResult.user) {
+        console.error('No database user found for passcode, authentication failed');
+        return res.status(401).json({ error: "Authentication failed - no user account found" });
       }
+      
+      const authenticatedUser = {
+        id: passcodeResult.user.id,
+        username: passcodeResult.user.username,
+        role: passcodeResult.user.role,
+        isActive: passcodeResult.user.isActive,
+        createdAt: passcodeResult.user.createdAt
+      };
       
       // Successful authentication - log in authenticated user
       console.log('About to call req.login with user:', { id: authenticatedUser.id, username: authenticatedUser.username, role: authenticatedUser.role });
