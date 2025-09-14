@@ -33,10 +33,8 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application and necessary files from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/client/dist ./client/dist
 COPY --from=builder /app/client/public ./client/public
 COPY --from=builder /app/shared ./shared
-COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder /app/seed.js ./seed.js
 
