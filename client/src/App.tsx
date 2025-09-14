@@ -137,7 +137,25 @@ function App() {
           
           // Set CSS variable and apply class
           document.documentElement.style.setProperty('--tv-scale', scale.toString());
-          rootElement.classList.add('tv-scale');
+          
+          // Check current route to avoid scaling on auth page
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes('/auth')) {
+            rootElement.classList.add('tv-scale');
+          }
+          
+          // Listen for route changes to toggle scaling
+          const toggleScalingForRoute = () => {
+            const path = window.location.pathname;
+            if (path.includes('/auth')) {
+              rootElement.classList.remove('tv-scale');
+            } else {
+              rootElement.classList.add('tv-scale');
+            }
+          };
+          
+          // Listen for navigation events
+          window.addEventListener('popstate', toggleScalingForRoute);
           
           console.log(`TV device detected: ${userAgent}, Resolution: ${actualWidth}x${actualHeight}, Scale: ${scale}`);
         }
