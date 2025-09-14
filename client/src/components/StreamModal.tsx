@@ -331,15 +331,45 @@ export default function StreamModal({
     }
   };
 
-  // Keyboard controls
+  // Track if we pushed a history state and prevent popstate loops
+  const historyStatePushedRef = useRef(false);
+  const suppressPopstateRef = useRef(false);
+  const lastBackKeyPressRef = useRef(false);
+
+  // History state management for Fire TV back button
+  useEffect(() => {
+    if (isOpen && !historyStatePushedRef.current) {
+      // Push a history state when modal opens
+      window.history.pushState({ modal: 'stream' }, '');
+      historyStatePushedRef.current = true;
+    }
+  }, [isOpen]);
+
+  // Keyboard controls - Enhanced for Firestick/Fire TV compatibility
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isOpen) return;
       
+      // Handle multiple Fire TV back button variations
+      const isBackButton = 
+        e.key === 'Escape' ||
+        e.key === 'Backspace' ||
+        e.key === 'Back' ||
+        e.key === 'BrowserBack' ||
+        e.keyCode === 8 ||  // Backspace keyCode
+        e.keyCode === 166 || // BrowserBack keyCode
+        e.code === 'BrowserBack';
+
+      if (isBackButton) {
+        e.preventDefault();
+        lastBackKeyPressRef.current = true;
+        handleModalClose();
+        return;
+      }
+
+      lastBackKeyPressRef.current = false;
+
       switch (e.key) {
-        case 'Escape':
-          onClose();
-          break;
         case 'f':
         case 'F':
           toggleFullscreen();
@@ -361,9 +391,64 @@ export default function StreamModal({
       }
     };
 
+    // Handle browser back button and popstate events
+    const handlePopState = (e: PopStateEvent) => {
+      if (suppressPopstateRef.current) {
+        suppressPopstateRef.current = false;
+        return;
+      }
+      
+      if (isOpen) {
+        historyStatePushedRef.current = false;
+        onClose();
+      }
+    };
+
+    // Handle fullscreen changes - update state and close modal if back was pressed
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(isCurrentlyFullscreen);
+      
+      // Close modal only if we're exiting fullscreen due to a back key press
+      // This provides one-step exit behavior on Fire TV while preserving other exits
+      if (!isCurrentlyFullscreen && isOpen && isFullscreen && lastBackKeyPressRef.current) {
+        handleModalClose();
+      }
+    };
+
     document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [isOpen, connectionStatus]);
+    window.addEventListener('popstate', handlePopState);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [isOpen, connectionStatus, isFullscreen]);
+
+  // Helper function to properly close modal with history management
+  const handleModalClose = () => {
+    if (historyStatePushedRef.current) {
+      // Close modal first, then handle history
+      historyStatePushedRef.current = false;
+      onClose();
+      
+      // Suppress the next popstate event to avoid loops
+      suppressPopstateRef.current = true;
+      window.history.back();
+    } else {
+      onClose();
+    }
+  };
+
+  // Reset history state tracking when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      historyStatePushedRef.current = false;
+      lastBackKeyPressRef.current = false;
+    }
+  }, [isOpen]);
 
   const toggleMute = () => {
     if (videoRef.current) {
@@ -404,7 +489,7 @@ export default function StreamModal({
     <div 
       ref={modalRef}
       className="fixed inset-0 bg-black z-50 flex items-center justify-center"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && handleModalClose()}
       onMouseMove={handleMouseMove}
       data-testid="stream-modal"
     >
@@ -596,7 +681,7 @@ export default function StreamModal({
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={onClose}
+                onClick={handleModalClose}
                 className="text-white hover:bg-white/20 pointer-events-auto focus-visible:ring-4 focus-visible:ring-primary"
                 data-testid="button-close-modal"
               >
