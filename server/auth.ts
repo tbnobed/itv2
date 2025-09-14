@@ -193,20 +193,30 @@ export function setupAuth(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
   
   const sessionSettings: session.SessionOptions = {
-    name: 'connect.sid', // Explicitly set to default to avoid conflicts
+    name: 'connect.sid', 
     secret: process.env.SESSION_SECRET || 'obtv-admin-secret-key-change-in-production',
     resave: false, // Don't force session save if unmodified
     saveUninitialized: false, // Don't save uninitialized sessions
     store: storage.sessionStore,
     cookie: {
       secure: false, // Disable HTTPS requirement for development
-      httpOnly: true, // Use standard httpOnly for security
+      httpOnly: true, // Secure cookie - not accessible to JS
       sameSite: 'lax', // Cross-site cookie policy
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/', // Explicitly set path
     },
   };
 
   app.set("trust proxy", 1);
+  
+  // Clear conflicting old session cookies before setting up new session
+  app.use((req: any, res: any, next: any) => {
+    if (req.headers.cookie && req.headers.cookie.includes('obtv.session=')) {
+      res.clearCookie('obtv.session', { path: '/' });
+    }
+    next();
+  });
+  
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());
