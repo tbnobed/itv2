@@ -194,16 +194,16 @@ export function setupAuth(app: Express) {
   
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'obtv-admin-secret-key-change-in-production',
-    resave: true, // Force session save even if unmodified
-    saveUninitialized: true, // Save uninitialized sessions
+    resave: false, // Don't force session save if unmodified
+    saveUninitialized: false, // Don't save uninitialized sessions
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Disable HTTPS requirement for debugging
-      httpOnly: false, // Allow client-side access for debugging
-      sameSite: 'lax', // More permissive cross-site cookie policy
+      secure: false, // Disable HTTPS requirement for development
+      httpOnly: true, // Use standard httpOnly for security
+      sameSite: 'lax', // Cross-site cookie policy
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
-    name: 'obtv.session', // Custom session name
+    // Remove custom session name - use default 'connect.sid'
   };
 
   app.set("trust proxy", 1);
@@ -313,21 +313,33 @@ export function setupAuth(app: Express) {
         createdAt: passcodeResult.user.createdAt
       };
       
-      // Successful authentication - log in authenticated user
+      // Successful authentication - regenerate and save session
       console.log('About to call req.login with user:', { id: authenticatedUser.id, username: authenticatedUser.username, role: authenticatedUser.role });
-      req.login(authenticatedUser, (loginErr) => {
-        if (loginErr) {
-          console.error("User login error:", loginErr);
+      req.session.regenerate((regenerateErr) => {
+        if (regenerateErr) {
+          console.error("Session regeneration error:", regenerateErr);
           return res.status(500).json({ error: "Authentication failed" });
         }
         
-        console.log(`Successful ${passcodeResult.role} login from ${identifier}`);
-        console.log('Session after login:', req.session.id);
-        console.log('isAuthenticated after login:', req.isAuthenticated());
-        res.status(200).json({ 
-          id: authenticatedUser.id, 
-          username: authenticatedUser.username,
-          role: authenticatedUser.role
+        req.login(authenticatedUser, (loginErr) => {
+          if (loginErr) {
+            console.error("User login error:", loginErr);
+            return res.status(500).json({ error: "Authentication failed" });
+          }
+          
+          // Generate CSRF token and save session
+          req.session.csrfToken = generateCSRFToken();
+          req.session.save(() => {
+            console.log(`Successful ${passcodeResult.role} login from ${identifier}`);
+            console.log('Session after login:', req.session.id);
+            console.log('isAuthenticated after login:', req.isAuthenticated());
+            console.log('Set-Cookie will be sent with session ID:', req.session.id);
+            res.status(200).json({ 
+              id: authenticatedUser.id, 
+              username: authenticatedUser.username,
+              role: authenticatedUser.role
+            });
+          });
         });
       });
       
