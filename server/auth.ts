@@ -318,7 +318,7 @@ export function setupAuth(app: Express) {
         console.error("Logout error:", err);
         return next(err);
       }
-      res.sendStatus(200);
+      res.json({ success: true, message: "Logged out successfully" });
     });
   });
 
