@@ -27,9 +27,9 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Copy package files and install production dependencies plus tsx
+# Copy package files and install production dependencies plus tsx and drizzle-kit
 COPY package*.json ./
-RUN npm ci --only=production && npm install tsx && npm cache clean --force
+RUN npm ci --only=production && npm install tsx drizzle-kit && npm cache clean --force
 
 # Copy built application and necessary files from builder
 COPY --from=builder /app/dist ./dist

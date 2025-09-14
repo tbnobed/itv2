@@ -5,6 +5,9 @@ import { storage, seedDatabase } from "./storage";
 import { insertStreamSchema, updateStreamSchema, insertStudioSchema, updateStudioSchema, insertUserSchema } from "../shared/schema";
 import { z } from "zod";
 import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { studios } from "../shared/schema";
 import path from "path";
 import fs from "fs";
 
@@ -17,6 +20,59 @@ function log(message: string, source = "express") {
     hour12: true,
   });
   console.log(`${formattedTime} [${source}] ${message}`);
+}
+
+// Automatic database initialization - idempotent
+async function initializeDatabase() {
+  try {
+    // Check if tables exist by trying to query studios table
+    await db.select().from(studios).limit(1);
+    log("Database tables already exist, skipping schema setup", "db");
+  } catch (error) {
+    // Tables don't exist, run schema push
+    log("Database tables not found, initializing schema...", "db");
+    
+    try {
+      // Import dynamically to avoid issues
+      const { spawn } = await import('child_process');
+      const { promisify } = await import('util');
+      
+      const execCommand = promisify(spawn);
+      
+      // Run npm run db:push to create tables
+      const dbPush = spawn('npm', ['run', 'db:push'], {
+        stdio: 'pipe',
+        cwd: process.cwd()
+      });
+      
+      let output = '';
+      let errorOutput = '';
+      
+      dbPush.stdout?.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      dbPush.stderr?.on('data', (data) => {
+        errorOutput += data.toString();
+      });
+      
+      await new Promise((resolve, reject) => {
+        dbPush.on('close', (code) => {
+          if (code === 0) {
+            log("Database schema initialized successfully", "db");
+            resolve(code);
+          } else {
+            log(`Database schema initialization failed with code ${code}: ${errorOutput}`, "db");
+            reject(new Error(`DB push failed: ${errorOutput}`));
+          }
+        });
+      });
+      
+    } catch (pushError) {
+      log(`Failed to initialize database schema: ${pushError}`, "db");
+      throw pushError;
+    }
+  }
 }
 
 // Production static file serving
@@ -84,6 +140,9 @@ async function registerRoutes(app: Express): Promise<Server> {
       uptime: process.uptime()
     });
   });
+  
+  // Initialize database schema automatically (idempotent)
+  await initializeDatabase();
   
   // Seed database on startup
   seedDatabase();
