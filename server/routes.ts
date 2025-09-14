@@ -53,6 +53,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/streams/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const stream = await storage.getStream(id);
+      
+      if (!stream) {
+        return res.status(404).json({ error: 'Stream not found' });
+      }
+      
+      res.json(stream);
+    } catch (error) {
+      console.error(`Error fetching stream ${req.params.id}:`, error);
+      res.status(500).json({ error: 'Failed to fetch stream' });
+    }
+  });
+
   app.post('/api/streams', requireAdmin, csrfProtection, async (req, res) => {
     try {
       const validatedData = insertStreamSchema.parse(req.body);
