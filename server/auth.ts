@@ -70,31 +70,34 @@ async function hashPasscode(code: string): Promise<string> {
 async function verifyPasscode(suppliedCode: string): Promise<{ isValid: boolean; role?: 'admin' | 'user'; user?: any }> {
   const pepperedCode = suppliedCode + PASSCODE_PEPPER;
   
-  // Check admin passcode
-  const hashedAdminCode = await hashPasscode(ADMIN_PASSCODE);
-  if (await bcrypt.compare(pepperedCode, hashedAdminCode)) {
-    return { isValid: true, role: 'admin' };
-  }
-  
-  // Check user passcode
-  const hashedUserCode = await hashPasscode(USER_PASSCODE);
-  if (await bcrypt.compare(pepperedCode, hashedUserCode)) {
-    return { isValid: true, role: 'user' };
-  }
-  
-  // Check database users with their individual codes
+  // First priority: Check database users with their individual codes
   try {
     const allUsers = await storage.getAllUsers();
     
     for (const user of allUsers) {
-      // User passwords are stored as hashed 4-digit codes - only check active users
-      if (user.isActive === 'true' && await bcrypt.compare(suppliedCode, user.password)) {
-        return { isValid: true, role: user.role, user };
+      // User passwords are stored as hashed 4-digit codes with pepper - only check active users
+      if (user.isActive === 'true' && await bcrypt.compare(pepperedCode, user.password)) {
+        console.log(`Database user authenticated: ${user.username} (${user.role})`);
+        return { isValid: true, role: user.role as 'admin' | 'user', user };
       }
     }
   } catch (error) {
     console.error('Error checking database users for passcode:', error);
-    // Continue without crashing - fallback to hardcoded passcodes only
+    // Continue to fallback authentication
+  }
+  
+  // Fallback: Check hardcoded admin passcode (for systems without database users)
+  const hashedAdminCode = await hashPasscode(ADMIN_PASSCODE);
+  if (await bcrypt.compare(pepperedCode, hashedAdminCode)) {
+    console.log('Fallback admin authentication used');
+    return { isValid: true, role: 'admin' };
+  }
+  
+  // Fallback: Check hardcoded user passcode (for systems without database users)
+  const hashedUserCode = await hashPasscode(USER_PASSCODE);
+  if (await bcrypt.compare(pepperedCode, hashedUserCode)) {
+    console.log('Fallback user authentication used');
+    return { isValid: true, role: 'user' };
   }
   
   return { isValid: false };
@@ -159,24 +162,17 @@ function recordAttempt(identifier: string, success: boolean): void {
   }
 }
 
-// Synthetic authenticated users for passcode access
-const ADMIN_USER: SelectUser = {
-  id: 'admin',
-  username: 'obtv-admin',
-  password: '', // Not used for passcode auth
-  role: 'admin',
-  isActive: 'true',
-  createdAt: new Date().toISOString()
-};
-
-const REGULAR_USER: SelectUser = {
-  id: 'user',
-  username: 'obtv-user', 
-  password: '', // Not used for passcode auth
-  role: 'user',
-  isActive: 'true',
-  createdAt: new Date().toISOString()
-};
+// Helper function to create synthetic user objects for fallback authentication
+function createSyntheticUser(role: 'admin' | 'user'): SelectUser {
+  return {
+    id: role === 'admin' ? 'fallback-admin' : 'fallback-user',
+    username: role === 'admin' ? 'obtv-admin-fallback' : 'obtv-user-fallback',
+    password: '', // Not used for passcode auth
+    role: role,
+    isActive: 'true',
+    createdAt: new Date().toISOString()
+  };
+}
 
 // CSRF token generation and validation
 function generateCSRFToken(): string {
@@ -243,13 +239,13 @@ export function setupAuth(app: Express) {
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: string, done) => {
     try {
-      // Handle synthetic authenticated users for passcode auth
-      if (id === 'admin') {
-        done(null, ADMIN_USER);
+      // Handle fallback synthetic users for passcode auth
+      if (id === 'fallback-admin') {
+        done(null, createSyntheticUser('admin'));
         return;
       }
-      if (id === 'user') {
-        done(null, REGULAR_USER);
+      if (id === 'fallback-user') {
+        done(null, createSyntheticUser('user'));
         return;
       }
       
@@ -313,8 +309,8 @@ export function setupAuth(app: Express) {
           createdAt: passcodeResult.user.createdAt
         };
       } else {
-        // Hardcoded admin/user passcode
-        authenticatedUser = passcodeResult.role === 'admin' ? ADMIN_USER : REGULAR_USER;
+        // Fallback synthetic user for hardcoded admin/user passcode
+        authenticatedUser = createSyntheticUser(passcodeResult.role as 'admin' | 'user');
       }
       
       // Successful authentication - log in authenticated user

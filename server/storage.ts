@@ -4,6 +4,7 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -626,17 +627,91 @@ export class DatabaseStorage implements IStorage {
 // Switch to database storage
 export const storage = new DatabaseStorage();
 
-// Database seeding function
+// Database seeding constants
+const SALT_ROUNDS = 12;
+const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
+const ADMIN_PASSCODE = process.env.ADMIN_PASSCODE || '1234';
+const USER_PASSCODE = process.env.USER_PASSCODE || '1111';
+
+// Database seeding function with retry logic
 export async function seedDatabase() {
+  const maxRetries = 3;
+  let retryCount = 0;
+  
+  while (retryCount <= maxRetries) {
+    try {
+      // Check if data already exists
+      const existingStudios = await storage.getAllStudios();
+      if (existingStudios.length > 0) {
+        console.log('Database already seeded');
+        return;
+      }
+      break; // Exit retry loop if connection succeeds
+    } catch (error) {
+      retryCount++;
+      console.log(`Database connection attempt ${retryCount}/${maxRetries + 1} failed:`, error.message);
+      
+      if (retryCount > maxRetries) {
+        console.error('Failed to connect to database after multiple attempts. Admin accounts will use fallback authentication.');
+        return; // Gracefully exit without seeding
+      }
+      
+      // Wait before retry (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+    }
+  }
+  
   try {
-    // Check if data already exists
-    const existingStudios = await storage.getAllStudios();
-    if (existingStudios.length > 0) {
-      console.log('Database already seeded');
-      return;
+    console.log('Seeding database...');
+
+    // Create admin and user accounts first (check if they exist)
+    console.log('Creating admin and user accounts...');
+    
+    // Check if admin user already exists
+    try {
+      const existingAdmin = await storage.getUserByUsername('obtv-admin');
+      if (!existingAdmin) {
+        // Hash passcode with pepper for security
+        const adminHashedPasscode = await bcrypt.hash(ADMIN_PASSCODE + PASSCODE_PEPPER, SALT_ROUNDS);
+        
+        const adminData: InsertUser = {
+          username: 'obtv-admin',
+          password: adminHashedPasscode,
+          role: 'admin',
+          isActive: 'true'
+        };
+        
+        const adminUser = await storage.createUser(adminData);
+        console.log(`Created admin user: ${adminUser.username} (ID: ${adminUser.id})`);
+      } else {
+        console.log('Admin user already exists');
+      }
+    } catch (error) {
+      console.error('Error creating admin user:', error);
     }
 
-    console.log('Seeding database...');
+    // Check if regular user already exists
+    try {
+      const existingUser = await storage.getUserByUsername('obtv-user');
+      if (!existingUser) {
+        // Hash passcode with pepper for security
+        const userHashedPasscode = await bcrypt.hash(USER_PASSCODE + PASSCODE_PEPPER, SALT_ROUNDS);
+        
+        const userData: InsertUser = {
+          username: 'obtv-user',
+          password: userHashedPasscode,
+          role: 'user',
+          isActive: 'true'
+        };
+        
+        const regularUser = await storage.createUser(userData);
+        console.log(`Created regular user: ${regularUser.username} (ID: ${regularUser.id})`);
+      } else {
+        console.log('Regular user already exists');
+      }
+    } catch (error) {
+      console.error('Error creating regular user:', error);
+    }
 
     // Seed initial studio data
     const studioData: Omit<InsertStudio, 'id'>[] = [
