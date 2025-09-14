@@ -9,8 +9,10 @@ import { AppSidebar } from "@/components/app-sidebar";
 import StreamingInterface from "@/components/StreamingInterface";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 // Admin page imports
 import UserManagement from "@/pages/admin/user-management";
@@ -65,6 +67,40 @@ function Router({ activeSection }: { activeSection: string }) {
   );
 }
 
+// Header component with logout functionality
+function AppHeader() {
+  const { user, logoutMutation } = useAuth();
+  const [location, navigate] = useLocation();
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    // Navigate to auth page after logout
+    navigate('/auth');
+  };
+
+  // Only show logout button if user is logged in and not on auth page
+  const showLogoutButton = user && !location.startsWith('/auth');
+
+  return (
+    <header className="flex items-center justify-between p-2 border-b">
+      <SidebarTrigger data-testid="button-sidebar-toggle" />
+      {showLogoutButton && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          disabled={logoutMutation.isPending}
+          data-testid="button-logout"
+          className="flex items-center gap-2"
+        >
+          <LogOut className="w-4 h-4" />
+          {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+        </Button>
+      )}
+    </header>
+  );
+}
+
 function App() {
   const [activeSection, setActiveSection] = React.useState('featured');
   
@@ -85,9 +121,7 @@ function App() {
                 onSectionChange={setActiveSection}
               />
               <div className="flex flex-col flex-1">
-                <header className="flex items-center justify-between p-2 border-b">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                </header>
+                <AppHeader />
                 <main className="flex-1 overflow-hidden">
                   <Router activeSection={activeSection} />
                 </main>
