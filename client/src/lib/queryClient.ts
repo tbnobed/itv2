@@ -11,11 +11,8 @@ async function throwIfResNotOk(res: Response) {
 let cachedCsrfToken: string | null = null;
 
 async function getCSRFToken(): Promise<string> {
-  if (cachedCsrfToken) {
-    return cachedCsrfToken;
-  }
-
   try {
+    // Always fetch a fresh token to avoid cache issues
     const response = await fetch('/api/csrf-token', {
       credentials: 'include',
     });

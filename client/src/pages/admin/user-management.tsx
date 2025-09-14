@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { User, Shield, UserPlus, Search, Settings, X } from 'lucide-react';
-import { User as UserType, insertUserSchema } from '@shared/schema';
+import { User as UserType, insertUserSchema, createUserSchema } from '@shared/schema';
 import { z } from 'zod';
 
 interface UserWithDetails extends UserType {
@@ -26,20 +26,14 @@ export default function UserManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Form for creating new users
-  const createUserSchema = insertUserSchema.extend({
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+  // Form for creating new users uses the imported createUserSchema
 
   const form = useForm({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
       username: '',
-      password: '',
-      confirmPassword: '',
+      code: '',
+      confirmCode: '',
       role: 'user' as const,
     },
   });
@@ -130,8 +124,13 @@ export default function UserManagement() {
   };
 
   const handleCreateUser = (data: any) => {
-    const { confirmPassword, ...userData } = data;
-    createUserMutation.mutate(userData);
+    const { confirmCode, ...userData } = data;
+    // Transform code to password for backend compatibility
+    const userDataWithPassword = {
+      ...userData,
+      password: data.code
+    };
+    createUserMutation.mutate(userDataWithPassword);
   };
 
   const filteredUsers = users.filter(user => {
@@ -215,7 +214,7 @@ export default function UserManagement() {
               <DialogHeader>
                 <DialogTitle>Create New User</DialogTitle>
                 <DialogDescription>
-                  Add a new user account to the system. They will be able to log in with their username and password.
+                  Add a new user account to the system. They will be able to log in with their username and 4-digit code.
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -260,15 +259,16 @@ export default function UserManagement() {
                   />
                   <FormField
                     control={form.control}
-                    name="password"
+                    name="code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>4-Digit Code</FormLabel>
                         <FormControl>
                           <Input 
-                            type="password"
-                            placeholder="Enter password"
-                            data-testid="input-new-password"
+                            type="text"
+                            placeholder="Enter 4-digit code"
+                            maxLength={4}
+                            data-testid="input-new-code"
                             {...field}
                           />
                         </FormControl>
@@ -278,15 +278,16 @@ export default function UserManagement() {
                   />
                   <FormField
                     control={form.control}
-                    name="confirmPassword"
+                    name="confirmCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
+                        <FormLabel>Confirm Code</FormLabel>
                         <FormControl>
                           <Input 
-                            type="password"
-                            placeholder="Confirm password"
-                            data-testid="input-confirm-password"
+                            type="text"
+                            placeholder="Confirm 4-digit code"
+                            maxLength={4}
+                            data-testid="input-confirm-code"
                             {...field}
                           />
                         </FormControl>

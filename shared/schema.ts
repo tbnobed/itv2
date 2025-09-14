@@ -42,11 +42,18 @@ export const updateUserSchema = insertUserSchema.partial().extend({
   isActive: z.string().optional(),
 });
 
-export const createUserSchema = insertUserSchema.extend({
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
+export const createUserSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  role: z.enum(["admin", "user"]),
+  code: z.string()
+    .length(4, "Code must be exactly 4 digits")
+    .regex(/^\d{4}$/, "Code must contain only numbers"),
+  confirmCode: z.string()
+    .length(4, "Code must be exactly 4 digits")
+    .regex(/^\d{4}$/, "Code must contain only numbers"),
+}).refine((data) => data.code === data.confirmCode, {
+  message: "Codes don't match",
+  path: ["confirmCode"],
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
