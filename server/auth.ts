@@ -211,7 +211,7 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       httpOnly: true,
-      sameSite: isSecureContext ? 'none' : 'lax',
+      sameSite: 'lax', // Use lax for same-origin requests (frontend and backend on same port)
       secure: isSecureContext, // true for HTTPS contexts
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',
