@@ -163,7 +163,7 @@ export default function StreamsListPage() {
           </div>
 
           {/* Streams Table */}
-          <div className="border rounded-md">
+          <div className="border rounded-md max-h-[calc(100vh-300px)] overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
