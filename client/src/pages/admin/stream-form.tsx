@@ -39,7 +39,7 @@ const streamFormSchema = insertStreamSchema.extend({
     (url) => url.startsWith('webrtc://') || url.startsWith('http://') || url.startsWith('https://'),
     'Must be a valid stream URL (webrtc://, http://, or https://)'
   ),
-  thumbnail: z.string().url('Must be a valid image URL').optional(),
+  thumbnail: z.string().optional(),
   category: z.enum(['featured', 'overTheAir', 'liveFeeds', 'studios'], {
     required_error: 'Category is required',
   }),
