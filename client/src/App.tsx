@@ -103,6 +103,10 @@ function AppHeader() {
 
 function App() {
   const [activeSection, setActiveSection] = React.useState('featured');
+  const [location] = useLocation();
+  
+  // Check if current route is auth page
+  const isAuthRoute = location.startsWith('/auth');
   
   // TV Device Detection and Scaling
   React.useEffect(() => {
@@ -125,7 +129,7 @@ function App() {
       if (isTVBrowser || (isLargeScreen && hasCoarsePointer)) {
         const rootElement = document.getElementById('root');
         if (rootElement) {
-          // Apply scaling based on resolution
+          // Apply scaling based on resolution - but NOT for auth page
           let scale = 1;
           if (actualWidth >= 3840 && actualHeight >= 2160) {
             scale = 0.5; // 4K TVs
@@ -135,38 +139,21 @@ function App() {
             scale = 0.75; // 720p TVs
           }
           
-          // Set CSS variable and apply class
-          document.documentElement.style.setProperty('--tv-scale', scale.toString());
+          // Only apply scaling to non-auth pages
+          if (!location.startsWith('/auth')) {
+            document.documentElement.style.setProperty('--tv-scale', scale.toString());
+            rootElement.classList.add('tv-scale');
+          } else {
+            rootElement.classList.remove('tv-scale');
+          }
           
-          // Apply different scaling for auth page vs main app
-          const authScale = Math.max(scale + 0.15, 0.85); // Lighter scaling for auth page
-          
-          const toggleScalingForRoute = () => {
-            const path = window.location.pathname;
-            if (path.includes('/auth')) {
-              // Use lighter scaling for auth page
-              document.documentElement.style.setProperty('--tv-scale', authScale.toString());
-              rootElement.classList.add('tv-scale');
-            } else {
-              // Use full scaling for main app
-              document.documentElement.style.setProperty('--tv-scale', scale.toString());
-              rootElement.classList.add('tv-scale');
-            }
-          };
-          
-          // Apply initial scaling based on current route
-          toggleScalingForRoute();
-          
-          // Listen for navigation events
-          window.addEventListener('popstate', toggleScalingForRoute);
-          
-          console.log(`TV device detected: ${userAgent}, Resolution: ${actualWidth}x${actualHeight}, Scale: ${scale}`);
+          console.log(`TV device detected: ${userAgent}, Resolution: ${actualWidth}x${actualHeight}, Scale: ${scale}, Auth route: ${location.startsWith('/auth')}`);
         }
       }
     };
     
     detectTVDevice();
-  }, []);
+  }, [location]);
   
   // Custom sidebar width for streaming application
   const style = {
@@ -178,21 +165,30 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <SidebarProvider style={style as React.CSSProperties}>
-            <div className="flex h-screen w-full">
-              <AppSidebar 
-                activeSection={activeSection} 
-                onSectionChange={setActiveSection}
-              />
-              <div className="flex flex-col flex-1">
-                <AppHeader />
-                <main className="flex-1 overflow-hidden">
-                  <Router activeSection={activeSection} />
-                </main>
-              </div>
+          {isAuthRoute ? (
+            // Auth page renders without sidebar/header layout constraints
+            <div className="h-screen w-full overflow-auto">
+              <Router activeSection={activeSection} />
+              <Toaster />
             </div>
-          </SidebarProvider>
-          <Toaster />
+          ) : (
+            // Main app with sidebar and header
+            <SidebarProvider style={style as React.CSSProperties}>
+              <div className="flex h-screen w-full">
+                <AppSidebar 
+                  activeSection={activeSection} 
+                  onSectionChange={setActiveSection}
+                />
+                <div className="flex flex-col flex-1">
+                  <AppHeader />
+                  <main className="flex-1 overflow-hidden">
+                    <Router activeSection={activeSection} />
+                  </main>
+                </div>
+              </div>
+              <Toaster />
+            </SidebarProvider>
+          )}
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
