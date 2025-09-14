@@ -53,4 +53,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:5000/api/health || exit 1
 
 # Start the production server directly (no vite imports)
-CMD ["tsx", "server/production.ts"]
+CMD ["node_modules/.bin/tsx", "server/production.ts"]
