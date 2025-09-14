@@ -75,7 +75,7 @@ async function verifyPasscode(suppliedCode: string): Promise<{ isValid: boolean;
     const allUsers = await storage.getAllUsers();
     
     for (const user of allUsers) {
-      // User passwords are stored as hashed 4-digit codes with pepper - only check active users
+      // User passwords are stored as hashed 4-digit codes with pepper - only check active users  
       if (user.isActive === 'true' && await bcrypt.compare(pepperedCode, user.password)) {
         console.log(`Database user authenticated: ${user.username} (${user.role})`);
         return { isValid: true, role: user.role as 'admin' | 'user', user };

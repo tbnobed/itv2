@@ -6,8 +6,8 @@
  * This runs during Docker deployment to ensure admin accounts are always created
  */
 
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
+import { Pool } from 'pg';
+import bcrypt from 'bcrypt';
 
 const SALT_ROUNDS = 12;
 const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
@@ -30,12 +30,12 @@ async function seedDatabase() {
     const adminHashedPasscode = await bcrypt.hash(ADMIN_PASSCODE + PASSCODE_PEPPER, SALT_ROUNDS);
     
     const adminQuery = `
-      INSERT INTO users (id, username, password, role, "isActive", "createdAt")
+      INSERT INTO users (id, username, password, role, is_active, created_at)
       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
       ON CONFLICT (username) DO UPDATE SET
         password = EXCLUDED.password,
         role = EXCLUDED.role,
-        "isActive" = EXCLUDED."isActive"
+        is_active = EXCLUDED.is_active
       RETURNING id, username, role;
     `;
     
@@ -54,12 +54,12 @@ async function seedDatabase() {
     const userHashedPasscode = await bcrypt.hash(USER_PASSCODE + PASSCODE_PEPPER, SALT_ROUNDS);
     
     const userQuery = `
-      INSERT INTO users (id, username, password, role, "isActive", "createdAt")
+      INSERT INTO users (id, username, password, role, is_active, created_at)
       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
       ON CONFLICT (username) DO UPDATE SET
         password = EXCLUDED.password,
         role = EXCLUDED.role,
-        "isActive" = EXCLUDED."isActive"
+        is_active = EXCLUDED.is_active
       RETURNING id, username, role;
     `;
     
@@ -106,7 +106,7 @@ async function seedDatabase() {
       const studioIds = [];
       for (const studio of studioData) {
         const studioQuery = `
-          INSERT INTO studios (id, name, thumbnail, description, status, "feedCount", "createdAt")
+          INSERT INTO studios (id, name, thumbnail, description, status, feed_count, created_at)
           VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6)
           RETURNING id;
         `;
@@ -154,7 +154,7 @@ async function seedDatabase() {
 
       for (const stream of streamData) {
         const streamQuery = `
-          INSERT INTO streams (id, title, thumbnail, "streamId", url, category, "studioId", "createdAt")
+          INSERT INTO streams (id, title, thumbnail, stream_id, url, category, studio_id, created_at)
           VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7);
         `;
         
@@ -185,8 +185,8 @@ async function seedDatabase() {
 }
 
 // Run seeding if this script is executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   seedDatabase().catch(console.error);
 }
 
-module.exports = { seedDatabase };
+export { seedDatabase };
