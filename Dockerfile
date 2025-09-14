@@ -45,6 +45,9 @@ RUN adduser -S nodejs -u 1001
 RUN chown -R nodejs:nodejs /app
 USER nodejs
 
+# Set Docker environment variable for session handling
+ENV DOCKER_ENV=true
+
 # Expose port
 EXPOSE 5000
 

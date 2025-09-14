@@ -209,7 +209,7 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: isProduction, // Require HTTPS in production
+      secure: isProduction && !process.env.DOCKER_ENV, // Only require HTTPS in production when not in Docker
       httpOnly: true,
       sameSite: 'strict', // CSRF protection
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
