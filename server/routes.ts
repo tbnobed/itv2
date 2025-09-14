@@ -31,17 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/streams/:category', async (req, res) => {
-    try {
-      const { category } = req.params;
-      const streams = await storage.getStreamsByCategory(category);
-      res.json(streams);
-    } catch (error) {
-      console.error(`Error fetching streams for category ${req.params.category}:`, error);
-      res.status(500).json({ error: 'Failed to fetch streams for category' });
-    }
-  });
-
+  // More specific routes first to avoid conflicts
   app.get('/api/streams/studio/:studioId', async (req, res) => {
     try {
       const { studioId } = req.params;
@@ -50,6 +40,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error(`Error fetching streams for studio ${req.params.studioId}:`, error);
       res.status(500).json({ error: 'Failed to fetch studio streams' });
+    }
+  });
+
+  app.get('/api/streams/category/:category', async (req, res) => {
+    try {
+      const { category } = req.params;
+      const streams = await storage.getStreamsByCategory(category);
+      res.json(streams);
+    } catch (error) {
+      console.error(`Error fetching streams for category ${req.params.category}:`, error);
+      res.status(500).json({ error: 'Failed to fetch streams for category' });
     }
   });
 
