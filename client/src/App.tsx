@@ -138,21 +138,24 @@ function App() {
           // Set CSS variable and apply class
           document.documentElement.style.setProperty('--tv-scale', scale.toString());
           
-          // Check current route to avoid scaling on auth page
-          const currentPath = window.location.pathname;
-          if (!currentPath.includes('/auth')) {
-            rootElement.classList.add('tv-scale');
-          }
+          // Apply different scaling for auth page vs main app
+          const authScale = Math.max(scale + 0.15, 0.85); // Lighter scaling for auth page
           
-          // Listen for route changes to toggle scaling
           const toggleScalingForRoute = () => {
             const path = window.location.pathname;
             if (path.includes('/auth')) {
-              rootElement.classList.remove('tv-scale');
+              // Use lighter scaling for auth page
+              document.documentElement.style.setProperty('--tv-scale', authScale.toString());
+              rootElement.classList.add('tv-scale');
             } else {
+              // Use full scaling for main app
+              document.documentElement.style.setProperty('--tv-scale', scale.toString());
               rootElement.classList.add('tv-scale');
             }
           };
+          
+          // Apply initial scaling based on current route
+          toggleScalingForRoute();
           
           // Listen for navigation events
           window.addEventListener('popstate', toggleScalingForRoute);
