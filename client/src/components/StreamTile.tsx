@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import WebRTCPreview from './WebRTCPreview';
 
 interface StreamTileProps {
   id: string;
@@ -25,8 +26,6 @@ export default function StreamTile({
 }: StreamTileProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [videoError, setVideoError] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
 
   const handleClick = async () => {
     console.log(`Opening stream: ${streamId} - ${title}`);
@@ -66,30 +65,14 @@ export default function StreamTile({
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
     >
-      {/* Live Video Preview or Thumbnail Fallback */}
-      {streamUrl && !videoError ? (
-        <>
-          <video
-            className={`w-full h-full object-cover bg-card ${
-              videoLoaded ? 'block' : 'hidden'
-            }`}
-            autoPlay
-            muted
-            loop
-            playsInline
-            onLoadedData={() => setVideoLoaded(true)}
-            onError={() => setVideoError(true)}
-            data-testid={`video-preview-${streamId}`}
-          >
-            <source src={streamUrl} type="application/x-mpegURL" />
-            <source src={streamUrl} type="video/mp4" />
-          </video>
-          {!videoLoaded && (
-            <div className="w-full h-full bg-card flex items-center justify-center">
-              <div className="text-gray-400 text-sm">Loading preview...</div>
-            </div>
-          )}
-        </>
+      {/* Live Video Preview */}
+      {streamUrl ? (
+        <WebRTCPreview
+          streamUrl={streamUrl}
+          streamId={streamId}
+          className="w-full h-full relative"
+          fallbackImage={thumbnail}
+        />
       ) : (
         <img
           src={thumbnail}
