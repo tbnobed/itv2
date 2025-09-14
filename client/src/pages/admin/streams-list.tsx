@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import WebRTCPreview from '@/components/WebRTCPreview';
 import type { Stream } from '@shared/schema';
 
 interface GroupedStreams {
@@ -185,12 +186,14 @@ export default function StreamsListPage() {
                   filteredStreams.map((stream) => (
                     <TableRow key={stream.id} data-testid={`row-stream-${stream.id}`}>
                       <TableCell>
-                        <img
-                          src={stream.thumbnail}
-                          alt={stream.title}
-                          className="w-16 h-9 object-cover rounded"
-                          data-testid={`img-thumbnail-${stream.id}`}
-                        />
+                        <div className="w-16 h-9 rounded overflow-hidden">
+                          <WebRTCPreview
+                            streamUrl={stream.url}
+                            streamId={stream.streamId}
+                            className="w-full h-full"
+                            fallbackImage={stream.thumbnail}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium">{stream.title}</TableCell>
                       <TableCell className="font-mono text-sm">{stream.streamId}</TableCell>

@@ -95,18 +95,19 @@ export default function WebRTCPreview({
 
   if (hasError || !isVisible) {
     return (
-      <div ref={containerRef} className={className}>
+      <div ref={containerRef} className={`relative ${className}`}>
         <img
           src={fallbackImage}
           alt={`Stream ${streamId}`}
           className="w-full h-full object-cover bg-card"
+          data-testid={`img-thumbnail-${streamId}`}
         />
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className={className}>
+    <div ref={containerRef} className={`relative ${className}`}>
       <video
         ref={videoRef}
         className={`w-full h-full object-cover bg-card transition-opacity duration-300 ${
