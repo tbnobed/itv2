@@ -6,13 +6,13 @@ import { cn } from '@/lib/utils';
 
 // Declare global SRS SDK types
 declare global {
-  function SrsRtcPlayerAsync(): {
-    play: (url: string) => Promise<{ simulator: string }>;
+  function SrsRtcWhipWhepAsync(): {
+    play: (url: string, options?: { videoOnly?: boolean; audioOnly?: boolean }) => Promise<{ sessionid: string; simulator: string }>;
     close: () => void;
-    ontrack: (event: RTCTrackEvent) => void;
     stream: MediaStream;
     pc: RTCPeerConnection;
   };
+  function SrsRtcFormatStats(stats: any, type: string): string;
 }
 
 interface StreamModalProps {
@@ -67,7 +67,7 @@ export default function StreamModal({
   // SDK Loading verification
   useEffect(() => {
     const checkSDKLoading = () => {
-      if (typeof SrsRtcPlayerAsync !== 'undefined') {
+      if (typeof SrsRtcWhipWhepAsync !== 'undefined') {
         setIsSDKLoaded(true);
         setSDKLoadError(null);
       } else {
@@ -201,17 +201,22 @@ export default function StreamModal({
       }
 
       // Check SDK availability
-      if (!isSDKLoaded || typeof SrsRtcPlayerAsync === 'undefined') {
+      if (!isSDKLoaded || typeof SrsRtcWhipWhepAsync === 'undefined') {
         throw new Error('SRS SDK not loaded. Please refresh the page and try again.');
       }
 
-      const player = SrsRtcPlayerAsync();
-      srsPlayerRef.current = player;
+      const sdk = SrsRtcWhipWhepAsync();
+      srsPlayerRef.current = sdk;
+      
+      // Set video source to the SDK stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = sdk.stream;
+      }
 
       // Enhanced RTCPeerConnection event logging
-      if (player.pc) {
-        player.pc.oniceconnectionstatechange = () => {
-          const iceState = player.pc.iceConnectionState;
+      if (sdk.pc) {
+        sdk.pc.oniceconnectionstatechange = () => {
+          const iceState = sdk.pc.iceConnectionState;
           console.log('ICE connection state changed:', iceState);
           setConnectionState(prev => ({ ...prev, iceConnectionState: iceState }));
           
@@ -229,8 +234,8 @@ export default function StreamModal({
           }
         };
 
-        player.pc.onconnectionstatechange = () => {
-          const connState = player.pc.connectionState;
+        sdk.pc.onconnectionstatechange = () => {
+          const connState = sdk.pc.connectionState;
           console.log('Peer connection state changed:', connState);
           setConnectionState(prev => ({ ...prev, connectionState: connState }));
           
@@ -250,13 +255,13 @@ export default function StreamModal({
           }
         };
 
-        player.pc.onicegatheringstatechange = () => {
-          const gatheringState = player.pc.iceGatheringState;
+        sdk.pc.onicegatheringstatechange = () => {
+          const gatheringState = sdk.pc.iceGatheringState;
           console.log('ICE gathering state changed:', gatheringState);
           setConnectionState(prev => ({ ...prev, iceGatheringState: gatheringState }));
         };
 
-        player.pc.onicecandidate = (event) => {
+        sdk.pc.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
           if (event.candidate) {
             console.log('ICE candidate:', event.candidate.candidate);
           } else {
@@ -265,27 +270,15 @@ export default function StreamModal({
         };
       }
 
-      // Set up track handler for received video/audio streams
-      player.ontrack = (event: RTCTrackEvent) => {
-        console.log('Received WebRTC track:', event.track.kind, event.track.readyState);
-        
-        if (videoRef.current && event.streams && event.streams[0]) {
-          videoRef.current.srcObject = event.streams[0];
-          videoRef.current.play().catch(error => {
-            console.error('Video playback failed:', error);
-            setDetailedError({
-              type: 'webrtc',
-              message: 'Video playback failed',
-              details: error.message,
-              suggestion: 'The video stream could not be played. Try refreshing the page.'
-            });
-          });
-        }
-      };
+      // Video element srcObject is already set to sdk.stream
+      // No need for ontrack handler with SrsRtcWhipWhepAsync approach
 
       // Connect to the WebRTC stream with enhanced error handling
       console.log('Initiating WebRTC connection...');
-      const session = await player.play(streamUrl);
+      const session = await sdk.play(streamUrl, {
+        videoOnly: false,
+        audioOnly: false
+      });
       
       console.log('WebRTC session established:', session);
       console.log('Final connection state:', connectionState);
