@@ -192,8 +192,8 @@ export function csrfProtection(req: any, res: any, next: any) {
 export function setupAuth(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
   
-  // Always use secure context in Replit (served over HTTPS)
-  const isSecureContext = true;
+  // Use lax cookies for development, secure for production
+  const isSecureContext = process.env.NODE_ENV === 'production';
 
   const sessionSettings: session.SessionOptions = {
     name: 'connect.sid', 
