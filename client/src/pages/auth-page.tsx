@@ -147,16 +147,16 @@ export default function PasscodeAuthPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto flex items-center justify-center min-h-screen p-6">
-        <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen bg-background overflow-auto">
+      <div className="container mx-auto flex items-start justify-center min-h-screen p-2 py-4">
+        <div className="w-full max-w-md space-y-4">
           
           {/* Header */}
-          <div className="text-center space-y-4">
-            <Shield className="w-16 h-16 mx-auto text-primary" />
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold">OBTV Streaming</h1>
-              <p className="text-xl text-muted-foreground">
+          <div className="text-center space-y-2">
+            <Shield className="w-12 h-12 mx-auto text-primary" />
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold">OBTV Streaming</h1>
+              <p className="text-lg text-muted-foreground">
                 Enter 4-digit passcode to access streams
               </p>
             </div>
@@ -170,10 +170,10 @@ export default function PasscodeAuthPage() {
                 Stream Access
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-8">
+            <CardContent className="space-y-4">
               
               {/* Passcode Display */}
-              <div className="flex flex-col items-center space-y-6">
+              <div className="flex flex-col items-center space-y-3">
                 <InputOTP
                   maxLength={4}
                   value={passcode}
@@ -181,22 +181,22 @@ export default function PasscodeAuthPage() {
                   data-testid="input-passcode"
                   disabled={lockoutState.isLocked}
                 >
-                  <InputOTPGroup className="gap-4">
+                  <InputOTPGroup className="gap-3">
                     <InputOTPSlot 
                       index={0} 
-                      className="h-16 w-16 text-2xl border-2 focus:ring-4 focus:ring-primary/50" 
+                      className="h-12 w-12 text-xl border-2 focus:ring-2 focus:ring-primary/50" 
                     />
                     <InputOTPSlot 
                       index={1} 
-                      className="h-16 w-16 text-2xl border-2 focus:ring-4 focus:ring-primary/50" 
+                      className="h-12 w-12 text-xl border-2 focus:ring-2 focus:ring-primary/50" 
                     />
                     <InputOTPSlot 
                       index={2} 
-                      className="h-16 w-16 text-2xl border-2 focus:ring-4 focus:ring-primary/50" 
+                      className="h-12 w-12 text-xl border-2 focus:ring-2 focus:ring-primary/50" 
                     />
                     <InputOTPSlot 
                       index={3} 
-                      className="h-16 w-16 text-2xl border-2 focus:ring-4 focus:ring-primary/50" 
+                      className="h-12 w-12 text-xl border-2 focus:ring-2 focus:ring-primary/50" 
                     />
                   </InputOTPGroup>
                 </InputOTP>
@@ -222,7 +222,7 @@ export default function PasscodeAuthPage() {
               </div>
 
               {/* Numeric Keypad */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {numberButtons.map((digit, index) => {
                   if (!digit) return <div key={`empty-${index}`} />;
                   
@@ -230,8 +230,7 @@ export default function PasscodeAuthPage() {
                     <Button
                       key={`digit-${digit}`}
                       variant="outline"
-                      size="lg"
-                      className="h-16 text-2xl font-bold focus:ring-4 focus:ring-primary/50 hover-elevate active-elevate-2"
+                      className="h-12 text-xl font-bold focus:ring-2 focus:ring-primary/50 hover-elevate active-elevate-2"
                       onClick={() => handleNumberClick(digit)}
                       disabled={lockoutState.isLocked || passcode.length >= 4}
                       data-testid={`button-digit-${digit}`}
@@ -243,26 +242,24 @@ export default function PasscodeAuthPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <Button
                   variant="outline"
-                  size="lg"
-                  className="h-14 text-lg focus:ring-4 focus:ring-primary/50"
+                  className="h-10 text-base focus:ring-2 focus:ring-primary/50"
                   onClick={handleBackspace}
                   disabled={lockoutState.isLocked || passcode.length === 0}
                   data-testid="button-backspace"
                 >
-                  <Delete className="w-5 h-5 mr-2" />
+                  <Delete className="w-4 h-4 mr-1" />
                   Clear
                 </Button>
                 <Button
-                  size="lg"
-                  className="h-14 text-lg focus:ring-4 focus:ring-primary/50"
+                  className="h-10 text-base focus:ring-2 focus:ring-primary/50"
                   onClick={handleSubmit}
                   disabled={lockoutState.isLocked || passcode.length !== 4 || passcodeLoginMutation?.isPending}
                   data-testid="button-submit"
                 >
-                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <CheckCircle className="w-4 h-4 mr-1" />
                   {passcodeLoginMutation?.isPending ? 'Checking...' : 'Submit'}
                 </Button>
               </div>
