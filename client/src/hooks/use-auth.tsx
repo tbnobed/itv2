@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const passcodeLoginMutation = useMutation({
     mutationFn: async (request: PasscodeLoginRequest): Promise<PasscodeLoginResponse> => {
-      const response = await apiRequest("/api/passcode-login", {
+      const response = await apiRequest("/api/login", {
         method: "POST",
         body: JSON.stringify(request),
       });
