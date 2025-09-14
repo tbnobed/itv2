@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import WebRTCPreview from './WebRTCPreview';
 
@@ -89,13 +88,6 @@ export default function StreamTile({
       
       {/* Content */}
       <div className="absolute inset-0 p-3 flex flex-col justify-end">
-        {/* Stream ID Badge */}
-        <Badge 
-          className="absolute top-3 right-3 bg-black/70 text-white text-xs font-mono"
-          data-testid={`badge-stream-${streamId}`}
-        >
-          #{streamId}
-        </Badge>
         
         {/* Title */}
         <h3 
