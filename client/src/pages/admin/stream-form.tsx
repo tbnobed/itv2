@@ -288,7 +288,7 @@ export default function StreamFormPage() {
                       <FormLabel>Category</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         data-testid="select-category"
                       >
                         <FormControl>
@@ -318,7 +318,7 @@ export default function StreamFormPage() {
                         <FormLabel>Studio</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           data-testid="select-studio"
                         >
                           <FormControl>
