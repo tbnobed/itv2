@@ -129,9 +129,15 @@ SESSION_SECRET=$(openssl rand -base64 32)
 NODE_ENV=production
 PORT=5000
 
+# Passcode Authentication - Change these for production!
+PASSCODE_PEPPER=$(openssl rand -base64 32)
+ADMIN_PASSCODE=1234
+USER_PASSCODE=1111
+
 # Generated on $(date)
 EOF
     echo "✅ .env file created with secure random values"
+    echo "⚠️  IMPORTANT: Change ADMIN_PASSCODE and USER_PASSCODE for production!"
     echo "⚠️  Please review and customize the .env file before deploying"
 else
     echo "✅ .env file already exists"
@@ -166,6 +172,14 @@ if command -v docker-compose &> /dev/null; then
     docker-compose --profile migrate run --rm migrate
 else
     docker compose --profile migrate run --rm migrate
+fi
+
+# Run database seeding to create admin accounts and initial data
+echo "🌱 Seeding database with admin accounts..."
+if command -v docker-compose &> /dev/null; then
+    docker-compose --profile seed run --rm seed
+else
+    docker compose --profile seed run --rm seed
 fi
 
 echo "🚀 Starting application..."

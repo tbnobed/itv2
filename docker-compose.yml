@@ -33,6 +33,23 @@ services:
     profiles:
       - migrate
 
+  # Database seeding service - creates admin accounts and initial data
+  seed:
+    build:
+      context: .
+      target: builder
+    environment:
+      DATABASE_URL: postgresql://obtv_user:${POSTGRES_PASSWORD:-obtv_secure_password}@postgres:5432/obtv_streaming
+      PASSCODE_PEPPER: ${PASSCODE_PEPPER:-obtv-universal-pepper-change-in-production}
+      ADMIN_PASSCODE: ${ADMIN_PASSCODE:-1234}
+      USER_PASSCODE: ${USER_PASSCODE:-1111}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: node seed.js
+    profiles:
+      - seed
+
   # OBTV Streaming Application
   app:
     build: .
