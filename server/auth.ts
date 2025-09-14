@@ -201,7 +201,7 @@ export function setupAuth(app: Express) {
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: true, // Always secure since we're on HTTPS in Replit
+      secure: false, // Internal Express server runs on HTTP in Replit
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',
       // DO NOT set domain - use host-only cookies
