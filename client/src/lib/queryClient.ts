@@ -7,29 +7,6 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Cache for CSRF token to avoid repeated requests
-let cachedCsrfToken: string | null = null;
-
-async function getCSRFToken(): Promise<string> {
-  try {
-    // Always fetch a fresh token to avoid cache issues
-    const response = await fetch('/api/csrf-token', {
-      credentials: 'include',
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch CSRF token');
-    }
-    
-    const data = await response.json();
-    cachedCsrfToken = data.csrfToken;
-    return data.csrfToken;
-  } catch (error) {
-    console.error('Error fetching CSRF token:', error);
-    throw error;
-  }
-}
-
 export async function apiRequest(
   url: string,
   options?: {
@@ -44,28 +21,12 @@ export async function apiRequest(
     ...(options?.headers || {}),
   };
 
-  // Add CSRF token for non-GET requests
-  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-    try {
-      const csrfToken = await getCSRFToken();
-      headers['x-csrf-token'] = csrfToken;
-    } catch (error) {
-      console.error('Failed to get CSRF token:', error);
-      // Continue without CSRF token - let the server handle the error
-    }
-  }
-
   const res = await fetch(url, {
     method,
     headers,
     body: options?.body,
     credentials: "include",
   });
-
-  // Clear cached CSRF token on 403 errors (token might be invalid)
-  if (res.status === 403) {
-    cachedCsrfToken = null;
-  }
 
   await throwIfResNotOk(res);
   

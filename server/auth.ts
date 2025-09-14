@@ -23,9 +23,9 @@ export function setupAuth(app: Express) {
 
   // Login endpoint - authenticates against database users
   app.post('/api/login', async (req, res) => {
-    const { passcode } = req.body;
+    const { code } = req.body;
     
-    if (!passcode || passcode.length !== 4) {
+    if (!code || code.length !== 4) {
       return res.status(400).json({ error: 'Valid 4-digit passcode required' });
     }
 
@@ -35,7 +35,7 @@ export function setupAuth(app: Express) {
       
       // Check passcode against each user's hashed password
       for (const user of users) {
-        const isValid = await bcrypt.compare(passcode, user.password);
+        const isValid = await bcrypt.compare(code, user.password);
         
         if (isValid && user.isActive === 'true') {
           // Store user in session
