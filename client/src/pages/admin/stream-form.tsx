@@ -35,8 +35,11 @@ import {
 const streamFormSchema = insertStreamSchema.extend({
   title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
   streamId: z.string().min(1, 'Stream ID is required').max(20, 'Stream ID too long'),
-  url: z.string().url('Must be a valid URL').startsWith('webrtc://', 'Must be a WebRTC URL'),
-  thumbnail: z.string().url('Must be a valid image URL'),
+  url: z.string().url('Must be a valid URL').refine(
+    (url) => url.startsWith('webrtc://') || url.startsWith('http://') || url.startsWith('https://'),
+    'Must be a valid stream URL (webrtc://, http://, or https://)'
+  ),
+  thumbnail: z.string().url('Must be a valid image URL').optional(),
   category: z.enum(['featured', 'overTheAir', 'liveFeeds', 'studios'], {
     required_error: 'Category is required',
   }),
