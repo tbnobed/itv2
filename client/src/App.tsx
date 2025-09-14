@@ -104,6 +104,49 @@ function AppHeader() {
 function App() {
   const [activeSection, setActiveSection] = React.useState('featured');
   
+  // TV Device Detection and Scaling
+  React.useEffect(() => {
+    const detectTVDevice = () => {
+      const userAgent = navigator.userAgent;
+      const screenWidth = screen.width;
+      const screenHeight = screen.height;
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      const actualWidth = screenWidth * devicePixelRatio;
+      const actualHeight = screenHeight * devicePixelRatio;
+      
+      // TV/OTT device detection
+      const isTVBrowser = /Silk|AFT|BRAVIA|Tizen|webOS|SmartTV|NetCast/i.test(userAgent) ||
+                          /CrKey|GoogleTV|AndroidTV/i.test(userAgent);
+      
+      // Heuristic: Large screens with coarse pointer (typical of TV devices)
+      const isLargeScreen = actualWidth >= 1280 && actualHeight >= 720;
+      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      
+      if (isTVBrowser || (isLargeScreen && hasCoarsePointer)) {
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+          // Apply scaling based on resolution
+          let scale = 1;
+          if (actualWidth >= 3840 && actualHeight >= 2160) {
+            scale = 0.5; // 4K TVs
+          } else if (actualWidth >= 1920 && actualHeight >= 1080) {
+            scale = 0.6; // 1080p TVs
+          } else if (actualWidth >= 1280 && actualHeight >= 720) {
+            scale = 0.75; // 720p TVs
+          }
+          
+          // Set CSS variable and apply class
+          document.documentElement.style.setProperty('--tv-scale', scale.toString());
+          rootElement.classList.add('tv-scale');
+          
+          console.log(`TV device detected: ${userAgent}, Resolution: ${actualWidth}x${actualHeight}, Scale: ${scale}`);
+        }
+      }
+    };
+    
+    detectTVDevice();
+  }, []);
+  
   // Custom sidebar width for streaming application
   const style = {
     "--sidebar-width": "16rem",

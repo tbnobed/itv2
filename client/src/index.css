@@ -214,6 +214,19 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
+
+  /* TV Browser Scaling Variables */
+  :root {
+    --tv-scale: 1;
+  }
+
+  /* TV Browser Compatibility - Single Transform Approach */
+  .tv-scale {
+    transform: scale(var(--tv-scale));
+    transform-origin: 0 0;
+    width: calc(100% / var(--tv-scale));
+    height: calc(100vh / var(--tv-scale));
+  }
 }
 
 /**
