@@ -30,6 +30,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import WebRTCPreview from '@/components/WebRTCPreview';
 
 // Enhanced form schema with additional validation
 const streamFormSchema = insertStreamSchema.extend({
@@ -264,13 +265,19 @@ export default function StreamFormPage() {
                         />
                       </FormControl>
                       <FormMessage />
-                      {field.value && (
+                      {(form.watch('url') || field.value) && (
                         <div className="mt-2">
-                          <img
-                            src={field.value}
-                            alt="Thumbnail preview"
-                            className="w-32 h-18 object-cover rounded border"
-                          />
+                          <div className="w-32 h-18 rounded border overflow-hidden">
+                            <WebRTCPreview
+                              streamUrl={form.watch('url') || ''}
+                              streamId={form.watch('streamId') || 'preview'}
+                              className="w-full h-full"
+                              fallbackImage={field.value || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFByZXZpZXc8L3RleHQ+PC9zdmc+'}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {form.watch('url') ? 'Live preview with thumbnail fallback' : 'Thumbnail preview'}
+                          </p>
                         </div>
                       )}
                     </FormItem>
