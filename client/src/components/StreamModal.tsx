@@ -192,12 +192,12 @@ export default function StreamModal({
         iceGatheringState: 'new'
       });
       
-      console.log(`Connecting to WebRTC stream: ${streamUrl}`);
+      console.log(`Connecting to stream: ${streamUrl}`);
       console.log('Connection state before:', connectionState);
       
-      // Validate WebRTC URL format
-      if (!streamUrl.startsWith('webrtc://')) {
-        throw new Error('Invalid WebRTC URL format. Expected webrtc://server:port/app/stream');
+      // Basic URL validation - allow HTTP, HTTPS, and WebRTC URLs
+      if (!streamUrl.match(/^(https?|webrtc):\/\/.+/)) {
+        throw new Error('Invalid stream URL format. Supported: http://, https://, or webrtc://');
       }
 
       // Check SDK availability
