@@ -199,23 +199,16 @@ export function setupAuth(app: Express) {
     saveUninitialized: false, // Don't save uninitialized sessions
     store: storage.sessionStore,
     cookie: {
-      secure: false, // Disable HTTPS requirement for development
-      httpOnly: true, // Secure cookie - not accessible to JS
-      sameSite: 'lax', // Cross-site cookie policy
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      path: '/', // Explicitly set path
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
+      // DO NOT set domain - use host-only cookies
     },
   };
 
   app.set("trust proxy", 1);
-  
-  // Clear conflicting old session cookies before setting up new session
-  app.use((req: any, res: any, next: any) => {
-    if (req.headers.cookie && req.headers.cookie.includes('obtv.session=')) {
-      res.clearCookie('obtv.session', { path: '/' });
-    }
-    next();
-  });
   
   app.use(session(sessionSettings));
   app.use(passport.initialize());
