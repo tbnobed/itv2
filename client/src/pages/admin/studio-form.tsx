@@ -34,7 +34,14 @@ import {
 const studioFormSchema = insertStudioSchema.extend({
   name: z.string().min(1, 'Studio name is required').max(100, 'Name too long'),
   description: z.string().min(1, 'Description is required').max(500, 'Description too long'),
-  thumbnail: z.string().url('Must be a valid image URL'),
+  thumbnail: z.string().refine(
+    (url) => {
+      if (!url) return true; // Allow empty string
+      // Allow relative paths starting with / or full URLs
+      return url.startsWith('/') || z.string().url().safeParse(url).success;
+    },
+    'Must be a valid image URL or path (e.g., /images/thumbnail.png or https://...)'
+  ),
   status: z.enum(['online', 'offline', 'maintenance'], {
     required_error: 'Status is required',
   }),
