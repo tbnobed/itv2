@@ -192,6 +192,9 @@ export function csrfProtection(req: any, res: any, next: any) {
 export function setupAuth(app: Express) {
   const isProduction = process.env.NODE_ENV === 'production';
   
+  // Always use secure context in Replit (served over HTTPS)
+  const isSecureContext = true;
+
   const sessionSettings: session.SessionOptions = {
     name: 'connect.sid', 
     secret: process.env.SESSION_SECRET || 'obtv-admin-secret-key-change-in-production',
@@ -200,8 +203,8 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false, // Internal Express server runs on HTTP in Replit
+      sameSite: isSecureContext ? 'none' : 'lax',
+      secure: isSecureContext, // true for HTTPS contexts
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',
       // DO NOT set domain - use host-only cookies
