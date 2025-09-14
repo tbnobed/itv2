@@ -1,12 +1,10 @@
 import { Express } from "express";
 import session from "express-session";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 
-// Simple passcode-based authentication
-const ADMIN_PASSCODE = process.env.ADMIN_PASSCODE || '1234';
-const USER_PASSCODE = process.env.USER_PASSCODE || '1111';
-
-// Current authenticated user per session
+// Database-stored users with passcode authentication
+// Each user in the database has a hashed passcode as their password
 const sessionUsers = new Map<string, { id: string; username: string; role: 'admin' | 'user' }>();
 
 export function setupAuth(app: Express) {
@@ -23,35 +21,42 @@ export function setupAuth(app: Express) {
     }
   }));
 
-  // Login endpoint
-  app.post('/api/login', (req, res) => {
+  // Login endpoint - authenticates against database users
+  app.post('/api/login', async (req, res) => {
     const { passcode } = req.body;
     
-    if (!passcode) {
-      return res.status(400).json({ error: 'Passcode required' });
+    if (!passcode || passcode.length !== 4) {
+      return res.status(400).json({ error: 'Valid 4-digit passcode required' });
     }
 
-    let user;
-    if (passcode === ADMIN_PASSCODE) {
-      user = { 
-        id: 'admin-id', 
-        username: 'admin', 
-        role: 'admin' as const 
-      };
-    } else if (passcode === USER_PASSCODE) {
-      user = { 
-        id: 'user-id', 
-        username: 'user', 
-        role: 'user' as const 
-      };
-    } else {
+    try {
+      // Get all users from database
+      const users = await storage.getAllUsers();
+      
+      // Check passcode against each user's hashed password
+      for (const user of users) {
+        const isValid = await bcrypt.compare(passcode, user.password);
+        
+        if (isValid && user.isActive === 'true') {
+          // Store user in session
+          const sessionUser = { 
+            id: user.id, 
+            username: user.username, 
+            role: user.role 
+          };
+          sessionUsers.set(req.session.id, sessionUser);
+          
+          return res.json(sessionUser);
+        }
+      }
+      
+      // No matching user found
       return res.status(401).json({ error: 'Invalid passcode' });
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      return res.status(500).json({ error: 'Login failed' });
     }
-
-    // Store user in session
-    sessionUsers.set(req.session.id, user);
-    
-    return res.json(user);
   });
 
   // Check current user
