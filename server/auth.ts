@@ -67,7 +67,7 @@ async function hashPasscode(code: string): Promise<string> {
   return await bcrypt.hash(pepperedCode, SALT_ROUNDS);
 }
 
-async function verifyPasscode(suppliedCode: string): Promise<{ isValid: boolean; role?: 'admin' | 'user' }> {
+async function verifyPasscode(suppliedCode: string): Promise<{ isValid: boolean; role?: 'admin' | 'user'; user?: any }> {
   const pepperedCode = suppliedCode + PASSCODE_PEPPER;
   
   // Check admin passcode
@@ -80,6 +80,21 @@ async function verifyPasscode(suppliedCode: string): Promise<{ isValid: boolean;
   const hashedUserCode = await hashPasscode(USER_PASSCODE);
   if (await bcrypt.compare(pepperedCode, hashedUserCode)) {
     return { isValid: true, role: 'user' };
+  }
+  
+  // Check database users with their individual codes
+  try {
+    const allUsers = await storage.getAllUsers();
+    
+    for (const user of allUsers) {
+      // User passwords are stored as hashed 4-digit codes - only check active users
+      if (user.isActive === 'true' && await bcrypt.compare(suppliedCode, user.password)) {
+        return { isValid: true, role: user.role, user };
+      }
+    }
+  } catch (error) {
+    console.error('Error checking database users for passcode:', error);
+    // Continue without crashing - fallback to hardcoded passcodes only
   }
   
   return { isValid: false };
@@ -287,7 +302,20 @@ export function setupAuth(app: Express) {
       }
       
       // Select appropriate user based on role
-      const authenticatedUser = passcodeResult.role === 'admin' ? ADMIN_USER : REGULAR_USER;
+      let authenticatedUser;
+      if (passcodeResult.user) {
+        // Database user with individual code
+        authenticatedUser = {
+          id: passcodeResult.user.id,
+          username: passcodeResult.user.username,
+          role: passcodeResult.user.role,
+          isActive: passcodeResult.user.isActive,
+          createdAt: passcodeResult.user.createdAt
+        };
+      } else {
+        // Hardcoded admin/user passcode
+        authenticatedUser = passcodeResult.role === 'admin' ? ADMIN_USER : REGULAR_USER;
+      }
       
       // Successful authentication - log in authenticated user
       req.login(authenticatedUser, (loginErr) => {
