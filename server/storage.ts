@@ -2,6 +2,7 @@ import { type User, type InsertUser, type Stream, type InsertStream, type Studio
 import { randomUUID } from "crypto";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -475,10 +476,23 @@ export class DatabaseStorage implements IStorage {
   public sessionStore: any;
 
   constructor() {
-    const MemoryStore = createMemoryStore(session);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-    });
+    try {
+      // Use PostgreSQL for session storage when DATABASE_URL is available
+      const pgSession = connectPgSimple(session);
+      this.sessionStore = new pgSession({
+        conString: process.env.DATABASE_URL,
+        tableName: 'session', // Table name for sessions
+        createTableIfMissing: true, // Auto-create sessions table
+      });
+      console.log('PostgreSQL session store configured');
+    } catch (error) {
+      // Fallback to memory store if PostgreSQL isn't available
+      console.warn('PostgreSQL session store failed, using memory store:', error);
+      const MemoryStore = createMemoryStore(session);
+      this.sessionStore = new MemoryStore({
+        checkPeriod: 86400000, // prune expired entries every 24h
+      });
+    }
   }
 
   // User operations
