@@ -5,8 +5,8 @@ import session from "express-session";
 import bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
 import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
-import { insertUserSchema } from "@shared/schema";
+import { User as SelectUser } from "../shared/schema";
+import { insertUserSchema } from "../shared/schema";
 import { z } from "zod";
 
 // Extend session interface to include CSRF token

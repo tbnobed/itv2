@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Stream, type InsertStream, type Studio, type InsertStudio, users, streams, studios } from "@shared/schema";
+import { type User, type InsertUser, type Stream, type InsertStream, type Studio, type InsertStudio, users, streams, studios } from "../shared/schema";
 import { randomUUID } from "crypto";
 import session from "express-session";
 import createMemoryStore from "memorystore";
