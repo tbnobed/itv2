@@ -630,20 +630,7 @@ export default function StreamModal({
           </div>
         )}
 
-        {/* Empty state for connected but no video */}
-        {isConnected && !isLoading && !connectionError && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-black/70 rounded-lg p-8 text-center">
-              <h3 className="text-white text-2xl font-bold mb-2">{streamTitle}</h3>
-              <Badge className="bg-green-500 text-white mb-4">
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse mr-2" />
-                LIVE
-              </Badge>
-              <p className="text-gray-300">Stream ID: {streamId}</p>
-              <p className="text-gray-400 text-sm mt-2">WebRTC Connected</p>
-            </div>
-          </div>
-        )}
+        {/* This overlay was causing the persistent status display - now removed */}
 
         {/* Controls Overlay */}
         <div 
