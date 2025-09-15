@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import 'mpegts.js';
+import mpegts from 'mpegts.js';
 
-// Declare mpegts types for FLV support
+// Declare mpegts types for FLV support - already imported above
 declare global {
   const mpegts: {
     getFeatureList(): { mseLivePlayback: boolean };
@@ -124,40 +124,43 @@ export default function WebRTCPreview({
     const detectedType = detectStreamType(streamUrl);
     setStreamType(detectedType);
 
+    let timeoutId: NodeJS.Timeout;
+
     if (detectedType === 'flv') {
-      const timeoutId = setTimeout(connectToFLVPreview, Math.random() * 1000);
-      return () => clearTimeout(timeoutId);
+      // Handle FLV streams
+      timeoutId = setTimeout(connectToFLVPreview, Math.random() * 1000);
+    } else {
+      // Handle WebRTC streams
+      const connectWebRTC = async () => {
+        try {
+          if (typeof SrsRtcWhipWhepAsync === 'undefined') {
+            throw new Error('SRS SDK not loaded');
+          }
+
+          const sdk = SrsRtcWhipWhepAsync();
+          sdkRef.current = sdk;
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = sdk.stream;
+          }
+
+          await sdk.play(streamUrl, {
+            videoOnly: true, // Audio off for previews
+            audioOnly: false
+          });
+
+          setIsConnected(true);
+          setHasError(false);
+
+        } catch (error) {
+          console.warn(`WebRTC preview failed for ${streamId}:`, error);
+          setHasError(true);
+          setIsConnected(false);
+        }
+      };
+
+      timeoutId = setTimeout(connectWebRTC, Math.random() * 1000); // Stagger connections
     }
-
-    const connectWebRTC = async () => {
-      try {
-        if (typeof SrsRtcWhipWhepAsync === 'undefined') {
-          throw new Error('SRS SDK not loaded');
-        }
-
-        const sdk = SrsRtcWhipWhepAsync();
-        sdkRef.current = sdk;
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = sdk.stream;
-        }
-
-        await sdk.play(streamUrl, {
-          videoOnly: true, // Audio off for previews
-          audioOnly: false
-        });
-
-        setIsConnected(true);
-        setHasError(false);
-
-      } catch (error) {
-        console.warn(`WebRTC preview failed for ${streamId}:`, error);
-        setHasError(true);
-        setIsConnected(false);
-      }
-    };
-
-    const timeoutId = setTimeout(connectWebRTC, Math.random() * 1000); // Stagger connections
 
     return () => {
       clearTimeout(timeoutId);
