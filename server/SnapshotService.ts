@@ -22,8 +22,9 @@ export class SnapshotService {
 
   private constructor() {
     this.snapshotDir = join(process.cwd(), 'server', 'public', 'snapshots');
-    // SRS HTTP-FLV is typically served on plain HTTP, not HTTPS
-    this.srsHttpFlvBase = process.env.SRS_HTTP_FLV_BASE || 'http://cdn2.obedtv.live:8080';
+    
+    // Default SRS server for fallback (optional)
+    this.srsHttpFlvBase = process.env.SRS_HTTP_FLV_BASE || '';
     
     // Ensure snapshot directory exists
     if (!existsSync(this.snapshotDir)) {
@@ -115,6 +116,42 @@ export class SnapshotService {
   }
 
   /**
+   * Convert WHEP URL to HTTP-FLV URL by parsing server info dynamically
+   */
+  private convertWhepToHttpFlv(whepUrl: string, streamId: string): string {
+    try {
+      const url = new URL(whepUrl);
+      const streamMatch = whepUrl.match(/[?&]stream=([^&]+)/);
+      const streamName = streamMatch ? streamMatch[1] : streamId;
+      
+      // Use the same port as the WHEP URL for HTTP-FLV
+      const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+      
+      // Use HTTP for HTTP-FLV streams (SRS typically serves HTTP-FLV on HTTP even if WHEP is HTTPS)
+      const protocol = process.env.SRS_FORCE_HTTPS === 'true' ? 'https' : 'http';
+      
+      return `${protocol}://${url.hostname}:${port}/live/${streamName}.flv`;
+    } catch (error) {
+      console.error(`SnapshotService: Error parsing WHEP URL ${whepUrl}:`, error);
+      // Fallback to default server if parsing fails
+      return this.getFallbackUrl(streamId);
+    }
+  }
+  
+  /**
+   * Get fallback URL when WHEP parsing fails
+   */
+  private getFallbackUrl(streamId: string): string {
+    if (this.srsHttpFlvBase) {
+      return `${this.srsHttpFlvBase}/live/${streamId}.flv`;
+    }
+    
+    // Last resort: use localhost
+    console.warn(`SnapshotService: No server configuration available for ${streamId}, using localhost`);
+    return `http://localhost:8080/live/${streamId}.flv`;
+  }
+
+  /**
    * Start ffmpeg worker for a stream
    */
   private startWorker(worker: StreamWorker, streamUrl?: string): void {
@@ -122,17 +159,14 @@ export class SnapshotService {
       return;
     }
 
-    // Derive HTTP-FLV URL from stream URL or use default pattern
+    // Derive HTTP-FLV URL from stream URL or use fallback
     let inputUrl: string;
-    if (streamUrl && streamUrl.includes('whep')) {
-      // Convert WHEP URL to HTTP-FLV URL
-      // Example: https://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=Socal1
-      // Becomes: https://cdn2.obedtv.live:8080/live/Socal1.flv
-      const urlMatch = streamUrl.match(/[?&]stream=([^&]+)/);
-      const streamName = urlMatch ? urlMatch[1] : worker.streamId;
-      inputUrl = `${this.srsHttpFlvBase}/live/${streamName}.flv`;
+    if (streamUrl && (streamUrl.includes('whep') || streamUrl.includes('rtc/v1'))) {
+      // Convert WHEP/WebRTC URL to HTTP-FLV URL dynamically
+      inputUrl = this.convertWhepToHttpFlv(streamUrl, worker.streamId);
     } else {
-      inputUrl = `${this.srsHttpFlvBase}/live/${worker.streamId}.flv`;
+      // Use fallback for non-WHEP URLs
+      inputUrl = this.getFallbackUrl(worker.streamId);
     }
 
     const outputPath = this.getSnapshotPath(worker.streamId);
