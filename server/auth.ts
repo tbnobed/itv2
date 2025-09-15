@@ -379,7 +379,7 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.sendStatus(401);
     }
-    res.json({ id: req.user.id, username: req.user.username });
+    res.json({ id: req.user.id, username: req.user.username, role: req.user.role });
   });
 
   // CSRF token endpoint
