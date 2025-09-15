@@ -470,9 +470,12 @@ class PreviewManager {
       return acc + Math.pow(val - avgBrightness, 2);
     }, 0) / validSamples;
     
-    // More lenient thresholds - many streams might be darker
-    const minBrightness = 5; // Lower minimum brightness (very dark content still counts)
-    const minVariance = 20;   // Lower minimum variance (less variation still counts)
+    // TEMPORARILY EXTREMELY LENIENT thresholds for debugging stream content
+    const minBrightness = 0.1; // Accept almost any brightness (debugging)
+    const minVariance = 0.1;   // Accept almost any variance (debugging)
+    
+    // Log detailed pixel analysis for debugging
+    console.log(`PreviewManager: Frame analysis for ${validSamples} pixels - avgBrightness: ${avgBrightness.toFixed(3)}, variance: ${variance.toFixed(3)}, first 5 brightness values: [${brightnessValues.slice(0, 5).map(v => v.toFixed(1)).join(', ')}]`);
     
     const isValid = avgBrightness > minBrightness || variance > minVariance; // OR instead of AND for more lenient validation
     
