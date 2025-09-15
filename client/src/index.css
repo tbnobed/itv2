@@ -226,7 +226,7 @@
     transform-origin: 0 0;
     width: calc(100% / var(--tv-scale));
     min-height: calc(100vh / var(--tv-scale));
-    overflow: hidden;
+    overflow: visible;
   }
 
   /* Ensure auth page content is properly contained on TV devices */
