@@ -59,6 +59,11 @@ services:
       DATABASE_URL: postgresql://obtv_user:${POSTGRES_PASSWORD:-obtv_secure_password}@postgres:5432/obtv_streaming
       SESSION_SECRET: ${SESSION_SECRET:-your_secure_session_secret_change_this}
       PORT: 5000
+      # Enable safe seeding in production mode
+      SAFE_SEED_USERS: true
+      PASSCODE_PEPPER: ${PASSCODE_PEPPER:-obtv-universal-pepper-change-in-production}
+      ADMIN_PASSCODE: ${ADMIN_PASSCODE:-1234}
+      USER_PASSCODE: ${USER_PASSCODE:-1111}
     ports:
       - "5000:5000"
     depends_on:
