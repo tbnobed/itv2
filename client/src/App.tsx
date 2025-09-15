@@ -179,9 +179,9 @@ function App() {
                   activeSection={activeSection} 
                   onSectionChange={setActiveSection}
                 />
-                <div className="flex flex-col flex-1">
+                <div className="flex flex-col flex-1 min-w-0">
                   <AppHeader />
-                  <main className="flex-1 overflow-hidden">
+                  <main className="flex-1 overflow-hidden min-w-0">
                     <Router activeSection={activeSection} />
                   </main>
                 </div>

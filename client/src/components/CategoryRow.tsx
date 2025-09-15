@@ -83,7 +83,7 @@ export default function CategoryRow({
   if (!streams.length) return null;
 
   return (
-    <div className={cn("relative mb-12", className)}>
+    <div className={cn("relative mb-12 w-full", className)}>
       {/* Section Title */}
       <h2 
         className={cn(
@@ -123,14 +123,14 @@ export default function CategoryRow({
       {/* Scrollable Content */}
       <div
         ref={scrollContainerRef}
-        className="overflow-x-auto scrollbar-hide focus-visible:outline-none"
+        className="overflow-x-auto scrollbar-hide focus-visible:outline-none w-full"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         tabIndex={0}
         onKeyDown={handleKeyNavigation}
         data-testid="scroll-container"
       >
         <div className={cn(
-          "flex gap-6 px-6",
+          "flex gap-6 px-6 min-w-0",
           !isOverflowing && "justify-center",
           featured ? "pb-8" : "pb-4"
         )}>

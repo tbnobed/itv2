@@ -201,7 +201,7 @@ export default function StreamingInterface({ className, activeSection = 'feature
           <h2 className="text-white font-bold mb-8 px-6 text-center text-2xl" data-testid="section-studios">
             Studios
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-6 w-full max-w-full">
             {studiosData?.map((studio) => (
               <StudioCard
                 key={studio.id}
@@ -259,8 +259,8 @@ export default function StreamingInterface({ className, activeSection = 'feature
   };
 
   return (
-    <div className={`h-full bg-background ${className}`}>
-      <main className="p-6">
+    <div className={`h-full w-full bg-background overflow-hidden ${className}`}>
+      <main className="p-6 h-full overflow-y-auto overflow-x-hidden">
         {/* Render based on active section */}
         {activeSection === 'studios' ? (
           renderStudiosSection()
