@@ -129,33 +129,37 @@ export default function StreamingInterface({ className, activeSection = 'feature
     setSelectedStream(null);
   };
 
-  // Function to get current section data
+  // Function to get current section data with alphabetical sorting
   const getCurrentSectionData = () => {
     if (!streamData) return { title: 'Loading...', streams: [], featured: false };
+
+    // Helper to sort streams alphabetically by title
+    const sortStreamsByTitle = (streams: StreamData[]) => 
+      streams.sort((a, b) => a.title.localeCompare(b.title));
 
     switch (activeSection) {
       case 'featured':
         return { 
           title: 'Featured', 
-          streams: streamData.featured.map(convertStreamToStreamData), 
+          streams: sortStreamsByTitle(streamData.featured.map(convertStreamToStreamData)), 
           featured: true 
         };
       case 'overTheAir':
         return { 
           title: 'Over The Air', 
-          streams: streamData.overTheAir.map(convertStreamToStreamData), 
+          streams: sortStreamsByTitle(streamData.overTheAir.map(convertStreamToStreamData)), 
           featured: false 
         };
       case 'liveFeeds':
         return { 
           title: 'Live Feeds', 
-          streams: streamData.liveFeeds.map(convertStreamToStreamData), 
+          streams: sortStreamsByTitle(streamData.liveFeeds.map(convertStreamToStreamData)), 
           featured: false 
         };
       default:
         return { 
           title: 'Featured', 
-          streams: streamData.featured.map(convertStreamToStreamData), 
+          streams: sortStreamsByTitle(streamData.featured.map(convertStreamToStreamData)), 
           featured: true 
         };
     }
@@ -202,7 +206,7 @@ export default function StreamingInterface({ className, activeSection = 'feature
             Studios
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-6 w-full max-w-full">
-            {studiosData?.map((studio) => (
+            {studiosData?.sort((a, b) => a.name.localeCompare(b.name)).map((studio) => (
               <StudioCard
                 key={studio.id}
                 studio={studio}
@@ -249,7 +253,7 @@ export default function StreamingInterface({ className, activeSection = 'feature
           </div>
           <CategoryRow
             title={`${selectedStudioData?.name} - Camera Feeds`}
-            streams={(studioFeeds || []).map(convertStreamToStreamData)}
+            streams={(studioFeeds || []).map(convertStreamToStreamData).sort((a, b) => a.title.localeCompare(b.title))}
             featured={false}
             onStreamSelect={handleStreamSelect}
           />
