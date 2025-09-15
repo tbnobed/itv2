@@ -30,25 +30,87 @@ export default function WebRTCPreview({
   const [hasError, setHasError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Intersection Observer for lazy loading
+  // Intersection Observer for lazy loading with stricter visibility
   const containerRef = useRef<HTMLDivElement>(null);
+  const disconnectTimeoutRef = useRef<number>();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(entry.isIntersecting);
+        const isCurrentlyVisible = entry.isIntersecting && entry.intersectionRatio > 0.5; // More restrictive - at least 50% visible
+        setIsVisible(isCurrentlyVisible);
+        
+        // Disconnect stream if not visible for 5 seconds to save resources
+        if (!isCurrentlyVisible) {
+          // Clear any existing disconnect timeout first
+          if (disconnectTimeoutRef.current) {
+            clearTimeout(disconnectTimeoutRef.current);
+          }
+          
+          // Capture current SDK reference to prevent race conditions
+          const currentSdk = sdkRef.current;
+          
+          disconnectTimeoutRef.current = window.setTimeout(() => {
+            // Only close if this is still the same SDK instance
+            if (sdkRef.current === currentSdk && currentSdk) {
+              console.log(`Disconnecting stream ${streamId} due to invisibility`);
+              try {
+                currentSdk.close();
+              } catch (error) {
+                console.warn('Error closing WebRTC preview:', error);
+              }
+              // Clear frame update interval and reset ref
+              if (frameUpdateRef.current) {
+                clearInterval(frameUpdateRef.current);
+                frameUpdateRef.current = undefined;
+              }
+              // Detach media and reset state
+              if (videoRef.current) {
+                videoRef.current.srcObject = null;
+              }
+              sdkRef.current = null;
+              setIsConnected(false);
+            }
+          }, 5000);
+        } else {
+          // Clear disconnect timeout if becomes visible again
+          if (disconnectTimeoutRef.current) {
+            clearTimeout(disconnectTimeoutRef.current);
+            disconnectTimeoutRef.current = undefined;
+          }
+        }
       },
-      { threshold: 0.1 }
+      { threshold: [0, 0.5] } // Monitor both entry/exit and 50% visibility
     );
 
     if (containerRef.current) {
       observer.observe(containerRef.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      // Don't close SDK here - let the timeout handle it
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current);
+      }
+    };
+  }, [streamId]);
+
+  // Separate cleanup for component unmount
+  useEffect(() => {
+    return () => {
+      if (sdkRef.current) {
+        try {
+          sdkRef.current.close();
+        } catch (error) {
+          console.warn('Error closing WebRTC preview on unmount:', error);
+        }
+        sdkRef.current = null;
+      }
+    };
   }, []);
 
-  // Function to capture frame from video and draw to canvas
+  // Function to capture frame from video and draw to canvas at reduced resolution
   const captureFrame = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -56,12 +118,15 @@ export default function WebRTCPreview({
     if (video && canvas && video.videoWidth > 0 && video.videoHeight > 0) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Set canvas size to match video
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        // Reduce resolution by 50% to lower processing load
+        const targetWidth = Math.floor(video.videoWidth * 0.5);
+        const targetHeight = Math.floor(video.videoHeight * 0.5);
         
-        // Draw current video frame to canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        
+        // Draw current video frame to canvas at reduced resolution
+        ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
       }
     }
   };
@@ -75,6 +140,54 @@ export default function WebRTCPreview({
           throw new Error('SRS SDK not loaded');
         }
 
+        // Clear any pending disconnect timeout
+        if (disconnectTimeoutRef.current) {
+          clearTimeout(disconnectTimeoutRef.current);
+          disconnectTimeoutRef.current = undefined;
+        }
+
+        // Reuse existing connection if it's still active
+        if (sdkRef.current && videoRef.current) {
+          console.log(`Reusing existing connection for ${streamId}`);
+          // Reattach the existing stream
+          videoRef.current.srcObject = sdkRef.current.stream;
+          
+          // Restart frame capture if not already running
+          if (!frameUpdateRef.current && sdkRef.current.stream) {
+            const staggerDelay = (streamId.charCodeAt(0) % 10) * 300;
+            setTimeout(() => {
+              frameUpdateRef.current = window.setInterval(captureFrame, 3000);
+              // Capture immediate frame for visual refresh
+              captureFrame();
+            }, 200 + staggerDelay);
+          } else if (sdkRef.current.stream) {
+            // Even if interval exists, capture a frame for immediate visual refresh
+            captureFrame();
+          }
+          
+          setIsConnected(true);
+          setHasError(false);
+          return;
+        }
+
+        // Close any existing connection before creating new one
+        if (sdkRef.current) {
+          try {
+            sdkRef.current.close();
+          } catch (error) {
+            console.warn('Error closing existing WebRTC connection:', error);
+          }
+          // Clear frame update interval and reset ref
+          if (frameUpdateRef.current) {
+            clearInterval(frameUpdateRef.current);
+            frameUpdateRef.current = undefined;
+          }
+          // Detach media
+          if (videoRef.current) {
+            videoRef.current.srcObject = null;
+          }
+        }
+
         const sdk = SrsRtcWhipWhepAsync();
         sdkRef.current = sdk;
 
@@ -86,11 +199,16 @@ export default function WebRTCPreview({
             setIsConnected(true);
             setHasError(false);
             
-            // Start capturing frames every 1 second
-            frameUpdateRef.current = window.setInterval(captureFrame, 1000);
+            // Stagger frame capture timing based on stream ID to avoid simultaneous updates
+            const staggerDelay = (streamId.charCodeAt(0) % 10) * 300; // 0-2.7 second stagger
+            const captureInterval = 3000; // Capture every 3 seconds
             
-            // Capture initial frame immediately
-            setTimeout(captureFrame, 100);
+            // Start the interval after the stagger delay to maintain timing offset
+            setTimeout(() => {
+              frameUpdateRef.current = window.setInterval(captureFrame, captureInterval);
+              // Capture initial frame immediately when starting
+              captureFrame();
+            }, 200 + staggerDelay);
           };
         }
 
@@ -111,19 +229,13 @@ export default function WebRTCPreview({
     return () => {
       clearTimeout(timeoutId);
       
-      // Clear frame update interval
+      // Clear frame update interval and reset ref
       if (frameUpdateRef.current) {
         clearInterval(frameUpdateRef.current);
+        frameUpdateRef.current = undefined;
       }
       
-      if (sdkRef.current) {
-        try {
-          sdkRef.current.close();
-        } catch (error) {
-          console.warn('Error closing WebRTC preview:', error);
-        }
-        sdkRef.current = null;
-      }
+      // Don't close SDK here - handled by separate unmount cleanup
       setIsConnected(false);
     };
   }, [isVisible, streamUrl, streamId]);
