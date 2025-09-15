@@ -22,8 +22,10 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine AS production
 
-# Install only curl for health checks (no postgresql-client needed)
-RUN apk add --no-cache curl
+# Install system dependencies for runtime
+# - curl: health checks
+# - ffmpeg: server-side video snapshot generation 
+RUN apk add --no-cache curl ffmpeg
 
 WORKDIR /app
 
@@ -46,6 +48,9 @@ RUN chmod +x docker-entrypoint.sh
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
+
+# Create snapshots directory with proper permissions
+RUN mkdir -p /app/server/public/snapshots
 RUN chown -R nodejs:nodejs /app
 USER nodejs
 
