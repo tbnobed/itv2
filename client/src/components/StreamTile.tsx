@@ -98,7 +98,12 @@ export default function StreamTile({
         alt={title}
         className="w-full h-full object-cover bg-card"
         onError={(e) => {
-          e.currentTarget.src = thumbnail;
+          // Only fall back to thumbnail if we're not already showing a snapshot
+          // This prevents snapshot failures from reverting to potentially broken thumbnails
+          if (!currentImage.startsWith('data:image')) {
+            e.currentTarget.src = thumbnail;
+          }
+          console.log(`StreamTile[${streamId}]: Image load error, src was: ${currentImage.startsWith('data:image') ? 'snapshot' : 'thumbnail'}`);
         }}
       />
       
