@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import PreviewManager from '@/lib/PreviewManager';
+import serverSnapshotService from '@/lib/ServerSnapshotService';
 
 interface StreamTileProps {
   id: string;
@@ -27,31 +27,33 @@ export default function StreamTile({
   const [isLoading, setIsLoading] = useState(false);
   const [currentImage, setCurrentImage] = useState(thumbnail);
 
-  // Register for live snapshot updates if streamUrl is available
+  // Register for server-side snapshots and update image URL periodically
   useEffect(() => {
     if (!streamUrl) return;
 
-    const previewManager = PreviewManager.getInstance();
+    console.log(`StreamTile[${streamId}]: Registering for server-side snapshots`);
     
-    const handleSnapshot = (dataUrl: string) => {
-      console.log(`StreamTile[${streamId}]: Received snapshot callback, dataUrl length: ${dataUrl?.length}, starts with data:image: ${dataUrl?.startsWith('data:image/')}`);
-      // Only update if we have a valid dataURL with actual image data
-      if (dataUrl && dataUrl.startsWith('data:image/') && dataUrl.length > 100) {
-        console.log(`StreamTile[${streamId}]: Valid snapshot received, updating image`);
-        setCurrentImage(dataUrl);
-      } else {
-        console.log(`StreamTile[${streamId}]: Invalid snapshot rejected - length: ${dataUrl?.length}, starts correctly: ${dataUrl?.startsWith('data:image/')}`);
-      }
+    // Register stream with server-side snapshot service
+    serverSnapshotService.registerStream(streamId);
+    
+    // Set up periodic image URL refresh (every 30 seconds to match server snapshot rate)
+    const updateSnapshotUrl = () => {
+      const snapshotUrl = serverSnapshotService.getSnapshotUrl(streamId, thumbnail);
+      setCurrentImage(snapshotUrl);
+      console.log(`StreamTile[${streamId}]: Updated to server snapshot URL: ${snapshotUrl}`);
     };
-
-    // Register for snapshots
-    previewManager.registerStreamForSnapshot(streamId, streamUrl, handleSnapshot);
+    
+    // Update immediately and then every 30 seconds
+    updateSnapshotUrl();
+    const refreshInterval = setInterval(updateSnapshotUrl, 30000);
 
     return () => {
       // Unregister when component unmounts
-      previewManager.unregisterStreamFromSnapshot(streamId);
+      console.log(`StreamTile[${streamId}]: Unregistering from server-side snapshots`);
+      serverSnapshotService.unregisterStream(streamId);
+      clearInterval(refreshInterval);
     };
-  }, [streamUrl, streamId]);
+  }, [streamUrl, streamId, thumbnail]);
 
   const handleClick = async () => {
     console.log(`Opening stream: ${streamId} - ${title}`);
@@ -99,12 +101,13 @@ export default function StreamTile({
         alt={title}
         className="w-full h-full object-cover bg-card"
         onError={(e) => {
-          // Only fall back to thumbnail if we're not already showing a snapshot
-          // This prevents snapshot failures from reverting to potentially broken thumbnails
-          if (!currentImage.startsWith('data:image')) {
-            e.currentTarget.src = thumbnail;
+          // Fallback to thumbnail when server snapshot is not available
+          if (currentImage !== thumbnail) {
+            console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
+            setCurrentImage(thumbnail);
+          } else {
+            console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
           }
-          console.log(`StreamTile[${streamId}]: Image load error, src was: ${currentImage.startsWith('data:image') ? 'snapshot' : 'thumbnail'}`);
         }}
       />
       
