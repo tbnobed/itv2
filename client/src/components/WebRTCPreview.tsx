@@ -75,46 +75,12 @@ export default function WebRTCPreview({
   };
 
   const connectToFLVPreview = async () => {
-    try {
-      if (!mpegts || !mpegts.getFeatureList().mseLivePlayback) {
-        console.warn(`FLV preview not supported for ${streamId}`);
-        setHasError(true);
-        return;
-      }
-
-      const flvPlayer = mpegts.createPlayer({
-        type: 'flv',
-        url: streamUrl,
-        isLive: true
-      });
-      
-      flvPlayerRef.current = flvPlayer;
-      
-      if (videoRef.current) {
-        flvPlayer.attachMediaElement(videoRef.current);
-        flvPlayer.load();
-        flvPlayer.play();
-        
-        // Mute for preview (like WebRTC previews)
-        videoRef.current.muted = true;
-        
-        videoRef.current.onloadeddata = () => {
-          setIsConnected(true);
-          setHasError(false);
-        };
-        
-        videoRef.current.onerror = () => {
-          console.warn(`FLV preview error for ${streamId}`);
-          setHasError(true);
-          setIsConnected(false);
-        };
-      }
-      
-    } catch (error) {
-      console.warn(`FLV preview failed for ${streamId}:`, error);
-      setHasError(true);
-      setIsConnected(false);
-    }
+    // FLV streams don't support preview mode - show placeholder instead
+    // This prevents conflicts when the modal opens the same FLV stream
+    console.log(`FLV preview disabled for: ${streamId} - will show placeholder`);
+    setIsConnected(false);
+    setHasError(false);
+    // Don't set any error - just show the placeholder image
   };
 
   useEffect(() => {
@@ -127,8 +93,8 @@ export default function WebRTCPreview({
     let timeoutId: NodeJS.Timeout;
 
     if (detectedType === 'flv') {
-      // Handle FLV streams
-      timeoutId = setTimeout(connectToFLVPreview, Math.random() * 1000);
+      // Handle FLV streams - show placeholder immediately
+      connectToFLVPreview();
     } else {
       // Handle WebRTC streams
       const connectWebRTC = async () => {
