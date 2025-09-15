@@ -171,14 +171,14 @@ function App() {
           ) : (
             // Main app with sidebar and header
             <SidebarProvider style={style as React.CSSProperties}>
-              <div className="flex h-screen w-full">
+              <div className="flex min-h-screen w-full">
                 <AppSidebar 
                   activeSection={activeSection} 
                   onSectionChange={setActiveSection}
                 />
                 <div className="flex flex-col flex-1 min-w-0">
                   <AppHeader />
-                  <main className="flex-1 overflow-auto min-w-0">
+                  <main className="flex-1 min-w-0">
                     <Router activeSection={activeSection} />
                   </main>
                 </div>
