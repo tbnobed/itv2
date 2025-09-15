@@ -34,7 +34,10 @@ export default function StreamTile({
     const previewManager = PreviewManager.getInstance();
     
     const handleSnapshot = (dataUrl: string) => {
-      setCurrentImage(dataUrl);
+      // Only update if we have a valid dataURL with actual image data
+      if (dataUrl && dataUrl.startsWith('data:image/') && dataUrl.length > 100) {
+        setCurrentImage(dataUrl);
+      }
     };
 
     // Register for snapshots

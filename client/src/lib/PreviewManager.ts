@@ -212,21 +212,27 @@ class PreviewManager {
         
         video.srcObject = sdk.stream;
         
-        // Wait for video to load and capture frame
-        video.onloadeddata = () => {
-          // Wait a moment for frame to stabilize
-          setTimeout(() => {
-            try {
+        // Wait for video to have actual frame data
+        const captureFrame = () => {
+          try {
+            // Check if video has actual dimensions and current time > 0 (frame data available)
+            if (video.videoWidth > 0 && video.videoHeight > 0 && video.currentTime > 0) {
               const canvas = document.createElement('canvas');
-              canvas.width = video.videoWidth || 320;
-              canvas.height = video.videoHeight || 180;
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
               
               const ctx = canvas.getContext('2d');
-              if (ctx && video.videoWidth > 0) {
+              if (ctx) {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                callback(dataUrl);
-                console.log(`PreviewManager: Captured snapshot for ${streamId}`);
+                
+                // Validate the captured image has actual data
+                if (dataUrl && dataUrl.length > 1000) {
+                  callback(dataUrl);
+                  console.log(`PreviewManager: Captured snapshot for ${streamId}`);
+                } else {
+                  throw new Error('Captured image data too small');
+                }
               }
               
               // Cleanup
@@ -234,13 +240,21 @@ class PreviewManager {
               if (sdk) sdk.close();
               clearTimeout(timeoutId);
               resolve();
-            } catch (error) {
-              document.body.removeChild(video);
-              if (sdk) sdk.close();
-              clearTimeout(timeoutId);
-              reject(error);
+            } else {
+              // Not ready yet, wait a bit more
+              setTimeout(captureFrame, 500);
             }
-          }, 1000);
+          } catch (error) {
+            document.body.removeChild(video);
+            if (sdk) sdk.close();
+            clearTimeout(timeoutId);
+            reject(error);
+          }
+        };
+
+        // Start trying to capture after video metadata is loaded
+        video.onloadedmetadata = () => {
+          setTimeout(captureFrame, 1000);
         };
 
         video.onerror = () => {
