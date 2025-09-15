@@ -23,7 +23,9 @@ export default function WebRTCPreview({
   fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9CVFYgTG9nbzwvdGV4dD48L3N2Zz4='
 }: WebRTCPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const sdkRef = useRef<any>(null);
+  const frameUpdateRef = useRef<number>();
   const [isConnected, setIsConnected] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -46,6 +48,24 @@ export default function WebRTCPreview({
     return () => observer.disconnect();
   }, []);
 
+  // Function to capture frame from video and draw to canvas
+  const captureFrame = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (video && canvas && video.videoWidth > 0 && video.videoHeight > 0) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Set canvas size to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw current video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!isVisible || !streamUrl) return;
 
@@ -60,15 +80,24 @@ export default function WebRTCPreview({
 
         if (videoRef.current) {
           videoRef.current.srcObject = sdk.stream;
+          
+          // When video starts playing, begin frame capture
+          videoRef.current.onloadeddata = () => {
+            setIsConnected(true);
+            setHasError(false);
+            
+            // Start capturing frames every 1 second
+            frameUpdateRef.current = window.setInterval(captureFrame, 1000);
+            
+            // Capture initial frame immediately
+            setTimeout(captureFrame, 100);
+          };
         }
 
         await sdk.play(streamUrl, {
           videoOnly: true, // Audio off for previews
           audioOnly: false
         });
-
-        setIsConnected(true);
-        setHasError(false);
 
       } catch (error) {
         console.warn(`WebRTC preview failed for ${streamId}:`, error);
@@ -81,6 +110,12 @@ export default function WebRTCPreview({
 
     return () => {
       clearTimeout(timeoutId);
+      
+      // Clear frame update interval
+      if (frameUpdateRef.current) {
+        clearInterval(frameUpdateRef.current);
+      }
+      
       if (sdkRef.current) {
         try {
           sdkRef.current.close();
@@ -111,16 +146,25 @@ export default function WebRTCPreview({
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
+      {/* Hidden video element for frame capture */}
       <video
         ref={videoRef}
-        className={`w-full h-full object-cover bg-card transition-opacity duration-300 ${
-          isConnected ? 'opacity-100' : 'opacity-0'
-        }`}
+        className="absolute opacity-0 pointer-events-none"
         autoPlay
         muted
         playsInline
+        style={{ width: '1px', height: '1px' }}
+      />
+      
+      {/* Canvas to display static frames */}
+      <canvas
+        ref={canvasRef}
+        className={`w-full h-full object-cover bg-card transition-opacity duration-300 ${
+          isConnected ? 'opacity-100' : 'opacity-0'
+        }`}
         data-testid={`webrtc-preview-${streamId}`}
       />
+      
       {!isConnected && (
         <div className="absolute inset-0 bg-card flex items-center justify-center">
           <div className="text-gray-400 text-xs">Connecting...</div>
