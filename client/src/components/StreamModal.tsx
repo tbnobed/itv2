@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import mpegts from 'mpegts.js';
 import { X, Volume2, VolumeX, Maximize, Minimize, AlertCircle, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-// Declare global SRS SDK and mpegts types
+// Declare global SRS SDK types
 declare global {
   function SrsRtcWhipWhepAsync(): {
     play: (url: string, options?: { videoOnly?: boolean; audioOnly?: boolean }) => Promise<{ sessionid: string; simulator: string }>;
@@ -14,7 +13,6 @@ declare global {
     pc: RTCPeerConnection;
   };
   function SrsRtcFormatStats(stats: any, type: string): string;
-
 }
 
 interface StreamModalProps {
@@ -32,7 +30,7 @@ interface ConnectionState {
 }
 
 interface DetailedError {
-  type: 'network' | 'cors' | 'https' | 'sdk' | 'webrtc' | 'server' | 'flv' | 'unknown';
+  type: 'network' | 'cors' | 'https' | 'sdk' | 'webrtc' | 'server' | 'unknown';
   message: string;
   details?: string;
   suggestion?: string;
@@ -60,13 +58,11 @@ export default function StreamModal({
   const [detailedError, setDetailedError] = useState<DetailedError | null>(null);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [sdkLoadError, setSDKLoadError] = useState<string | null>(null);
-  const [streamType, setStreamType] = useState<'webrtc' | 'flv' | 'auto'>('auto');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const srsPlayerRef = useRef<any>(null);
-  const flvPlayerRef = useRef<any>(null);
 
   // SDK Loading verification
   useEffect(() => {
@@ -88,21 +84,10 @@ export default function StreamModal({
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // Stream connection management - supports both WebRTC and FLV
+  // SRS WebRTC connection management
   useEffect(() => {
-    if (isOpen && streamUrl) {
-      // Detect stream type and connect accordingly
-      const detectedType = detectStreamType(streamUrl);
-      setStreamType(detectedType);
-      
-      if (detectedType === 'flv') {
-        connectToFLVStream(streamUrl);
-      } else if (detectedType === 'webrtc' && isSDKLoaded) {
-        connectToWebRTCStream();
-      } else if (detectedType === 'webrtc' && !isSDKLoaded) {
-        // Wait for SDK to load for WebRTC streams
-        return;
-      }
+    if (isOpen && streamUrl && isSDKLoaded) {
+      connectToWebRTCStream();
     } else {
       disconnectStream();
     }
@@ -120,78 +105,6 @@ export default function StreamModal({
       }
     };
   }, []);
-
-  // URL parsing and stream type detection (based on SRS player example)
-  const detectStreamType = (url: string): 'webrtc' | 'flv' => {
-    // Check for FLV format - only match .flv extensions specifically
-    const isFlv = /\.flv(\?|$)/i.test(url);
-    return isFlv ? 'flv' : 'webrtc';
-  };
-
-  const connectToFLVStream = async (url: string) => {
-    try {
-      setIsLoading(true);
-      setConnectionError(null);
-      setDetailedError(null);
-      setConnectionStatus('connecting');
-      setIsConnected(false);
-      
-      console.log(`Connecting to FLV stream: ${url}`);
-      
-      // Small delay to allow any existing players to clean up properly
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Check if mpegts.js is available and MSE is supported
-      if (!mpegts || !mpegts.getFeatureList().mseLivePlayback) {
-        throw new Error('FLV playback not supported in this browser');
-      }
-
-      // Create FLV player using mpegts.js (same as SRS player example)
-      const flvPlayer = mpegts.createPlayer({
-        type: 'flv',
-        url: url,
-        isLive: true
-      });
-      
-      flvPlayerRef.current = flvPlayer;
-      
-      if (videoRef.current) {
-        flvPlayer.attachMediaElement(videoRef.current);
-        flvPlayer.load();
-        flvPlayer.play();
-        
-        // Set up video event listeners
-        videoRef.current.addEventListener('loadstart', () => {
-          console.log('FLV stream loading started');
-        });
-        
-        videoRef.current.addEventListener('loadeddata', () => {
-          console.log('FLV stream data loaded');
-          setIsConnected(true);
-          setConnectionStatus('connected');
-          setIsLoading(false);
-        });
-        
-        videoRef.current.addEventListener('error', (e) => {
-          console.error('FLV stream error:', e);
-          throw new Error('FLV stream playback failed');
-        });
-      }
-      
-    } catch (error) {
-      console.error('FLV connection failed:', error);
-      setDetailedError({
-        type: 'flv',
-        message: 'FLV stream connection failed',
-        details: error?.toString() || 'Unknown FLV error',
-        suggestion: 'Check the FLV stream URL and ensure the server supports HTTP-FLV.'
-      });
-      setConnectionError('FLV stream failed');
-      setConnectionStatus('failed');
-      setIsLoading(false);
-      setIsConnected(false);
-    }
-  };
 
   const analyzeError = (error: any): DetailedError => {
     const errorStr = error?.message || error?.toString() || 'Unknown error';
@@ -243,16 +156,6 @@ export default function StreamModal({
         message: 'Server error',
         details: errorStr,
         suggestion: 'The WebRTC server is experiencing issues. Try again later or contact support.'
-      };
-    }
-    
-    // FLV specific errors
-    if (errorStr.includes('FLV') || errorStr.includes('flv') || errorStr.includes('mpegts') || errorStr.includes('MSE')) {
-      return {
-        type: 'flv',
-        message: 'FLV stream playback failed',
-        details: errorStr,
-        suggestion: 'Check the FLV stream URL and ensure your browser supports Media Source Extensions (MSE).'
       };
     }
     
@@ -395,28 +298,14 @@ export default function StreamModal({
   };
 
   const disconnectStream = () => {
-    // Clean up WebRTC player
     if (srsPlayerRef.current) {
       console.log('Disconnecting WebRTC stream');
       srsPlayerRef.current.close();
       srsPlayerRef.current = null;
     }
     
-    // Clean up FLV player
-    if (flvPlayerRef.current) {
-      console.log('Disconnecting FLV stream');
-      try {
-        flvPlayerRef.current.destroy();
-      } catch (error) {
-        // Ignore destroy errors during cleanup - this is normal when aborting a loading stream
-        console.debug('FLV player destroy error (expected during cleanup):', error);
-      }
-      flvPlayerRef.current = null;
-    }
-    
     if (videoRef.current) {
       videoRef.current.srcObject = null;
-      videoRef.current.src = ''; // Clear any src URL as well
     }
     
     // Clear timeout to prevent memory leak
@@ -429,7 +318,6 @@ export default function StreamModal({
     setConnectionError(null);
     setDetailedError(null);
     setConnectionStatus('idle');
-    setStreamType('auto');
     setConnectionState({
       iceConnectionState: 'new',
       connectionState: 'new',

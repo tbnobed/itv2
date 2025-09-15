@@ -1,24 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import mpegts from 'mpegts.js';
-
-// Declare mpegts types for FLV support - already imported above
-declare global {
-  const mpegts: {
-    getFeatureList(): { mseLivePlayback: boolean };
-    createPlayer(config: {
-      type: 'flv' | 'mpegts';
-      url: string;
-      isLive?: boolean;
-      enableStashBuffer?: boolean;
-      liveSync?: boolean;
-    }): {
-      attachMediaElement(video: HTMLVideoElement): void;
-      load(): void;
-      play(): void;
-      destroy(): void;
-    };
-  };
-}
 
 interface WebRTCPreviewProps {
   streamUrl: string;
@@ -44,11 +24,9 @@ export default function WebRTCPreview({
 }: WebRTCPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sdkRef = useRef<any>(null);
-  const flvPlayerRef = useRef<any>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [streamType, setStreamType] = useState<'webrtc' | 'flv'>('webrtc');
 
   // Intersection Observer for lazy loading
   const containerRef = useRef<HTMLDivElement>(null);
@@ -68,69 +46,41 @@ export default function WebRTCPreview({
     return () => observer.disconnect();
   }, []);
 
-  // Stream type detection
-  const detectStreamType = (url: string): 'webrtc' | 'flv' => {
-    const isFlv = /\.flv(\?|$)/i.test(url);
-    return isFlv ? 'flv' : 'webrtc';
-  };
-
-  const connectToFLVPreview = async () => {
-    // FLV streams don't support preview mode - show placeholder instead
-    // This prevents conflicts when the modal opens the same FLV stream
-    console.log(`FLV preview disabled for: ${streamId} - will show placeholder`);
-    setIsConnected(false);
-    setHasError(false);
-    // Don't set any error - just show the placeholder image
-  };
-
   useEffect(() => {
     if (!isVisible || !streamUrl) return;
-    
-    // Detect stream type
-    const detectedType = detectStreamType(streamUrl);
-    setStreamType(detectedType);
 
-    let timeoutId: NodeJS.Timeout;
-
-    if (detectedType === 'flv') {
-      // Handle FLV streams - show placeholder immediately
-      connectToFLVPreview();
-    } else {
-      // Handle WebRTC streams
-      const connectWebRTC = async () => {
-        try {
-          if (typeof SrsRtcWhipWhepAsync === 'undefined') {
-            throw new Error('SRS SDK not loaded');
-          }
-
-          const sdk = SrsRtcWhipWhepAsync();
-          sdkRef.current = sdk;
-
-          if (videoRef.current) {
-            videoRef.current.srcObject = sdk.stream;
-          }
-
-          await sdk.play(streamUrl, {
-            videoOnly: true, // Audio off for previews
-            audioOnly: false
-          });
-
-          setIsConnected(true);
-          setHasError(false);
-
-        } catch (error) {
-          console.warn(`WebRTC preview failed for ${streamId}:`, error);
-          setHasError(true);
-          setIsConnected(false);
+    const connectWebRTC = async () => {
+      try {
+        if (typeof SrsRtcWhipWhepAsync === 'undefined') {
+          throw new Error('SRS SDK not loaded');
         }
-      };
 
-      timeoutId = setTimeout(connectWebRTC, Math.random() * 1000); // Stagger connections
-    }
+        const sdk = SrsRtcWhipWhepAsync();
+        sdkRef.current = sdk;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = sdk.stream;
+        }
+
+        await sdk.play(streamUrl, {
+          videoOnly: true, // Audio off for previews
+          audioOnly: false
+        });
+
+        setIsConnected(true);
+        setHasError(false);
+
+      } catch (error) {
+        console.warn(`WebRTC preview failed for ${streamId}:`, error);
+        setHasError(true);
+        setIsConnected(false);
+      }
+    };
+
+    const timeoutId = setTimeout(connectWebRTC, Math.random() * 1000); // Stagger connections
 
     return () => {
       clearTimeout(timeoutId);
-      // Clean up WebRTC
       if (sdkRef.current) {
         try {
           sdkRef.current.close();
@@ -139,30 +89,6 @@ export default function WebRTCPreview({
         }
         sdkRef.current = null;
       }
-      
-      // Clean up FLV player
-      if (flvPlayerRef.current) {
-        try {
-          flvPlayerRef.current.destroy();
-        } catch (error) {
-          console.warn('Error closing FLV preview:', error);
-        }
-        flvPlayerRef.current = null;
-      }
-      
-      // Clear video element
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-        videoRef.current.removeAttribute('src');
-        videoRef.current.onloadeddata = null;
-        videoRef.current.onerror = null;
-        try {
-          videoRef.current.load();
-        } catch (error) {
-          // Ignore load errors during cleanup
-        }
-      }
-      
       setIsConnected(false);
     };
   }, [isVisible, streamUrl, streamId]);

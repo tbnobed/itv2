@@ -78,8 +78,8 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
   const [location, navigate] = useLocation();
   const { user, isLoading } = useAuth();
   
-  // Check if user is admin - wait for loading to complete and ensure we have user data
-  const isAdmin = !isLoading && user !== null && user?.role === 'admin';
+  // Check if user is admin - wait for loading to complete
+  const isAdmin = !isLoading && user?.role === 'admin';
 
   // Sync with parent activeSection changes
   useEffect(() => {
