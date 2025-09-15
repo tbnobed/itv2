@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Shield, Monitor, Delete, CheckCircle, Lock } from 'lucide-react';
+import { Shield, Monitor, Delete, CheckCircle, Lock, Download, Smartphone } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { passcodeLoginSchema } from '@shared/schema';
 
@@ -285,6 +285,32 @@ export default function PasscodeAuthPage() {
                 >
                   <CheckCircle className="w-4 h-4 mr-1" />
                   {passcodeLoginMutation?.isPending ? 'Checking...' : 'Submit'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* FireStick APK Download */}
+          <Card className="hover-elevate">
+            <CardContent className="p-4">
+              <div className="text-center space-y-3">
+                <div className="flex items-center justify-center gap-2">
+                  <Smartphone className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-semibold">FireStick App</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Download the OBTV app for Amazon FireStick
+                </p>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="w-full hover-elevate active-elevate-2"
+                  data-testid="button-download-apk"
+                >
+                  <a href="/itv-obtv-firestick.apk" download="OBTV-FireStick.apk">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download APK
+                  </a>
                 </Button>
               </div>
             </CardContent>
