@@ -159,50 +159,8 @@ async function seedDatabase() {
         console.log(`✅ Created studio: ${studio.name}`);
       }
 
-      // Create initial streams with more studios
-      const mobileStudioId = studioIds[2]; // We'll need more studios
-      const rehearsalStudioId = studioIds[2]; // Using backup studio for now
-
-      // Add more studios first
-      const additionalStudios = [
-        {
-          name: 'Mobile Unit 1',
-          thumbnail: '/generated_images/Featured_live_production_15b7d8b1.png',
-          description: 'On-location broadcast unit for field reporting',
-          status: 'online',
-          feedCount: 2
-        },
-        {
-          name: 'Rehearsal Room',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          description: 'Practice and rehearsal space for productions',
-          status: 'offline',
-          feedCount: 1
-        }
-      ];
-
-      for (const studio of additionalStudios) {
-        const studioQuery = `
-          INSERT INTO studios (id, name, thumbnail, description, status, feed_count)
-          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
-          RETURNING id;
-        `;
-        
-        const studioResult = await pool.query(studioQuery, [
-          studio.name,
-          studio.thumbnail,
-          studio.description,
-          studio.status,
-          studio.feedCount
-        ]);
-        
-        studioIds.push(studioResult.rows[0].id);
-        console.log(`✅ Created studio: ${studio.name}`);
-      }
-
-      // Create complete stream data (24 original streams)
+      // Create initial streams
       const streamData = [
-        // Featured streams
         {
           title: 'Featured Live Production',
           thumbnail: '/generated_images/Featured_live_production_15b7d8b1.png',
@@ -212,106 +170,7 @@ async function seedDatabase() {
           studioId: null
         },
         {
-          title: 'Prime Time Broadcast',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'PT001',
-          url: 'webrtc://localhost:1985/live/primetime',
-          category: 'featured',
-          studioId: null
-        },
-        {
-          title: 'Special Event Coverage',
-          thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
-          streamId: 'SE001',
-          url: 'webrtc://localhost:1985/live/special',
-          category: 'featured',
-          studioId: null
-        },
-        // Over The Air streams
-        {
-          title: 'Main Transmission Tower',
-          thumbnail: '/generated_images/Over-the-air_broadcast_tower_04c20672.png',
-          streamId: 'MT001',
-          url: 'webrtc://localhost:1985/live/main-tower',
-          category: 'overTheAir',
-          studioId: null
-        },
-        {
-          title: 'Backup Tower Feed',
-          thumbnail: '/generated_images/Over-the-air_broadcast_tower_04c20672.png',
-          streamId: 'BT001',
-          url: 'webrtc://localhost:1985/live/backup-tower',
-          category: 'overTheAir',
-          studioId: null
-        },
-        {
-          title: 'Repeater Station 1',
-          thumbnail: '/generated_images/Over-the-air_broadcast_tower_04c20672.png',
-          streamId: 'RS001',
-          url: 'webrtc://localhost:1985/live/repeater-1',
-          category: 'overTheAir',
-          studioId: null
-        },
-        {
-          title: 'Repeater Station 2',
-          thumbnail: '/generated_images/Over-the-air_broadcast_tower_04c20672.png',
-          streamId: 'RS002',
-          url: 'webrtc://localhost:1985/live/repeater-2',
-          category: 'overTheAir',
-          studioId: null
-        },
-        // Live Feeds streams
-        {
-          title: 'Dallas Control Center',
-          thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
-          streamId: 'DC001',
-          url: 'webrtc://localhost:1985/live/dallas-control',
-          category: 'liveFeeds',
-          studioId: null
-        },
-        {
-          title: 'Houston Backup Center',
-          thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
-          streamId: 'HB001',
-          url: 'webrtc://localhost:1985/live/houston-backup',
-          category: 'liveFeeds',
-          studioId: null
-        },
-        {
-          title: 'System Monitoring',
-          thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
-          streamId: 'SM001',
-          url: 'webrtc://localhost:1985/live/monitoring',
-          category: 'liveFeeds',
-          studioId: null
-        },
-        {
-          title: 'Emergency Broadcast',
-          thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
-          streamId: 'EB001',
-          url: 'webrtc://localhost:1985/live/emergency',
-          category: 'liveFeeds',
-          studioId: null
-        },
-        {
-          title: 'Weather Station',
-          thumbnail: '/generated_images/Over-the-air_broadcast_tower_04c20672.png',
-          streamId: 'WS001',
-          url: 'webrtc://localhost:1985/live/weather',
-          category: 'liveFeeds',
-          studioId: null
-        },
-        {
-          title: 'Traffic Camera Feed',
-          thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
-          streamId: 'TC001',
-          url: 'webrtc://localhost:1985/live/traffic',
-          category: 'liveFeeds',
-          studioId: null
-        },
-        // Studio A feeds
-        {
-          title: 'Main Camera Feed',
+          title: 'Studio A Main Feed',
           thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
           streamId: 'SA001',
           url: 'webrtc://localhost:1985/live/studio-a-main',
@@ -319,96 +178,12 @@ async function seedDatabase() {
           studioId: studioIds[0]
         },
         {
-          title: 'Wide Angle Shot',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'SA002',
-          url: 'webrtc://localhost:1985/live/studio-a-wide',
-          category: 'studios',
-          studioId: studioIds[0]
-        },
-        {
-          title: 'Close Up Camera',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'SA003',
-          url: 'webrtc://localhost:1985/live/studio-a-close',
-          category: 'studios',
-          studioId: studioIds[0]
-        },
-        {
-          title: 'Overhead View',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'SA004',
-          url: 'webrtc://localhost:1985/live/studio-a-overhead',
-          category: 'studios',
-          studioId: studioIds[0]
-        },
-        // Studio B feeds
-        {
-          title: 'Main Production Feed',
+          title: 'Studio B Camera 1',
           thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
           streamId: 'SB001',
-          url: 'webrtc://localhost:1985/live/studio-b-main',
+          url: 'webrtc://localhost:1985/live/studio-b-cam1',
           category: 'studios',
           studioId: studioIds[1]
-        },
-        {
-          title: 'Alternate Angle',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'SB002',
-          url: 'webrtc://localhost:1985/live/studio-b-alt',
-          category: 'studios',
-          studioId: studioIds[1]
-        },
-        {
-          title: 'Guest Camera',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'SB003',
-          url: 'webrtc://localhost:1985/live/studio-b-guest',
-          category: 'studios',
-          studioId: studioIds[1]
-        },
-        // Studio C feeds
-        {
-          title: 'Backup Feed',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'SC001',
-          url: 'webrtc://localhost:1985/live/studio-c-backup',
-          category: 'studios',
-          studioId: studioIds[2]
-        },
-        {
-          title: 'Monitoring Camera',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'SC002',
-          url: 'webrtc://localhost:1985/live/studio-c-monitor',
-          category: 'studios',
-          studioId: studioIds[2]
-        },
-        // Mobile Unit feeds
-        {
-          title: 'Field Reporter Feed',
-          thumbnail: '/generated_images/Featured_live_production_15b7d8b1.png',
-          streamId: 'MU001',
-          url: 'webrtc://localhost:1985/live/mobile-field',
-          category: 'studios',
-          studioId: studioIds[3]
-        },
-        {
-          title: 'Mobile Wide Shot',
-          thumbnail: '/generated_images/Featured_live_production_15b7d8b1.png',
-          streamId: 'MU002',
-          url: 'webrtc://localhost:1985/live/mobile-wide',
-          category: 'studios',
-          studioId: studioIds[3]
-        },
-        // Rehearsal Room feed
-        {
-          title: 'Rehearsal Feed',
-          thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
-          streamId: 'RR001',
-          url: 'webrtc://localhost:1985/live/rehearsal',
-          category: 'studios',
-          studioId: studioIds[4]
         }
       ];
 
