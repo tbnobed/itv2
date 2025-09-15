@@ -1,6 +1,3 @@
-import { useRef, useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import StreamTile from './StreamTile';
 
@@ -27,59 +24,6 @@ export default function CategoryRow({
   onStreamSelect,
   className 
 }: CategoryRowProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const [isOverflowing, setIsOverflowing] = useState(false);
-
-  const updateScrollButtons = () => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    setCanScrollLeft(container.scrollLeft > 0);
-    setCanScrollRight(
-      container.scrollLeft < container.scrollWidth - container.clientWidth - 1
-    );
-    // Check if content overflows to determine centering
-    setIsOverflowing(container.scrollWidth > container.clientWidth);
-  };
-
-  useEffect(() => {
-    updateScrollButtons();
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', updateScrollButtons);
-      window.addEventListener('resize', updateScrollButtons);
-      return () => {
-        container.removeEventListener('scroll', updateScrollButtons);
-        window.removeEventListener('resize', updateScrollButtons);
-      };
-    }
-  }, [streams]);
-
-  const scroll = (direction: 'left' | 'right') => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const scrollAmount = featured ? 320 : 240; // Width of one tile
-    const targetScroll = direction === 'left' 
-      ? container.scrollLeft - scrollAmount 
-      : container.scrollLeft + scrollAmount;
-
-    container.scrollTo({
-      left: targetScroll,
-      behavior: 'smooth'
-    });
-  };
-
-  const handleKeyNavigation = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowLeft' && canScrollLeft) {
-      scroll('left');
-    } else if (e.key === 'ArrowRight' && canScrollRight) {
-      scroll('right');
-    }
-  };
-
   if (!streams.length) return null;
 
   return (
@@ -95,44 +39,13 @@ export default function CategoryRow({
         {title}
       </h2>
 
-      {/* Navigation Buttons */}
-      {canScrollLeft && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 text-white border-none"
-          onClick={() => scroll('left')}
-          data-testid="button-scroll-left"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </Button>
-      )}
-
-      {canScrollRight && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/70 text-white border-none"
-          onClick={() => scroll('right')}
-          data-testid="button-scroll-right"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </Button>
-      )}
-
-      {/* Scrollable Content */}
-      <div
-        ref={scrollContainerRef}
-        className="overflow-x-auto scrollbar-hide focus-visible:outline-none w-full"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        tabIndex={0}
-        onKeyDown={handleKeyNavigation}
-        data-testid="scroll-container"
-      >
+      {/* Grid Content */}
+      <div className="w-full px-6" data-testid="grid-container">
         <div className={cn(
-          "flex gap-6 px-6 min-w-0",
-          !isOverflowing && "justify-center",
-          featured ? "pb-8" : "pb-4"
+          "grid gap-6 justify-items-center",
+          featured 
+            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pb-8" 
+            : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 pb-4"
         )}>
           {streams.map((stream) => (
             <StreamTile
@@ -144,12 +57,11 @@ export default function CategoryRow({
               streamUrl={stream.url}
               size={featured ? 'featured' : 'regular'}
               onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
-              className="flex-shrink-0"
+              className="w-full max-w-full"
             />
           ))}
         </div>
       </div>
-
     </div>
   );
 }
