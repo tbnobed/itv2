@@ -4,3 +4,6 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Exclude Android app folder (contains large Gradle files >100MB)
+android-app/
