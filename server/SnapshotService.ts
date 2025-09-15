@@ -51,6 +51,7 @@ export class SnapshotService {
     // Sanitize streamId for file paths
     const sanitizedStreamId = streamId.replace(/[^a-zA-Z0-9-_]/g, '');
     
+    
     const existing = this.workers.get(sanitizedStreamId);
     if (existing) {
       // Extend TTL
@@ -118,7 +119,7 @@ export class SnapshotService {
   /**
    * Convert WHEP URL to HTTP-FLV URL by parsing server info dynamically
    */
-  private convertWhepToHttpFlv(whepUrl: string, streamId: string): string {
+  private convertWhepToHttpFlv(whepUrl: string, streamId: string): string | null {
     try {
       const url = new URL(whepUrl);
       const streamMatch = whepUrl.match(/[?&]stream=([^&]+)/);
@@ -133,8 +134,8 @@ export class SnapshotService {
       return `${protocol}://${url.hostname}:${port}/live/${streamName}.flv`;
     } catch (error) {
       console.error(`SnapshotService: Error parsing WHEP URL ${whepUrl}:`, error);
-      // Fallback to default server if parsing fails
-      return this.getFallbackUrl(streamId);
+      // No fallback - return null if parsing fails
+      return null;
     }
   }
   
@@ -146,9 +147,9 @@ export class SnapshotService {
       return `${this.srsHttpFlvBase}/live/${streamId}.flv`;
     }
     
-    // Last resort: use localhost
-    console.warn(`SnapshotService: No server configuration available for ${streamId}, using localhost`);
-    return `http://localhost:8080/live/${streamId}.flv`;
+    // No fallback - return null if no valid server configuration
+    console.warn(`SnapshotService: No server configuration available for ${streamId}, skipping snapshot generation`);
+    return null;
   }
 
   /**
@@ -160,13 +161,19 @@ export class SnapshotService {
     }
 
     // Derive HTTP-FLV URL from stream URL or use fallback
-    let inputUrl: string;
+    let inputUrl: string | null;
     if (streamUrl && (streamUrl.includes('whep') || streamUrl.includes('rtc/v1'))) {
       // Convert WHEP/WebRTC URL to HTTP-FLV URL dynamically
       inputUrl = this.convertWhepToHttpFlv(streamUrl, worker.streamId);
     } else {
       // Use fallback for non-WHEP URLs
       inputUrl = this.getFallbackUrl(worker.streamId);
+    }
+
+    // Skip worker creation if no valid URL available
+    if (!inputUrl) {
+      console.log(`SnapshotService: Skipping worker for ${worker.streamId} - no valid stream URL`);
+      return;
     }
 
     const outputPath = this.getSnapshotPath(worker.streamId);

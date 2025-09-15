@@ -1,0 +1,72 @@
+ | SnapshotService: Starting worker for P47
+app-1       |   Input: http://localhost:8080/live/P47.flv
+app-1       |   Output: /app/server/public/snapshots/P47.jpg
+app-1       | SnapshotService: No server configuration available for P47, using localhost
+app-1       | SnapshotService: No server configuration available for P46, using localhost
+app-1       | SnapshotService: Starting worker for P46
+app-1       |   Input: http://localhost:8080/live/P46.flv
+app-1       |   Output: /app/server/public/snapshots/P46.jpg
+app-1       | SnapshotService: Starting worker for P48
+app-1       |   Input: http://localhost:8080/live/P48.flv
+app-1       |   Output: /app/server/public/snapshots/P48.jpg
+app-1       | SnapshotService: No server configuration available for P48, using localhost
+app-1       | SnapshotService: No server configuration available for P41, using localhost
+app-1       | SnapshotService: Starting worker for P41
+app-1       |   Input: http://localhost:8080/live/P41.flv
+app-1       |   Output: /app/server/public/snapshots/P41.jpg
+app-1       | SnapshotService: Starting worker for P43
+app-1       |   Input: http://localhost:8080/live/P43.flv
+app-1       |   Output: /app/server/public/snapshots/P43.jpg
+app-1       | SnapshotService: No server configuration available for P43, using localhost
+app-1       | SnapshotService: No server configuration available for P44, using localhost
+app-1       | SnapshotService: Starting worker for P44
+app-1       |   Input: http://localhost:8080/live/P44.flv
+app-1       |   Output: /app/server/public/snapshots/P44.jpg
+app-1       | SnapshotService: No server configuration available for P42, using localhost
+app-1       | SnapshotService: Starting worker for P42
+app-1       |   Input: http://localhost:8080/live/P42.flv
+app-1       |   Output: /app/server/public/snapshots/P42.jpg
+app-1       | SnapshotService: No server configuration available for P45, using localhost
+app-1       | SnapshotService: Starting worker for P45
+app-1       |   Input: http://localhost:8080/live/P45.flv
+app-1       |   Output: /app/server/public/snapshots/P45.jpg
+app-1       | SnapshotService[P47]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P47]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P46]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P46]: [tcp @ 0x7fed81f73ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P48]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P48]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P41]: [tcp @ 0x7f6f5f6daec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P41]: [tcp @ 0x7f6f5f6cfec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P44]: [tcp @ 0x7f7dac585ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P44]: [tcp @ 0x7f7dac57aec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P43]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P43]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P45]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P45]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P42]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P42]: Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P47]: [tcp @ 0x7fc2deee9e40] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P46]: [tcp @ 0x7fed81de7e40] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P48]: [tcp @ 0x7f0b549e3e40] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P41]: [tcp @ 0x7f6f5f543e40] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P44]: [tcp @ 0x7f7dac3eee40] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P43]: [tcp @ 0x7f55c5643e40] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P45]: [tcp @ 0x7f4696614e40] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P42]: [tcp @ 0x7fab61f4ae40] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P47]: [tcp @ 0x7fc2deedbec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P46]: [tcp @ 0x7fed81dd9ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P48]: [tcp @ 0x7f0b549d5ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P41]: [tcp @ 0x7f6f5f535ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P44]: [tcp @ 0x7f7dac3e0ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P43]: [tcp @ 0x7f55c5635ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P45]: [tcp @ 0x7f4696606ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P42]: [tcp @ 0x7fab61f3cec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P47]: [tcp @ 0x7fc2dec4bec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P46]: [tcp @ 0x7fed81b49ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P48]: [tcp @ 0x7f0b54745ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P41]: [tcp @ 0x7f6f5f2a5ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P44]: [tcp @ 0x7f7dac150ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P43]: [tcp @ 0x7f55c53a5ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P45]: [tcp @ 0x7f4696376ec0] Connection to tcp://localhost:8080 failed: Connection refused
+app-1       | SnapshotService[P42]: [tcp @ 0x7fab61cacec0] Connection to tcp://localhost:8080 failed: Connection refused
