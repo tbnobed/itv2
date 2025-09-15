@@ -138,6 +138,9 @@ export default function StreamModal({
       
       console.log(`Connecting to FLV stream: ${url}`);
       
+      // Small delay to allow any existing players to clean up properly
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Check if mpegts.js is available and MSE is supported
       if (!mpegts || !mpegts.getFeatureList().mseLivePlayback) {
         throw new Error('FLV playback not supported in this browser');
