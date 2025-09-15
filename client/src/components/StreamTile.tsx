@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import PreviewManager from '@/lib/PreviewManager';
 
 interface StreamTileProps {
   id: string;
@@ -24,6 +25,26 @@ export default function StreamTile({
 }: StreamTileProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentImage, setCurrentImage] = useState(thumbnail);
+
+  // Register for live snapshot updates if streamUrl is available
+  useEffect(() => {
+    if (!streamUrl) return;
+
+    const previewManager = PreviewManager.getInstance();
+    
+    const handleSnapshot = (dataUrl: string) => {
+      setCurrentImage(dataUrl);
+    };
+
+    // Register for snapshots
+    previewManager.registerStreamForSnapshot(streamId, streamUrl, handleSnapshot);
+
+    return () => {
+      // Unregister when component unmounts
+      previewManager.unregisterStreamFromSnapshot(streamId);
+    };
+  }, [streamUrl, streamId]);
 
   const handleClick = async () => {
     console.log(`Opening stream: ${streamId} - ${title}`);
@@ -64,13 +85,13 @@ export default function StreamTile({
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
     >
-      {/* Thumbnail Image */}
+      {/* Live Preview Image */}
       <img
-        src={thumbnail}
+        src={currentImage}
         alt={title}
         className="w-full h-full object-cover bg-card"
         onError={(e) => {
-          e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9CVFYgTG9nbzwvdGV4dD48L3N2Zz4=';
+          e.currentTarget.src = thumbnail;
         }}
       />
       
