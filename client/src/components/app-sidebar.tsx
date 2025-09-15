@@ -111,11 +111,11 @@ export function AppSidebar({ activeSection = "featured", onSectionChange }: AppS
     <Sidebar data-testid="app-sidebar">
       <SidebarContent className="bg-background/95 backdrop-blur-sm">
         <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center justify-center py-2">
+          <SidebarGroupLabel className="flex items-center justify-center py-4">
             <img 
               src="/assets/obtv-logo.png" 
               alt="OBTV" 
-              className="h-40 w-auto"
+              className="h-16 w-auto"
               data-testid="obtv-logo"
             />
           </SidebarGroupLabel>
