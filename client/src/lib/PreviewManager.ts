@@ -265,9 +265,15 @@ class PreviewManager {
 
         sdk = SrsRtcWhipWhepAsync();
         
-        // Set up video element for capture
+        // Set up video element for capture - positioned offscreen instead of display:none
+        // Browsers don't decode frames for display:none videos
         video = document.createElement('video');
-        video.style.display = 'none';
+        video.style.position = 'fixed';
+        video.style.top = '-10000px';
+        video.style.left = '-10000px';
+        video.style.width = '2px';
+        video.style.height = '2px';
+        video.style.opacity = '0';
         video.autoplay = true;
         video.muted = true;
         video.playsInline = true;
@@ -290,9 +296,9 @@ class PreviewManager {
 
               // Check if video is playing and has actual dimensions
               if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-                // Add delay to ensure we get actual frame content, not just metadata
-                const delayMs = 300 + Math.random() * 500; // 300-800ms random delay
-                console.log(`PreviewManager: Video ready for ${canonicalId}, waiting ${delayMs.toFixed(0)}ms for frame data`);
+                // Wait longer for GOP/keyframe interval (2-5 seconds typical for broadcast streams)
+                const gopDelayMs = 2000 + Math.random() * 3000; // 2-5 second delay for GOP
+                console.log(`PreviewManager: Video ready for ${canonicalId}, waiting ${gopDelayMs.toFixed(0)}ms for GOP/keyframe`);
                 
                 setTimeout(() => {
                   if (!video) {
@@ -310,7 +316,7 @@ class PreviewManager {
                       }
                     })
                     .catch(attemptReject);
-                }, delayMs);
+                }, gopDelayMs);
               } else {
                 // Not ready yet, check again
                 setTimeout(checkVideoReady, 200);
@@ -354,6 +360,15 @@ class PreviewManager {
         };
 
         await sdk.play(streamUrl, { videoOnly: true, audioOnly: false });
+        
+        // Explicitly call video.play() after SDK play to ensure frame decoding
+        try {
+          await video.play();
+          console.log(`PreviewManager: Video.play() completed for ${canonicalId}`);
+        } catch (error) {
+          console.error(`PreviewManager: Video.play() failed for ${canonicalId}:`, error);
+        }
+        
         executeWithRetry();
         
       } catch (error) {
@@ -470,14 +485,11 @@ class PreviewManager {
       return acc + Math.pow(val - avgBrightness, 2);
     }, 0) / validSamples;
     
-    // TEMPORARILY EXTREMELY LENIENT thresholds for debugging stream content
-    const minBrightness = 0.1; // Accept almost any brightness (debugging)
-    const minVariance = 0.1;   // Accept almost any variance (debugging)
+    // Normal validation thresholds  
+    const minBrightness = 5; // Minimum brightness for valid content
+    const minVariance = 20;   // Minimum variance for valid content
     
-    // Log detailed pixel analysis for debugging
-    console.log(`PreviewManager: Frame analysis for ${validSamples} pixels - avgBrightness: ${avgBrightness.toFixed(3)}, variance: ${variance.toFixed(3)}, first 5 brightness values: [${brightnessValues.slice(0, 5).map(v => v.toFixed(1)).join(', ')}]`);
-    
-    const isValid = avgBrightness > minBrightness || variance > minVariance; // OR instead of AND for more lenient validation
+    const isValid = avgBrightness > minBrightness || variance > minVariance;
     
     return {
       isValid,
