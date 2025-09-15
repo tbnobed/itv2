@@ -21,6 +21,8 @@ class PreviewManager {
   private isTV: boolean = false;
   private snapshotTimer: number | null = null;
   private snapshotRegistry: Map<string, SnapshotRegistry> = new Map();
+  private isSuspended: boolean = false;
+  private suspendedRegistry: Map<string, SnapshotRegistry> = new Map();
 
   private constructor() {
     // Detect TV device and set limits
@@ -512,6 +514,71 @@ class PreviewManager {
         console.warn('PreviewManager: Error closing SDK:', e);
       }
     }
+  }
+
+  /**
+   * Suspend all preview activity for exclusive playback mode (critical for Firestick stability)
+   * Stops snapshot timer and cleans up all active connections to prevent resource exhaustion
+   */
+  suspendAll() {
+    if (this.isSuspended) return;
+    
+    console.log('PreviewManager: Suspending all preview activity for exclusive playback');
+    this.isSuspended = true;
+    
+    // Stop snapshot timer
+    if (this.snapshotTimer) {
+      clearInterval(this.snapshotTimer);
+      this.snapshotTimer = null;
+    }
+    
+    // Save current registry for restoration
+    this.suspendedRegistry = new Map(this.snapshotRegistry);
+    
+    // Clean up all active preview slots
+    for (const [streamId, slot] of Array.from(this.activeSlots)) {
+      try {
+        slot.releaseCallback();
+        console.log(`PreviewManager: Released slot ${streamId} during suspension`);
+      } catch (error) {
+        console.warn(`PreviewManager: Error releasing slot ${streamId}:`, error);
+      }
+    }
+    this.activeSlots.clear();
+    
+    // Clear snapshot registry
+    this.snapshotRegistry.clear();
+    
+    console.log('PreviewManager: All preview activity suspended for exclusive playback mode');
+  }
+
+  /**
+   * Resume snapshot activity after exclusive playback ends
+   * Restores previous snapshot registrations and restarts timer
+   */
+  resumeSnapshots() {
+    if (!this.isSuspended) return;
+    
+    console.log('PreviewManager: Resuming snapshot activity after exclusive playback');
+    this.isSuspended = false;
+    
+    // Restore snapshot registry
+    this.snapshotRegistry = new Map(this.suspendedRegistry);
+    this.suspendedRegistry.clear();
+    
+    // Restart snapshot timer if we have streams to track
+    if (this.snapshotRegistry.size > 0) {
+      this.startSnapshotTimer();
+    }
+    
+    console.log(`PreviewManager: Resumed snapshot activity for ${this.snapshotRegistry.size} streams`);
+  }
+
+  /**
+   * Check if preview system is currently suspended
+   */
+  isSuspendedForPlayback(): boolean {
+    return this.isSuspended;
   }
 
   getStatus() {

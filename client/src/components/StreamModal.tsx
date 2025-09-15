@@ -3,6 +3,7 @@ import { X, Volume2, VolumeX, Maximize, Minimize, AlertCircle, Wifi } from 'luci
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import PreviewManager from '@/lib/PreviewManager';
 
 // Declare global SRS SDK types
 declare global {
@@ -185,6 +186,10 @@ export default function StreamModal({
       setConnectionStatus('connecting');
       setIsConnected(false);
       
+      // CRITICAL: Suspend all preview activity for exclusive playback mode (prevents Firestick crashes)
+      console.log('StreamModal: Suspending all preview activity for exclusive playback mode');
+      PreviewManager.getInstance().suspendAll();
+      
       // Reset connection state
       setConnectionState({
         iceConnectionState: 'new',
@@ -288,6 +293,10 @@ export default function StreamModal({
       console.error('WebRTC connection failed:', error);
       console.log('Error details:', { error, connectionState });
       
+      // CRITICAL: Resume preview activity if connection fails (restore Firestick stability)
+      console.log('StreamModal: Resuming preview activity after connection failure');
+      PreviewManager.getInstance().resumeSnapshots();
+      
       const analyzedError = analyzeError(error);
       setDetailedError(analyzedError);
       setConnectionError(analyzedError.message);
@@ -312,6 +321,10 @@ export default function StreamModal({
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
+    
+    // CRITICAL: Resume preview activity after exclusive playback ends (restore Firestick stability)
+    console.log('StreamModal: Resuming preview activity after exclusive playback ended');
+    PreviewManager.getInstance().resumeSnapshots();
     
     setIsLoading(false);
     setIsConnected(false);
