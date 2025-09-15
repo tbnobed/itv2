@@ -118,25 +118,22 @@ function App() {
       const actualWidth = screenWidth * devicePixelRatio;
       const actualHeight = screenHeight * devicePixelRatio;
       
-      // TV/OTT device detection
+      // TV/OTT device detection - apply to actual TV devices including Firestick
       const isTVBrowser = /Silk|AFT|BRAVIA|Tizen|webOS|SmartTV|NetCast/i.test(userAgent) ||
                           /CrKey|GoogleTV|AndroidTV/i.test(userAgent);
       
-      // Heuristic: Large screens with coarse pointer (typical of TV devices)
-      const isLargeScreen = actualWidth >= 1280 && actualHeight >= 720;
-      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-      
-      if (isTVBrowser || (isLargeScreen && hasCoarsePointer)) {
+      // Apply TV scaling to confirmed TV devices (including Firestick Silk browser)
+      if (isTVBrowser) {
         const rootElement = document.getElementById('root');
         if (rootElement) {
-          // Apply scaling based on resolution - but NOT for auth page
+          // Apply more conservative scaling - less aggressive than before
           let scale = 1;
           if (actualWidth >= 3840 && actualHeight >= 2160) {
-            scale = 0.5; // 4K TVs
+            scale = 0.85; // 4K TVs - much less scaling
           } else if (actualWidth >= 1920 && actualHeight >= 1080) {
-            scale = 0.6; // 1080p TVs
+            scale = 0.9; // 1080p TVs - minimal scaling
           } else if (actualWidth >= 1280 && actualHeight >= 720) {
-            scale = 0.75; // 720p TVs
+            scale = 0.95; // 720p TVs - very minimal scaling
           }
           
           // Only apply scaling to non-auth pages
@@ -181,7 +178,7 @@ function App() {
                 />
                 <div className="flex flex-col flex-1 min-w-0">
                   <AppHeader />
-                  <main className="flex-1 overflow-hidden min-w-0">
+                  <main className="flex-1 overflow-auto min-w-0">
                     <Router activeSection={activeSection} />
                   </main>
                 </div>
