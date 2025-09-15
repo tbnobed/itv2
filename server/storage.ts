@@ -278,6 +278,14 @@ export class MemStorage implements IStorage {
         category: 'featured',
         studioId: null
       },
+      {
+        title: 'Test FLV Stream',
+        thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
+        streamId: 'FLV001',
+        url: 'https://cdn2.obedtv.live:8088/live/Socal1.flv',
+        category: 'featured',
+        studioId: null
+      },
       // Over The Air streams
       {
         title: 'Main Transmission Tower',

@@ -184,6 +184,14 @@ async function seedDatabase() {
           url: 'webrtc://localhost:1985/live/studio-b-cam1',
           category: 'studios',
           studioId: studioIds[1]
+        },
+        {
+          title: 'Test FLV Stream',
+          thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
+          streamId: 'FLV001',
+          url: 'https://cdn2.obedtv.live:8088/live/Socal1.flv',
+          category: 'featured',
+          studioId: null
         }
       ];
 
