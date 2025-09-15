@@ -345,24 +345,7 @@ export function setupAuth(app: Express) {
           // Generate CSRF token and save session
           req.session.csrfToken = generateCSRFToken();
           req.session.save(() => {
-            console.log(`Successful ${passcodeResult.role} login from ${identifier}`);
-            console.log('Session after login:', req.session.id);
-            console.log('isAuthenticated after login:', req.isAuthenticated());
-            console.log('req.secure:', req.secure);
-            console.log('req.protocol:', req.protocol);
-            console.log('X-Forwarded-Proto:', req.headers['x-forwarded-proto']);
-            console.log('Set-Cookie will be sent with session ID:', req.session.id);
-            
-            // Add debugging header to see what cookie gets set
-            res.setHeader('X-Debug-Session-ID', req.session.id);
-            res.setHeader('X-Debug-Set-Cookie', 'connect.sid=' + req.session.id);
-            
-            // Force log the actual Set-Cookie header after response
-            const originalEnd = res.end;
-            res.end = function(...args) {
-              console.log('RESPONSE HEADERS:', JSON.stringify(res.getHeaders(), null, 2));
-              return originalEnd.apply(this, args);
-            };
+            console.log(`Successful ${passcodeResult.role} login for user ${authenticatedUser.username}`);
             
             res.status(200).json({ 
               id: authenticatedUser.id, 
