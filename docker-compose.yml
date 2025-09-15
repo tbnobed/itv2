@@ -64,6 +64,12 @@ services:
       PASSCODE_PEPPER: ${PASSCODE_PEPPER:-obtv-universal-pepper-change-in-production}
       ADMIN_PASSCODE: ${ADMIN_PASSCODE:-1234}
       USER_PASSCODE: ${USER_PASSCODE:-1111}
+      # SRS Server Configuration for Snapshot Generation (optional fallback)
+      # The system auto-detects servers and ports from WHEP URLs
+      # Only set this if you need a fallback when WHEP URL parsing fails
+      SRS_HTTP_FLV_BASE: ${SRS_HTTP_FLV_BASE:-}
+      # Optional: Force HTTPS if your SRS uses SSL
+      # SRS_FORCE_HTTPS: ${SRS_FORCE_HTTPS:-false}
     ports:
       - "5000:5000"
     depends_on:

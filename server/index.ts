@@ -67,6 +67,17 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize SnapshotService early with error handling
+  try {
+    console.log("🔧 Initializing SnapshotService...");
+    const { SnapshotService } = await import("./SnapshotService.js");
+    const snapshotService = SnapshotService.getInstance();
+    console.log(`✅ SnapshotService ready: ${snapshotService.getActiveWorkerCount()} workers`);
+  } catch (error) {
+    console.error("❌ SnapshotService initialization failed:", error);
+    // Continue startup - service will retry when first accessed
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

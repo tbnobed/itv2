@@ -132,12 +132,38 @@ async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes first
   setupAuth(app);
   
+  // Initialize SnapshotService for server-side video preview generation
+  let snapshotService: any;
+  try {
+    const { SnapshotService } = await import("./SnapshotService.js");
+    snapshotService = SnapshotService.getInstance();
+    
+    // Serve static snapshot files
+    const { join } = await import("path");
+    const snapshotsPath = join(process.cwd(), 'server', 'public', 'snapshots');
+    app.use('/snapshots', express.static(snapshotsPath, {
+      maxAge: 0, // No caching
+      etag: true,
+      lastModified: true,
+      setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'no-store');
+      }
+    }));
+    
+    console.log(`✅ SnapshotService initialized in production mode`);
+  } catch (error) {
+    console.error("❌ SnapshotService initialization failed:", error);
+    // Continue startup - frontend will fallback to thumbnails
+  }
+  
   // Health check endpoint
   app.get('/api/health', (req, res) => {
+    const activeWorkers = snapshotService ? snapshotService.getActiveWorkerCount() : 0;
     res.status(200).json({ 
       status: 'ok', 
       timestamp: new Date().toISOString(),
-      uptime: process.uptime()
+      uptime: process.uptime(),
+      snapshotWorkers: activeWorkers
     });
   });
   
@@ -431,6 +457,76 @@ async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to update user status' });
     }
   });
+
+  // Snapshot endpoints for server-side video preview generation
+  if (snapshotService) {
+    // Direct snapshot access with cache busting
+    app.get('/api/streams/:id/snapshot', (req, res) => {
+      try {
+        const { id } = req.params;
+        const snapshotPath = snapshotService.getSnapshotPath(id);
+        
+        const { existsSync } = require('fs');
+        if (existsSync(snapshotPath)) {
+          // Redirect to static file with cache busting
+          const timestamp = Math.floor(Date.now() / 30000); // 30 second cache intervals
+          res.redirect(302, `/snapshots/${id.replace(/[^a-zA-Z0-9-_]/g, '')}.jpg?t=${timestamp}`);
+        } else {
+          res.status(404).json({ error: 'Snapshot not available' });
+        }
+      } catch (error) {
+        console.error(`Error serving snapshot for ${req.params.id}:`, error);
+        res.status(500).json({ error: 'Failed to serve snapshot' });
+      }
+    });
+
+    // Register streams for snapshot generation (extends TTL)
+    app.post('/api/snapshots/register', async (req, res) => {
+      try {
+        const { streamIds } = req.body;
+        
+        if (!Array.isArray(streamIds)) {
+          return res.status(400).json({ error: 'streamIds must be an array' });
+        }
+
+        // Get stream details and register with snapshot service
+        const registeredStreams: string[] = [];
+        
+        for (const streamId of streamIds) {
+          try {
+            // Find the stream to get its URL
+            const allStreams = await storage.getAllStreams();
+            const stream = allStreams.find(s => s.streamId === streamId);
+            
+            if (stream) {
+              snapshotService.registerStream(streamId, stream.url);
+              registeredStreams.push(streamId);
+            }
+          } catch (error) {
+            console.warn(`Failed to register stream ${streamId}:`, error);
+          }
+        }
+        
+        res.json({ 
+          registered: registeredStreams.length,
+          streamIds: registeredStreams,
+          activeWorkers: snapshotService.getActiveWorkerCount()
+        });
+      } catch (error) {
+        console.error('Error registering streams for snapshots:', error);
+        res.status(500).json({ error: 'Failed to register streams' });
+      }
+    });
+  } else {
+    // Fallback endpoints when SnapshotService is not available
+    app.get('/api/streams/:id/snapshot', (req, res) => {
+      res.status(503).json({ error: 'Snapshot service not available' });
+    });
+    
+    app.post('/api/snapshots/register', (req, res) => {
+      res.status(503).json({ error: 'Snapshot service not available' });
+    });
+  }
 
   const httpServer = createServer(app);
 
