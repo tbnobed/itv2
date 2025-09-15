@@ -170,10 +170,16 @@ export default function PasscodeAuthPage() {
         <div className="auth-container w-full max-w-md space-y-4">
           
           {/* Header */}
-          <div className="text-center space-y-2">
-            <Shield className="w-12 h-12 mx-auto text-primary" />
+          <div className="text-center space-y-4">
+            <div className="flex justify-center">
+              <img 
+                src="/assets/obtv-logo.png" 
+                alt="OBTV" 
+                className="h-24 w-auto"
+                data-testid="obtv-logo"
+              />
+            </div>
             <div className="space-y-1">
-              <h1 className="text-2xl font-bold">OBTV Streaming</h1>
               <p className="text-lg text-muted-foreground">
                 Enter 4-digit passcode to access streams
               </p>
