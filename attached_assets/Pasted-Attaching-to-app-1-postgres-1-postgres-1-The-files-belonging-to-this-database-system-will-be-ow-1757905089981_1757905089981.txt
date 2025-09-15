@@ -1,0 +1,155 @@
+Attaching to app-1, postgres-1
+postgres-1  | The files belonging to this database system will be owned by user "postgres".
+postgres-1  | This user must also own the server process.
+postgres-1  |
+postgres-1  | The database cluster will be initialized with locale "en_US.utf8".
+postgres-1  | The default database encoding has accordingly been set to "UTF8".
+postgres-1  | The default text search configuration will be set to "english".
+postgres-1  |
+postgres-1  | Data page checksums are disabled.
+postgres-1  |
+postgres-1  | fixing permissions on existing directory /var/lib/postgresql/data ... ok
+postgres-1  | creating subdirectories ... ok
+postgres-1  | selecting dynamic shared memory implementation ... posix
+postgres-1  | selecting default max_connections ... 100
+postgres-1  | selecting default shared_buffers ... 128MB
+postgres-1  | selecting default time zone ... UTC
+postgres-1  | creating configuration files ... ok
+postgres-1  | running bootstrap script ... ok
+postgres-1  | sh: locale: not found
+postgres-1  | 2025-09-15 02:57:17.613 UTC [36] WARNING:  no usable system locales were found
+postgres-1  | performing post-bootstrap initialization ... ok
+postgres-1  | syncing data to disk ... ok
+postgres-1  |
+postgres-1  |
+postgres-1  | Success. You can now start the database server using:
+postgres-1  |
+postgres-1  |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+postgres-1  |
+postgres-1  | initdb: warning: enabling "trust" authentication for local connections
+postgres-1  | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+postgres-1  | waiting for server to start....2025-09-15 02:57:18.246 UTC [42] LOG:  starting PostgreSQL 15.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+postgres-1  | 2025-09-15 02:57:18.247 UTC [42] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2025-09-15 02:57:18.253 UTC [45] LOG:  database system was shut down at 2025-09-15 02:57:18 UTC
+postgres-1  | 2025-09-15 02:57:18.261 UTC [42] LOG:  database system is ready to accept connections
+postgres-1  |  done
+postgres-1  | server started
+postgres-1  | CREATE DATABASE
+postgres-1  |
+postgres-1  |
+postgres-1  | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/init.sql
+postgres-1  | CREATE EXTENSION
+postgres-1  | CREATE EXTENSION
+postgres-1  | SET
+postgres-1  | DO
+postgres-1  | psql:/docker-entrypoint-initdb.d/init.sql:20: NOTICE:  Database initialized. Tables and initial data will be created by the application.
+postgres-1  |
+postgres-1  |
+postgres-1  | waiting for server to shut down...2025-09-15 02:57:18.435 UTC [42] LOG:  received fast shutdown request
+postgres-1  | .2025-09-15 02:57:18.436 UTC [42] LOG:  aborting any active transactions
+postgres-1  | 2025-09-15 02:57:18.443 UTC [42] LOG:  background worker "logical replication launcher" (PID 48) exited with exit code 1
+postgres-1  | 2025-09-15 02:57:18.443 UTC [43] LOG:  shutting down
+postgres-1  | 2025-09-15 02:57:18.444 UTC [43] LOG:  checkpoint starting: shutdown immediate
+postgres-1  | 2025-09-15 02:57:18.479 UTC [43] LOG:  checkpoint complete: wrote 925 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.019 s, sync=0.014 s, total=0.036 s; sync files=301, longest=0.001 s, average=0.001 s; distance=4294 kB, estimate=4294 kB
+postgres-1  | 2025-09-15 02:57:18.489 UTC [42] LOG:  database system is shut down
+postgres-1  |  done
+postgres-1  | server stopped
+postgres-1  |
+postgres-1  | PostgreSQL init process complete; ready for start up.
+postgres-1  |
+postgres-1  | 2025-09-15 02:57:18.569 UTC [1] LOG:  starting PostgreSQL 15.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+postgres-1  | 2025-09-15 02:57:18.569 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+postgres-1  | 2025-09-15 02:57:18.569 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+postgres-1  | 2025-09-15 02:57:18.571 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2025-09-15 02:57:18.577 UTC [60] LOG:  database system was shut down at 2025-09-15 02:57:18 UTC
+postgres-1  | 2025-09-15 02:57:18.587 UTC [1] LOG:  database system is ready to accept connections
+app-1       | 🐳 Starting OBTV Docker container...
+app-1       | 📦 Database connection detected, checking readiness...
+app-1       | ✅ Database connection successful
+app-1       | 🌱 Running database seeding...
+app-1       | 🌱 Starting database seeding...
+app-1       | 🔒 Safe seeding mode enabled - preserving existing users
+app-1       | 👑 Creating admin account: obtv-admin...
+postgres-1  | 2025-09-15 02:57:29.106 UTC [72] ERROR:  relation "users" does not exist at character 20
+postgres-1  | 2025-09-15 02:57:29.106 UTC [72] STATEMENT:
+postgres-1  |         INSERT INTO users (id, username, password, role, is_active, created_at)
+postgres-1  |         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+postgres-1  |         ON CONFLICT (username) DO NOTHING
+postgres-1  |         RETURNING id, username, role;
+
+
+
+app-1       | ❌ Database seeding failed: error: relation "users" does not exist
+postgres-1  |
+
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async seedDatabase (file:///app/seed.js:68:25) {
+app-1       |   length: 104,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42P01',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '20',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '1392',
+app-1       |   routine: 'parserOpenTable'
+app-1       | }
+app-1       | ❌ Database seeding failed
+app-1 exited with code 1
+postgres-1  | 2025-09-15 02:57:31.203 UTC [74] ERROR:  relation "users" does not exist at character 20
+postgres-1  | 2025-09-15 02:57:31.203 UTC [74] STATEMENT:
+postgres-1  |         INSERT INTO users (id, username, password, role, is_active, created_at)
+postgres-1  |         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+postgres-1  |         ON CONFLICT (username) DO NOTHING
+postgres-1  |         RETURNING id, username, role;
+postgres-1  |
+app-1 exited with code 1
+postgres-1  | 2025-09-15 02:57:33.210 UTC [76] ERROR:  relation "users" does not exist at character 20
+postgres-1  | 2025-09-15 02:57:33.210 UTC [76] STATEMENT:
+postgres-1  |         INSERT INTO users (id, username, password, role, is_active, created_at)
+postgres-1  |         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+postgres-1  |         ON CONFLICT (username) DO NOTHING
+postgres-1  |         RETURNING id, username, role;
+postgres-1  |
+app-1 exited with code 1
+postgres-1  | 2025-09-15 02:57:35.321 UTC [78] ERROR:  relation "users" does not exist at character 20
+postgres-1  | 2025-09-15 02:57:35.321 UTC [78] STATEMENT:
+postgres-1  |         INSERT INTO users (id, username, password, role, is_active, created_at)
+postgres-1  |         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+postgres-1  |         ON CONFLICT (username) DO NOTHING
+postgres-1  |         RETURNING id, username, role;
+postgres-1  |
+app-1 exited with code 1
+postgres-1  | 2025-09-15 02:57:37.850 UTC [87] ERROR:  relation "users" does not exist at character 20
+postgres-1  | 2025-09-15 02:57:37.850 UTC [87] STATEMENT:
+postgres-1  |         INSERT INTO users (id, username, password, role, is_active, created_at)
+postgres-1  |         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+postgres-1  |         ON CONFLICT (username) DO NOTHING
+postgres-1  |         RETURNING id, username, role;
+postgres-1  |
+app-1 exited with code 1
+postgres-1  | 2025-09-15 02:57:41.123 UTC [90] ERROR:  relation "users" does not exist at character 20
+postgres-1  | 2025-09-15 02:57:41.123 UTC [90] STATEMENT:
+postgres-1  |         INSERT INTO users (id, username, password, role, is_active, created_at)
+postgres-1  |         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+postgres-1  |         ON CONFLICT (username) DO NOTHING
+postgres-1  |         RETURNING id, username, role;
+postgres-1  |
+app-1 exited with code 1
+postgres-1  | 2025-09-15 02:57:46.048 UTC [92] ERROR:  relation "users" does not exist at character 20
+postgres-1  | 2025-09-15 02:57:46.048 UTC [92] STATEMENT:
+postgres-1  |         INSERT INTO users (id, username, password, role, is_active, created_at)
+postgres-1  |         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
+postgres-1  |         ON CONFLICT (username) DO NOTHING
+postgres-1  |         RETURNING id, username, role;
+postgres-1  |
+app-1 exited with code 1
