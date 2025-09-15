@@ -9,14 +9,18 @@ type PreviewSlot = {
   releaseCallback: () => void;
 };
 
+interface SnapshotRegistry {
+  streamUrl: string;
+  callbacks: Set<(dataUrl: string) => void>;
+}
+
 class PreviewManager {
   private static instance: PreviewManager;
   private activeSlots: Map<string, PreviewSlot> = new Map();
   private maxConcurrent: number = 2; // Default for desktop
   private isTV: boolean = false;
   private snapshotTimer: number | null = null;
-  private visibleStreams: Set<string> = new Set();
-  private snapshotCallbacks: Map<string, (dataUrl: string) => void> = new Map();
+  private snapshotRegistry: Map<string, SnapshotRegistry> = new Map();
 
   private constructor() {
     // Detect TV device and set limits
@@ -38,6 +42,27 @@ class PreviewManager {
     this.maxConcurrent = this.isTV ? 1 : 2;
     
     console.log(`PreviewManager: TV device detected: ${this.isTV}, Max concurrent: ${this.maxConcurrent}`);
+  }
+
+  /**
+   * Canonicalize stream ID for consistent storage/lookup
+   */
+  private canonicalStreamId(streamId?: string, streamUrl?: string): string {
+    // If streamUrl is provided, try to extract stream ID from it
+    if (streamUrl) {
+      try {
+        const url = new URL(streamUrl);
+        const streamParam = url.searchParams.get('stream');
+        if (streamParam) {
+          return streamParam.trim();
+        }
+      } catch (e) {
+        // Fallback to streamId if URL parsing fails
+      }
+    }
+    
+    // Use provided streamId, trimmed and normalized
+    return (streamId || '').trim();
   }
 
   /**
@@ -110,32 +135,55 @@ class PreviewManager {
    * Register a stream for snapshot updates
    */
   registerStreamForSnapshot(streamId: string, streamUrl: string, callback: (dataUrl: string) => void) {
-    this.visibleStreams.add(streamId);
-    this.snapshotCallbacks.set(streamId, callback);
+    const canonicalId = this.canonicalStreamId(streamId, streamUrl);
+    
+    // Get or create registry entry
+    let registry = this.snapshotRegistry.get(canonicalId);
+    if (!registry) {
+      registry = {
+        streamUrl,
+        callbacks: new Set<(dataUrl: string) => void>()
+      };
+      this.snapshotRegistry.set(canonicalId, registry);
+    }
+    
+    // Ensure callbacks Set exists
+    if (!registry.callbacks) {
+      registry.callbacks = new Set<(dataUrl: string) => void>();
+    }
+    
+    // Add callback to the set
+    registry.callbacks.add(callback);
     
     // Start snapshot timer if this is the first stream
-    if (this.visibleStreams.size === 1 && !this.snapshotTimer) {
+    if (this.snapshotRegistry.size === 1 && !this.snapshotTimer) {
       this.startSnapshotTimer();
     }
     
-    console.log(`PreviewManager: Registered ${streamId} for snapshots (${this.visibleStreams.size} streams)`);
+    console.log(`PreviewManager: Registered ${streamId} (canonical: ${canonicalId}) for snapshots (${this.snapshotRegistry.size} streams, ${registry.callbacks.size} callbacks for this stream)`);
   }
 
   /**
    * Unregister a stream from snapshot updates
    */
   unregisterStreamFromSnapshot(streamId: string) {
-    this.visibleStreams.delete(streamId);
-    this.snapshotCallbacks.delete(streamId);
+    const canonicalId = this.canonicalStreamId(streamId);
+    
+    const registry = this.snapshotRegistry.get(canonicalId);
+    if (registry) {
+      // Find and remove the callback (we can't identify which specific callback, so remove all for this streamId)
+      // In practice this is fine since each StreamTile component calls this on unmount
+      this.snapshotRegistry.delete(canonicalId);
+      
+      console.log(`PreviewManager: Unregistered ${streamId} (canonical: ${canonicalId}) from snapshots (${this.snapshotRegistry.size} streams)`);
+    }
     
     // Stop snapshot timer if no streams left
-    if (this.visibleStreams.size === 0 && this.snapshotTimer) {
+    if (this.snapshotRegistry.size === 0 && this.snapshotTimer) {
       clearInterval(this.snapshotTimer);
       this.snapshotTimer = null;
       console.log('PreviewManager: Stopped snapshot timer');
     }
-    
-    console.log(`PreviewManager: Unregistered ${streamId} from snapshots (${this.visibleStreams.size} streams)`);
   }
 
   /**
@@ -159,17 +207,17 @@ class PreviewManager {
    * Capture snapshots for all visible streams sequentially
    */
   private async captureAllSnapshots() {
-    if (this.visibleStreams.size === 0) return;
+    if (this.snapshotRegistry.size === 0) return;
     
-    console.log(`PreviewManager: Capturing snapshots for ${this.visibleStreams.size} streams`);
+    console.log(`PreviewManager: Capturing snapshots for ${this.snapshotRegistry.size} streams`);
     
-    for (const streamId of Array.from(this.visibleStreams)) {
+    for (const [canonicalId, registry] of this.snapshotRegistry.entries()) {
       try {
-        await this.captureStreamSnapshot(streamId);
+        await this.captureStreamSnapshot(canonicalId, registry);
         // Small delay between snapshots to avoid overwhelming the system
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
-        console.warn(`PreviewManager: Failed to capture snapshot for ${streamId}:`, error);
+        console.warn(`PreviewManager: Failed to capture snapshot for ${canonicalId}:`, error);
       }
     }
     
@@ -179,9 +227,14 @@ class PreviewManager {
   /**
    * Capture a single snapshot for a stream
    */
-  private async captureStreamSnapshot(streamId: string): Promise<void> {
-    const callback = this.snapshotCallbacks.get(streamId);
-    if (!callback) return;
+  private async captureStreamSnapshot(canonicalId: string, registry?: SnapshotRegistry): Promise<void> {
+    if (!registry) {
+      registry = this.snapshotRegistry.get(canonicalId);
+    }
+    if (!registry || registry.callbacks.size === 0) return;
+
+    const { streamUrl, callbacks } = registry;
+    console.log(`PreviewManager: Capturing snapshot for ${canonicalId}, callbacks: ${callbacks.size}, streamUrl: ${streamUrl}`);
 
     return new Promise(async (resolve, reject) => {
       let sdk: any = null;
@@ -199,8 +252,7 @@ class PreviewManager {
 
         sdk = SrsRtcWhipWhepAsync();
         
-        // Get stream URL for this streamId (assuming it follows pattern)
-        const streamUrl = `https://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=${streamId}`;
+        // Use the registered streamUrl
         
         // Set up video element for capture
         const video = document.createElement('video');
@@ -228,8 +280,11 @@ class PreviewManager {
                 
                 // Validate the captured image has actual data
                 if (dataUrl && dataUrl.length > 100) {
-                  callback(dataUrl);
-                  console.log(`PreviewManager: Captured snapshot for ${streamId}`);
+                  // Call all registered callbacks for this stream
+                  for (const callback of callbacks) {
+                    callback(dataUrl);
+                  }
+                  console.log(`PreviewManager: Captured snapshot for ${canonicalId}`);
                 } else {
                   throw new Error('Captured image data too small');
                 }

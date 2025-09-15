@@ -34,9 +34,13 @@ export default function StreamTile({
     const previewManager = PreviewManager.getInstance();
     
     const handleSnapshot = (dataUrl: string) => {
+      console.log(`StreamTile[${streamId}]: Received snapshot callback, dataUrl length: ${dataUrl?.length}, starts with data:image: ${dataUrl?.startsWith('data:image/')}`);
       // Only update if we have a valid dataURL with actual image data
       if (dataUrl && dataUrl.startsWith('data:image/') && dataUrl.length > 100) {
+        console.log(`StreamTile[${streamId}]: Valid snapshot received, updating image`);
         setCurrentImage(dataUrl);
+      } else {
+        console.log(`StreamTile[${streamId}]: Invalid snapshot rejected - length: ${dataUrl?.length}, starts correctly: ${dataUrl?.startsWith('data:image/')}`);
       }
     };
 
