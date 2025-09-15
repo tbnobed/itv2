@@ -45,8 +45,8 @@ export default function StreamTile({
   };
 
   const tileSize = size === 'featured' 
-    ? 'w-64 h-36' 
-    : 'w-40 h-24';
+    ? 'w-48 h-28' 
+    : 'w-36 h-20';
 
   return (
     <div
