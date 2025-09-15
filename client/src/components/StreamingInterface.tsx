@@ -166,8 +166,8 @@ export default function StreamingInterface({ className, activeSection = 'feature
   // Show loading state
   if (streamsLoading || (activeSection === 'studios' && studiosLoading)) {
     return (
-      <div className={`h-full bg-background ${className}`}>
-        <main className="p-6">
+      <div className={`h-full w-full bg-background ${className}`}>
+        <main className="p-6 h-full overflow-y-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-white text-lg">Loading streaming data...</div>
           </div>
@@ -180,8 +180,8 @@ export default function StreamingInterface({ className, activeSection = 'feature
   if (streamsError || (activeSection === 'studios' && studiosError)) {
     const error = streamsError || studiosError;
     return (
-      <div className={`h-full bg-background ${className}`}>
-        <main className="p-6">
+      <div className={`h-full w-full bg-background ${className}`}>
+        <main className="p-6 h-full overflow-y-auto">
           <div className="flex items-center justify-center h-64">
             <div className="text-red-400 text-lg">
               Failed to load streaming data: {error?.message || 'Unknown error'}
@@ -259,8 +259,8 @@ export default function StreamingInterface({ className, activeSection = 'feature
   };
 
   return (
-    <div className={`h-full w-full bg-background overflow-hidden ${className}`}>
-      <main className="p-6 h-full overflow-y-auto overflow-x-hidden">
+    <div className={`h-full w-full bg-background ${className}`}>
+      <main className="p-6 h-full overflow-y-auto">
         {/* Render based on active section */}
         {activeSection === 'studios' ? (
           renderStudiosSection()
