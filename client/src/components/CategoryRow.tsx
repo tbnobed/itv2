@@ -39,25 +39,24 @@ export default function CategoryRow({
         {title}
       </h2>
 
-      {/* Horizontal Scroll Content */}
-      <div className="w-full" data-testid="scroll-container">
+      {/* Grid Content - All tiles visible, no scrolling */}
+      <div className="w-full px-6" data-testid="grid-container">
         <div className={cn(
-          "flex gap-6 overflow-x-auto scrollbar-hide px-6 pb-6",
-          "scroll-smooth snap-x snap-mandatory"
+          "grid gap-4 justify-items-center pb-6",
+          "grid-cols-6"
         )}>
           {streams.map((stream) => (
-            <div key={stream.id} className="flex-shrink-0 snap-start">
-              <StreamTile
-                id={stream.id}
-                title={stream.title}
-                thumbnail={stream.thumbnail}
-                streamId={stream.streamId}
-                streamUrl={stream.url}
-                size={featured ? 'featured' : 'regular'}
-                onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
-                className=""
-              />
-            </div>
+            <StreamTile
+              key={stream.id}
+              id={stream.id}
+              title={stream.title}
+              thumbnail={stream.thumbnail}
+              streamId={stream.streamId}
+              streamUrl={stream.url}
+              size={featured ? 'featured' : 'regular'}
+              onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
+              className=""
+            />
           ))}
         </div>
       </div>
