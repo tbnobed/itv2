@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import WebRTCPreview from './WebRTCPreview';
+import PreviewManager from '@/lib/PreviewManager';
 
 interface StreamTileProps {
   id: string;
@@ -25,6 +26,8 @@ export default function StreamTile({
 }: StreamTileProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const previewManager = PreviewManager.getInstance();
 
   const handleClick = async () => {
     console.log(`Opening stream: ${streamId} - ${title}`);
@@ -44,6 +47,16 @@ export default function StreamTile({
     }
   };
 
+  const handleFocus = useCallback(() => {
+    setIsFocused(true);
+    console.log(`StreamTile ${streamId} gained focus`);
+  }, [streamId]);
+
+  const handleBlur = useCallback(() => {
+    setIsFocused(false);
+    console.log(`StreamTile ${streamId} lost focus`);
+  }, [streamId]);
+
   const tileSize = size === 'featured' 
     ? 'w-58 h-34' 
     : 'w-44 h-24';
@@ -60,6 +73,8 @@ export default function StreamTile({
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyPress}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
@@ -69,6 +84,7 @@ export default function StreamTile({
         <WebRTCPreview
           streamUrl={streamUrl}
           streamId={streamId}
+          isActive={isFocused}
           className="w-full h-full relative"
           fallbackImage={thumbnail}
         />

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import PreviewManager from '@/lib/PreviewManager';
 
 interface WebRTCPreviewProps {
   streamUrl: string;
   streamId: string;
+  isActive?: boolean;
   className?: string;
   fallbackImage?: string;
 }
@@ -19,6 +21,7 @@ declare global {
 export default function WebRTCPreview({ 
   streamUrl, 
   streamId, 
+  isActive = false,
   className = '',
   fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk9CVFYgTG9nbzwvdGV4dD48L3N2Zz4='
 }: WebRTCPreviewProps) {
@@ -29,6 +32,7 @@ export default function WebRTCPreview({
   const [isConnected, setIsConnected] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const previewManager = PreviewManager.getInstance();
 
   // Intersection Observer for lazy loading with stricter visibility
   const containerRef = useRef<HTMLDivElement>(null);
@@ -132,12 +136,41 @@ export default function WebRTCPreview({
   };
 
   useEffect(() => {
-    if (!isVisible || !streamUrl) return;
+    if (!isVisible || !streamUrl || !isActive) return;
 
     const connectWebRTC = async () => {
       try {
         if (typeof SrsRtcWhipWhepAsync === 'undefined') {
           throw new Error('SRS SDK not loaded');
+        }
+
+        // Request preview slot from manager
+        const releaseCallback = () => {
+          console.log(`Force releasing WebRTC connection for ${streamId}`);
+          if (sdkRef.current) {
+            try {
+              sdkRef.current.close();
+            } catch (error) {
+              console.warn('Error closing forced WebRTC connection:', error);
+            }
+            sdkRef.current = null;
+            setIsConnected(false);
+          }
+        };
+
+        // Try to get a slot first
+        if (!previewManager.requestSlot(streamId, streamUrl, releaseCallback)) {
+          // At capacity - try to force release oldest
+          if (previewManager.forceReleaseOldest()) {
+            // Try again after releasing oldest
+            if (!previewManager.requestSlot(streamId, streamUrl, releaseCallback)) {
+              console.log(`Could not get preview slot for ${streamId}, showing fallback`);
+              return;
+            }
+          } else {
+            console.log(`Preview manager at capacity, showing fallback for ${streamId}`);
+            return;
+          }
         }
 
         // Clear any pending disconnect timeout
@@ -229,6 +262,9 @@ export default function WebRTCPreview({
     return () => {
       clearTimeout(timeoutId);
       
+      // Release preview slot when component unmounts or loses focus/visibility
+      previewManager.releaseSlot(streamId);
+      
       // Clear frame update interval and reset ref
       if (frameUpdateRef.current) {
         clearInterval(frameUpdateRef.current);
@@ -238,9 +274,9 @@ export default function WebRTCPreview({
       // Don't close SDK here - handled by separate unmount cleanup
       setIsConnected(false);
     };
-  }, [isVisible, streamUrl, streamId]);
+  }, [isVisible, streamUrl, streamId, isActive]);
 
-  if (hasError || !isVisible) {
+  if (hasError || !isVisible || !isActive) {
     return (
       <div ref={containerRef} className={`relative ${className}`}>
         <img
