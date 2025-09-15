@@ -57,7 +57,7 @@ export default function CategoryRow({
               streamUrl={stream.url}
               size={featured ? 'featured' : 'regular'}
               onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
-              className="w-full max-w-full"
+              className=""
             />
           ))}
         </div>

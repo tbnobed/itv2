@@ -259,8 +259,8 @@ export default function StreamingInterface({ className, activeSection = 'feature
   };
 
   return (
-    <div className={`h-full w-full bg-background ${className}`}>
-      <main className="p-6 h-full overflow-y-auto">
+    <div className={`min-h-full w-full bg-background ${className}`}>
+      <main className="p-6 min-h-screen overflow-y-auto">
         {/* Render based on active section */}
         {activeSection === 'studios' ? (
           renderStudiosSection()

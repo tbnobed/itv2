@@ -45,8 +45,8 @@ export default function StreamTile({
   };
 
   const tileSize = size === 'featured' 
-    ? 'w-full aspect-video max-w-sm' 
-    : 'w-full aspect-video';
+    ? 'w-64 h-36' 
+    : 'w-40 h-24';
 
   return (
     <div
