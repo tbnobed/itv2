@@ -72,9 +72,10 @@ export default function StreamTile({
   };
 
 
+  // Use consistent 16:9 aspect ratio to match captured snapshots (320x180)
   const tileSize = size === 'featured' 
-    ? 'w-58 h-34' 
-    : 'w-44 h-24';
+    ? 'w-60 h-[135px]'  // 240x135 = 1.78:1 (16:9 ratio)
+    : 'w-44 h-[99px]';  // 176x99 = 1.78:1 (16:9 ratio)
 
   return (
     <div
