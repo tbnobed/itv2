@@ -402,7 +402,12 @@ export default function StreamModal({
     // Clean up FLV player
     if (flvPlayerRef.current) {
       console.log('Disconnecting FLV stream');
-      flvPlayerRef.current.destroy();
+      try {
+        flvPlayerRef.current.destroy();
+      } catch (error) {
+        // Ignore destroy errors during cleanup - this is normal when aborting a loading stream
+        console.debug('FLV player destroy error (expected during cleanup):', error);
+      }
       flvPlayerRef.current = null;
     }
     
