@@ -215,8 +215,8 @@ class PreviewManager {
         // Wait for video to have actual frame data
         const captureFrame = () => {
           try {
-            // Check if video has actual dimensions and current time > 0 (frame data available)
-            if (video.videoWidth > 0 && video.videoHeight > 0 && video.currentTime > 0) {
+            // Check if video has actual dimensions (frame data available)
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
               const canvas = document.createElement('canvas');
               canvas.width = video.videoWidth;
               canvas.height = video.videoHeight;
@@ -227,7 +227,7 @@ class PreviewManager {
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                 
                 // Validate the captured image has actual data
-                if (dataUrl && dataUrl.length > 1000) {
+                if (dataUrl && dataUrl.length > 100) {
                   callback(dataUrl);
                   console.log(`PreviewManager: Captured snapshot for ${streamId}`);
                 } else {
