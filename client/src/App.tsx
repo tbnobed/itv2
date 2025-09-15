@@ -126,14 +126,14 @@ function App() {
       if (isTVBrowser) {
         const rootElement = document.getElementById('root');
         if (rootElement) {
-          // Apply more conservative scaling - less aggressive than before
+          // Scale DOWN to fit more content on TV screens
           let scale = 1;
           if (actualWidth >= 3840 && actualHeight >= 2160) {
-            scale = 0.85; // 4K TVs - much less scaling
+            scale = 0.7; // 4K TVs - scale down to fit more content
           } else if (actualWidth >= 1920 && actualHeight >= 1080) {
-            scale = 0.9; // 1080p TVs - minimal scaling
+            scale = 0.75; // 1080p TVs - scale down moderately
           } else if (actualWidth >= 1280 && actualHeight >= 720) {
-            scale = 0.95; // 720p TVs - very minimal scaling
+            scale = 0.85; // 720p TVs - scale down slightly
           }
           
           // Only apply scaling to non-auth pages
