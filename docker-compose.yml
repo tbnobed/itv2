@@ -70,7 +70,7 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./client/public/generated_images:/app/client/public/generated_images
+      - ./attached_assets/generated_images:/app/client/public/generated_images
     # Removed healthcheck - using the one defined in Dockerfile
 
   # Nginx Reverse Proxy (optional)
