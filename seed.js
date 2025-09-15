@@ -142,8 +142,8 @@ async function seedDatabase() {
       const studioIds = [];
       for (const studio of studioData) {
         const studioQuery = `
-          INSERT INTO studios (id, name, thumbnail, description, status, feed_count, created_at)
-          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6)
+          INSERT INTO studios (id, name, thumbnail, description, status, feed_count)
+          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5)
           RETURNING id;
         `;
         
@@ -152,8 +152,7 @@ async function seedDatabase() {
           studio.thumbnail,
           studio.description,
           studio.status,
-          studio.feedCount,
-          new Date().toISOString()
+          studio.feedCount
         ]);
         
         studioIds.push(studioResult.rows[0].id);
@@ -190,8 +189,8 @@ async function seedDatabase() {
 
       for (const stream of streamData) {
         const streamQuery = `
-          INSERT INTO streams (id, title, thumbnail, stream_id, url, category, studio_id, created_at)
-          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7);
+          INSERT INTO streams (id, title, thumbnail, stream_id, url, category, studio_id)
+          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6);
         `;
         
         await pool.query(streamQuery, [
@@ -200,8 +199,7 @@ async function seedDatabase() {
           stream.streamId,
           stream.url,
           stream.category,
-          stream.studioId,
-          new Date().toISOString()
+          stream.studioId
         ]);
         
         console.log(`✅ Created stream: ${stream.title}`);
