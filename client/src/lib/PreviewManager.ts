@@ -211,7 +211,7 @@ class PreviewManager {
     
     console.log(`PreviewManager: Capturing snapshots for ${this.snapshotRegistry.size} streams`);
     
-    for (const [canonicalId, registry] of this.snapshotRegistry.entries()) {
+    for (const [canonicalId, registry] of Array.from(this.snapshotRegistry.entries())) {
       try {
         await this.captureStreamSnapshot(canonicalId, registry);
         // Small delay between snapshots to avoid overwhelming the system
@@ -225,7 +225,7 @@ class PreviewManager {
   }
 
   /**
-   * Capture a single snapshot for a stream
+   * Capture a single snapshot for a stream with black frame detection and retry logic
    */
   private async captureStreamSnapshot(canonicalId: string, registry?: SnapshotRegistry): Promise<void> {
     if (!registry) {
@@ -238,12 +238,25 @@ class PreviewManager {
 
     return new Promise(async (resolve, reject) => {
       let sdk: any = null;
+      let video: HTMLVideoElement | null = null;
+      let attemptCount = 0;
+      const maxAttempts = 5;
+      const overallTimeoutMs = 15000; // 15 second overall timeout
+      
       const timeoutId = setTimeout(() => {
-        if (sdk) {
-          try { sdk.close(); } catch (e) {}
+        this.cleanupCapture(sdk, video);
+        reject(new Error(`Snapshot timeout after ${overallTimeoutMs}ms`));
+      }, overallTimeoutMs);
+
+      const cleanupAndResolve = (success: boolean) => {
+        clearTimeout(timeoutId);
+        this.cleanupCapture(sdk, video);
+        if (success) {
+          resolve();
+        } else {
+          reject(new Error('Failed all capture attempts'));
         }
-        reject(new Error('Snapshot timeout'));
-      }, 10000); // 10 second timeout
+      };
 
       try {
         if (typeof SrsRtcWhipWhepAsync === 'undefined') {
@@ -252,10 +265,8 @@ class PreviewManager {
 
         sdk = SrsRtcWhipWhepAsync();
         
-        // Use the registered streamUrl
-        
         // Set up video element for capture
-        const video = document.createElement('video');
+        video = document.createElement('video');
         video.style.display = 'none';
         video.autoplay = true;
         video.muted = true;
@@ -264,70 +275,228 @@ class PreviewManager {
         
         video.srcObject = sdk.stream;
         
-        // Wait for video to have actual frame data
-        const captureFrame = () => {
-          try {
-            // Check if video has actual dimensions (frame data available)
-            if (video.videoWidth > 0 && video.videoHeight > 0) {
-              const canvas = document.createElement('canvas');
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              
-              const ctx = canvas.getContext('2d');
-              if (ctx) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                
-                // Validate the captured image has actual data
-                if (dataUrl && dataUrl.length > 100) {
-                  // Call all registered callbacks for this stream
-                  for (const callback of callbacks) {
-                    callback(dataUrl);
-                  }
-                  console.log(`PreviewManager: Captured snapshot for ${canonicalId}`);
-                } else {
-                  throw new Error('Captured image data too small');
-                }
+        // Retry capture with black frame detection
+        const attemptCapture = async (): Promise<void> => {
+          attemptCount++;
+          console.log(`PreviewManager: Capture attempt ${attemptCount}/${maxAttempts} for ${canonicalId}`);
+          
+          return new Promise((attemptResolve, attemptReject) => {
+            // Wait for video to be playing and have frame data
+            const checkVideoReady = () => {
+              if (!video) {
+                attemptReject(new Error('Video element destroyed'));
+                return;
               }
-              
-              // Cleanup
-              document.body.removeChild(video);
-              if (sdk) sdk.close();
-              clearTimeout(timeoutId);
-              resolve();
-            } else {
-              // Not ready yet, wait a bit more
-              setTimeout(captureFrame, 500);
-            }
-          } catch (error) {
-            document.body.removeChild(video);
-            if (sdk) sdk.close();
-            clearTimeout(timeoutId);
-            reject(error);
-          }
+
+              // Check if video is playing and has actual dimensions
+              if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                // Add delay to ensure we get actual frame content, not just metadata
+                const delayMs = 300 + Math.random() * 500; // 300-800ms random delay
+                console.log(`PreviewManager: Video ready for ${canonicalId}, waiting ${delayMs.toFixed(0)}ms for frame data`);
+                
+                setTimeout(() => {
+                  if (!video) {
+                    attemptReject(new Error('Video element destroyed during capture'));
+                    return;
+                  }
+                  this.captureAndValidateFrame(video, canonicalId, callbacks)
+                    .then(result => {
+                      if (result.success) {
+                        console.log(`PreviewManager: ✓ Valid frame captured for ${canonicalId} (attempt ${attemptCount}, brightness: ${result.brightness?.toFixed(2)}, variance: ${result.variance?.toFixed(2)})`);
+                        attemptResolve();
+                      } else {
+                        console.warn(`PreviewManager: ✗ Black/invalid frame detected for ${canonicalId} (attempt ${attemptCount}, brightness: ${result.brightness?.toFixed(2)}, variance: ${result.variance?.toFixed(2)})`);
+                        attemptReject(new Error('Black frame detected'));
+                      }
+                    })
+                    .catch(attemptReject);
+                }, delayMs);
+              } else {
+                // Not ready yet, check again
+                setTimeout(checkVideoReady, 200);
+              }
+            };
+
+            checkVideoReady();
+          });
         };
 
-        // Start trying to capture after video metadata is loaded
-        video.onloadedmetadata = () => {
-          setTimeout(captureFrame, 1000);
+        // Set up video event handlers
+        video.onplaying = () => {
+          console.log(`PreviewManager: Video playing for ${canonicalId}, starting capture attempts`);
         };
 
         video.onerror = () => {
-          document.body.removeChild(video);
-          if (sdk) sdk.close();
-          clearTimeout(timeoutId);
-          reject(new Error('Video load error'));
+          cleanupAndResolve(false);
+        };
+
+        // Retry logic
+        const executeWithRetry = async () => {
+          while (attemptCount < maxAttempts) {
+            try {
+              await attemptCapture();
+              cleanupAndResolve(true);
+              return;
+            } catch (error) {
+              console.warn(`PreviewManager: Attempt ${attemptCount} failed for ${canonicalId}:`, error);
+              
+              if (attemptCount >= maxAttempts) {
+                console.error(`PreviewManager: All ${maxAttempts} attempts failed for ${canonicalId}`);
+                cleanupAndResolve(false);
+                return;
+              }
+              
+              // Wait before retry (300-500ms)
+              const retryDelay = 300 + Math.random() * 200;
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+            }
+          }
         };
 
         await sdk.play(streamUrl, { videoOnly: true, audioOnly: false });
+        executeWithRetry();
+        
       } catch (error) {
-        if (sdk) {
-          try { sdk.close(); } catch (e) {}
-        }
-        clearTimeout(timeoutId);
-        reject(error);
+        console.error(`PreviewManager: SDK error for ${canonicalId}:`, error);
+        cleanupAndResolve(false);
       }
     });
+  }
+
+  /**
+   * Capture frame and validate it's not black/empty
+   */
+  private async captureAndValidateFrame(
+    video: HTMLVideoElement, 
+    canonicalId: string, 
+    callbacks: Set<(dataUrl: string) => void>
+  ): Promise<{success: boolean, brightness?: number, variance?: number}> {
+    
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+      return { success: false };
+    }
+
+    // Create canvas for capture - downscaled for performance
+    const targetWidth = 320;
+    const targetHeight = 180;
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return { success: false };
+    }
+
+    // Draw video frame to canvas (downscaled)
+    ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+    
+    // Get image data for validation
+    const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+    const validation = this.validateFrameContent(imageData);
+    
+    if (!validation.isValid) {
+      return { 
+        success: false, 
+        brightness: validation.avgBrightness, 
+        variance: validation.variance 
+      };
+    }
+
+    // Frame is valid, create final image
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+    
+    if (dataUrl && dataUrl.length > 1000) { // Ensure reasonable image size
+      // Call all registered callbacks for this stream
+      for (const callback of Array.from(callbacks)) {
+        callback(dataUrl);
+      }
+      
+      return { 
+        success: true, 
+        brightness: validation.avgBrightness, 
+        variance: validation.variance 
+      };
+    }
+    
+    return { success: false };
+  }
+
+  /**
+   * Validate frame content to detect black/empty frames
+   */
+  private validateFrameContent(imageData: ImageData): {
+    isValid: boolean;
+    avgBrightness: number;
+    variance: number;
+  } {
+    const data = imageData.data;
+    const pixelCount = data.length / 4;
+    
+    // Sample every 8th pixel for performance - reduces sample size but still gives good accuracy
+    const sampleStep = 8;
+    const sampleSize = Math.floor(pixelCount / sampleStep);
+    let totalBrightness = 0;
+    const brightnessValues: number[] = [];
+    let validSamples = 0;
+    
+    for (let i = 0; i < sampleSize; i++) {
+      const pixelIndex = (i * sampleStep) * 4; // Convert pixel index to byte index
+      if (pixelIndex + 3 >= data.length) break;
+      
+      const r = data[pixelIndex];
+      const g = data[pixelIndex + 1];
+      const b = data[pixelIndex + 2];
+      const a = data[pixelIndex + 3];
+      
+      // Skip transparent pixels
+      if (a < 128) continue;
+      
+      // Calculate luminance (perceived brightness)
+      const brightness = (0.299 * r + 0.587 * g + 0.114 * b);
+      brightnessValues.push(brightness);
+      totalBrightness += brightness;
+      validSamples++;
+    }
+    
+    if (validSamples === 0) {
+      return { isValid: false, avgBrightness: 0, variance: 0 };
+    }
+    
+    const avgBrightness = totalBrightness / validSamples;
+    
+    // Calculate variance
+    const variance = brightnessValues.reduce((acc, val) => {
+      return acc + Math.pow(val - avgBrightness, 2);
+    }, 0) / validSamples;
+    
+    // More lenient thresholds - many streams might be darker
+    const minBrightness = 5; // Lower minimum brightness (very dark content still counts)
+    const minVariance = 20;   // Lower minimum variance (less variation still counts)
+    
+    const isValid = avgBrightness > minBrightness || variance > minVariance; // OR instead of AND for more lenient validation
+    
+    return {
+      isValid,
+      avgBrightness,
+      variance
+    };
+  }
+
+  /**
+   * Clean up SDK and video resources
+   */
+  private cleanupCapture(sdk: any, video: HTMLVideoElement | null) {
+    if (video && video.parentNode) {
+      video.parentNode.removeChild(video);
+    }
+    if (sdk) {
+      try { 
+        sdk.close(); 
+      } catch (e) {
+        console.warn('PreviewManager: Error closing SDK:', e);
+      }
+    }
   }
 
   getStatus() {
@@ -336,7 +505,7 @@ class PreviewManager {
       maxConcurrent: this.maxConcurrent,
       isTV: this.isTV,
       hasCapacity: this.activeSlots.size < this.maxConcurrent,
-      snapshotStreams: this.visibleStreams.size,
+      snapshotStreams: this.snapshotRegistry.size,
       snapshotActive: !!this.snapshotTimer
     };
   }
