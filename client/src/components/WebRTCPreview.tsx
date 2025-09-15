@@ -1,4 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
+import 'mpegts.js';
+
+// Declare mpegts types for FLV support
+declare global {
+  const mpegts: {
+    getFeatureList(): { mseLivePlayback: boolean };
+    createPlayer(config: {
+      type: 'flv' | 'mpegts';
+      url: string;
+      isLive?: boolean;
+      enableStashBuffer?: boolean;
+      liveSync?: boolean;
+    }): {
+      attachMediaElement(video: HTMLVideoElement): void;
+      load(): void;
+      play(): void;
+      destroy(): void;
+    };
+  };
+}
 
 interface WebRTCPreviewProps {
   streamUrl: string;
@@ -24,9 +44,11 @@ export default function WebRTCPreview({
 }: WebRTCPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sdkRef = useRef<any>(null);
+  const flvPlayerRef = useRef<any>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [streamType, setStreamType] = useState<'webrtc' | 'flv'>('webrtc');
 
   // Intersection Observer for lazy loading
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,8 +68,66 @@ export default function WebRTCPreview({
     return () => observer.disconnect();
   }, []);
 
+  // Stream type detection
+  const detectStreamType = (url: string): 'webrtc' | 'flv' => {
+    const isFlv = /\.flv(\?|$)/i.test(url);
+    return isFlv ? 'flv' : 'webrtc';
+  };
+
+  const connectToFLVPreview = async () => {
+    try {
+      if (!mpegts || !mpegts.getFeatureList().mseLivePlayback) {
+        console.warn(`FLV preview not supported for ${streamId}`);
+        setHasError(true);
+        return;
+      }
+
+      const flvPlayer = mpegts.createPlayer({
+        type: 'flv',
+        url: streamUrl,
+        isLive: true
+      });
+      
+      flvPlayerRef.current = flvPlayer;
+      
+      if (videoRef.current) {
+        flvPlayer.attachMediaElement(videoRef.current);
+        flvPlayer.load();
+        flvPlayer.play();
+        
+        // Mute for preview (like WebRTC previews)
+        videoRef.current.muted = true;
+        
+        videoRef.current.onloadeddata = () => {
+          setIsConnected(true);
+          setHasError(false);
+        };
+        
+        videoRef.current.onerror = () => {
+          console.warn(`FLV preview error for ${streamId}`);
+          setHasError(true);
+          setIsConnected(false);
+        };
+      }
+      
+    } catch (error) {
+      console.warn(`FLV preview failed for ${streamId}:`, error);
+      setHasError(true);
+      setIsConnected(false);
+    }
+  };
+
   useEffect(() => {
     if (!isVisible || !streamUrl) return;
+    
+    // Detect stream type
+    const detectedType = detectStreamType(streamUrl);
+    setStreamType(detectedType);
+
+    if (detectedType === 'flv') {
+      const timeoutId = setTimeout(connectToFLVPreview, Math.random() * 1000);
+      return () => clearTimeout(timeoutId);
+    }
 
     const connectWebRTC = async () => {
       try {
@@ -81,6 +161,7 @@ export default function WebRTCPreview({
 
     return () => {
       clearTimeout(timeoutId);
+      // Clean up WebRTC
       if (sdkRef.current) {
         try {
           sdkRef.current.close();
@@ -89,6 +170,30 @@ export default function WebRTCPreview({
         }
         sdkRef.current = null;
       }
+      
+      // Clean up FLV player
+      if (flvPlayerRef.current) {
+        try {
+          flvPlayerRef.current.destroy();
+        } catch (error) {
+          console.warn('Error closing FLV preview:', error);
+        }
+        flvPlayerRef.current = null;
+      }
+      
+      // Clear video element
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.removeAttribute('src');
+        videoRef.current.onloadeddata = null;
+        videoRef.current.onerror = null;
+        try {
+          videoRef.current.load();
+        } catch (error) {
+          // Ignore load errors during cleanup
+        }
+      }
+      
       setIsConnected(false);
     };
   }, [isVisible, streamUrl, streamId]);
