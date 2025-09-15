@@ -290,21 +290,6 @@ export default function PasscodeAuthPage() {
             </CardContent>
           </Card>
 
-          {/* Instructions */}
-          <Card className="bg-muted/50">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 gap-3 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Monitor className="w-4 h-4 text-primary" />
-                  <span>Use TV remote number keys or on-screen keypad</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-primary" />
-                  <span>Auto-submits when 4 digits entered</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
