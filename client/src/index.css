@@ -415,4 +415,27 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* Proportional text system for stream tiles */
+  .stream-tile {
+    font-size: clamp(8px, calc(8px * var(--tile-scale, 1)), 14px);
+  }
+
+  .stream-tile-title {
+    font-size: 1.4em;
+    line-height: 1.1;
+  }
+
+  .stream-tile-meta {
+    font-size: 0.9em;
+  }
+
+  .stream-tile-badge {
+    font-size: 0.8em;
+  }
+
+  .stream-tile-live-dot {
+    width: 0.4em;
+    height: 0.4em;
+  }
 }

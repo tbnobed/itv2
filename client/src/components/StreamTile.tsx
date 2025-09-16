@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import serverSnapshotService from '@/lib/ServerSnapshotService';
+import { useTileResize } from '@/hooks/useTileResize';
 
 interface StreamTileProps {
   id: string;
@@ -18,7 +19,7 @@ interface StreamTileProps {
   className?: string;
 }
 
-const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function StreamTile({ 
+const StreamTile = React.forwardRef(({ 
   id, 
   title, 
   thumbnail, 
@@ -32,7 +33,7 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
   tabIndex,
   onSelect,
   className 
-}, ref) {
+}: StreamTileProps, ref: React.Ref<HTMLDivElement>) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -90,6 +91,23 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
 
   const handleBlur = (e: React.FocusEvent) => {
     console.log(`StreamTile[${streamId}]: BLUR EVENT received`);
+  };
+
+  // Dynamic tile sizing for proportional text
+  const { ref: tileRef, tileStyle } = useTileResize();
+  
+  // Merge refs to support both forwarded ref and measurement ref
+  const setRef = (node: HTMLDivElement | null) => {
+    // Attach to measurement ref
+    if (tileRef.current !== node) {
+      (tileRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    }
+    // Forward to parent ref
+    if (typeof ref === 'function') {
+      ref(node);
+    } else if (ref) {
+      (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+    }
   };
 
 
@@ -236,10 +254,12 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
     );
   }
 
-  // Poster Layout (existing)
+  // Poster Layout with info below image
   return (
     <div
-      className={cardClasses.container}
+      ref={setRef}
+      style={tileStyle}
+      className="relative cursor-pointer group outline-none flex flex-col stream-tile"
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyPress}
@@ -247,8 +267,16 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
     >
-      {/* Card Content */}
-      <div className="relative w-full h-full">
+      {/* Image Container */}
+      <div className={cn(
+        "relative overflow-hidden shadow-sm bg-gray-800 transition-all duration-300 ease-out",
+        "aspect-[16/9] rounded-lg",
+        "focus-visible:scale-110 focus-visible:z-30",
+        "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+        size === 'featured' ? 'w-[200px]' : 'w-[150px]',
+        isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+        className
+      )}>
         {/* Loading Skeleton */}
         {isLoading || !isImageLoaded ? (
           <div className="w-full h-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
@@ -277,32 +305,29 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
             }
           }}
         />
+      </div>
+      
+      {/* Stream Info Below Image */}
+      <div className="mt-[0.4em] px-[0.2em]">
+        {/* Stream Title */}
+        <h3 
+          className="text-white font-medium leading-tight line-clamp-2 mb-[0.2em] stream-tile-title"
+          data-testid={`text-title-${streamId}`}
+          title={title}
+        >
+          {title}
+        </h3>
         
-        {/* Bottom Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-        
-        {/* Content - Bottom Left */}
-        <div className="absolute inset-0 p-3 flex flex-col justify-end">
-          <h3 
-            className={cn(
-              "text-white font-medium leading-tight line-clamp-2 mb-1",
-              size === 'featured' ? 'text-base' : 'text-sm'
-            )}
-            data-testid={`text-title-${streamId}`}
-          >
-            {title}
-          </h3>
-          
+        {/* Bottom Row - Live Indicator and Stream ID */}
+        <div className="flex items-center justify-between">
           {/* Live Indicator */}
           <div className="flex items-center">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
-            <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
+            <div className="bg-red-500 rounded-full animate-pulse mr-[0.3em] stream-tile-live-dot" />
+            <span className="text-red-500 font-medium uppercase tracking-wide stream-tile-meta">LIVE</span>
           </div>
-        </div>
-        
-        {/* Stream ID Badge - Bottom Right */}
-        <div className="absolute bottom-2 right-2">
-          <div className="bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs text-white/80 font-mono">
+          
+          {/* Stream ID */}
+          <div className="bg-gray-800/80 px-[0.3em] py-[0.1em] rounded text-white/80 font-mono stream-tile-badge">
             {streamId}
           </div>
         </div>
