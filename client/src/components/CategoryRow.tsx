@@ -33,7 +33,10 @@ export default function CategoryRow({
   
   if (!streams.length) return null;
 
-  // Focus management is handled by parent navigation
+  // Update focusedIndex when tiles receive focus from external navigation
+  const updateFocusedIndex = (index: number) => {
+    setFocusedIndex(index);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
@@ -103,7 +106,13 @@ export default function CategoryRow({
               return (
                 <StreamTile
                   key={stream.id}
-                  ref={(el) => tileRefs.current[index] = el}
+                  ref={(el) => {
+                    tileRefs.current[index] = el;
+                    // Set up focus listener to sync focusedIndex
+                    if (el) {
+                      el.addEventListener('focus', () => updateFocusedIndex(index));
+                    }
+                  }}
                   id={stream.id}
                   title={stream.title}
                   thumbnail={stream.thumbnail}
