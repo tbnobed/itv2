@@ -173,21 +173,21 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
             
             {/* Loading Skeleton - Text */}
             {isLoading || !isImageLoaded ? (
-              <div className="absolute inset-0 p-4 flex flex-col justify-center gap-2">
-                <div className="h-4 bg-gray-700 rounded animate-pulse" />
-                <div className="h-3 bg-gray-700 rounded w-3/4 animate-pulse" />
-                <div className="h-3 bg-gray-700 rounded w-1/2 animate-pulse" />
+              <div className="absolute inset-0 p-2 flex flex-col justify-center gap-1">
+                <div className="h-3 bg-gray-700 rounded animate-pulse" />
+                <div className="h-2 bg-gray-700 rounded w-3/4 animate-pulse" />
+                <div className="h-2 bg-gray-700 rounded w-1/2 animate-pulse" />
               </div>
             ) : (
               <div className={cn(
                 "absolute inset-0 flex flex-col justify-center text-white",
-                size === 'featured' ? 'p-4 gap-1' : 'p-3 gap-1'
+                size === 'featured' ? 'p-3 gap-0.5' : 'p-2 gap-0.5'
               )}>
                 {/* Main Title */}
                 <h3 
                   className={cn(
-                    "font-semibold line-clamp-2 leading-tight",
-                    size === 'featured' ? 'text-lg' : 'text-base'
+                    "font-semibold line-clamp-1 leading-tight",
+                    size === 'featured' ? 'text-sm' : 'text-xs'
                   )}
                   data-testid={`text-title-${streamId}`}
                 >
@@ -197,7 +197,7 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
                 {/* Subtitle */}
                 {subtitle && (
                   <p 
-                    className="text-sm text-white/70 line-clamp-1 leading-tight"
+                    className="text-xs text-white/70 line-clamp-1 leading-tight"
                     data-testid={`text-subtitle-${streamId}`}
                   >
                     {subtitle}
@@ -205,26 +205,26 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
                 )}
                 
                 {/* Metadata Row */}
-                <div className="flex items-center gap-3 mt-1">
+                <div className="flex items-center gap-2 mt-0.5">
                   {/* Live Badge */}
                   <div className="flex items-center">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1" />
-                    <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
+                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse mr-1" />
+                    <span className="text-red-500 text-[10px] font-medium uppercase tracking-wide">LIVE</span>
                   </div>
                   
                   {/* Stream ID */}
-                  <div className="bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs text-white/80 font-mono">
+                  <div className="bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-white/80 font-mono">
                     {streamId}
                   </div>
                   
                   {/* Meta Left */}
                   {metaLeft && (
-                    <span className="text-xs text-white/60">{metaLeft}</span>
+                    <span className="text-[10px] text-white/60">{metaLeft}</span>
                   )}
                   
                   {/* Meta Right */}
                   {metaRight && (
-                    <span className="text-xs text-white/60">{metaRight}</span>
+                    <span className="text-[10px] text-white/60">{metaRight}</span>
                   )}
                 </div>
               </div>
