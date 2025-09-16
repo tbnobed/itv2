@@ -215,15 +215,60 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 
-  /* UI Scaling Variables */
+  /* TV Scaling Variables */
   :root {
-    --ui-scale: 1;
+    --tv-scale: 1;
+    --base-font-size: 16px;
+    --tile-width: 320px;
+    --tile-height: 180px;
+    --spacing-unit: 16px;
   }
 
-  /* Viewport Scaler - Clean single-source scaling */
-  .scaled-viewport {
-    /* Scaling applied via inline styles in ViewportScaler component */
+  /* TV Scale Classes - No transforms, just smaller sizes */
+  .tv-scale-30 {
+    font-size: calc(var(--base-font-size) * 0.3);
   }
+  
+  .tv-scale-30 .text-2xl { font-size: calc(1.5rem * 0.3) !important; }
+  .tv-scale-30 .text-xl { font-size: calc(1.25rem * 0.3) !important; }
+  .tv-scale-30 .text-lg { font-size: calc(1.125rem * 0.3) !important; }
+  .tv-scale-30 .text-base { font-size: calc(1rem * 0.3) !important; }
+  .tv-scale-30 .text-sm { font-size: calc(0.875rem * 0.3) !important; }
+  .tv-scale-30 .p-4 { padding: calc(1rem * 0.3) !important; }
+  .tv-scale-30 .p-6 { padding: calc(1.5rem * 0.3) !important; }
+  .tv-scale-30 .gap-4 { gap: calc(1rem * 0.3) !important; }
+  .tv-scale-30 .gap-6 { gap: calc(1.5rem * 0.3) !important; }
+  .tv-scale-30 .rounded-lg { border-radius: calc(0.5rem * 0.3) !important; }
+  
+  .tv-scale-45 {
+    font-size: calc(var(--base-font-size) * 0.45);
+  }
+  
+  .tv-scale-45 .text-2xl { font-size: calc(1.5rem * 0.45) !important; }
+  .tv-scale-45 .text-xl { font-size: calc(1.25rem * 0.45) !important; }
+  .tv-scale-45 .text-lg { font-size: calc(1.125rem * 0.45) !important; }
+  .tv-scale-45 .text-base { font-size: calc(1rem * 0.45) !important; }
+  .tv-scale-45 .text-sm { font-size: calc(0.875rem * 0.45) !important; }
+  .tv-scale-45 .p-4 { padding: calc(1rem * 0.45) !important; }
+  .tv-scale-45 .p-6 { padding: calc(1.5rem * 0.45) !important; }
+  .tv-scale-45 .gap-4 { gap: calc(1rem * 0.45) !important; }
+  .tv-scale-45 .gap-6 { gap: calc(1.5rem * 0.45) !important; }
+  .tv-scale-45 .rounded-lg { border-radius: calc(0.5rem * 0.45) !important; }
+  
+  .tv-scale-60 {
+    font-size: calc(var(--base-font-size) * 0.6);
+  }
+  
+  .tv-scale-60 .text-2xl { font-size: calc(1.5rem * 0.6) !important; }
+  .tv-scale-60 .text-xl { font-size: calc(1.25rem * 0.6) !important; }
+  .tv-scale-60 .text-lg { font-size: calc(1.125rem * 0.6) !important; }
+  .tv-scale-60 .text-base { font-size: calc(1rem * 0.6) !important; }
+  .tv-scale-60 .text-sm { font-size: calc(0.875rem * 0.6) !important; }
+  .tv-scale-60 .p-4 { padding: calc(1rem * 0.6) !important; }
+  .tv-scale-60 .p-6 { padding: calc(1.5rem * 0.6) !important; }
+  .tv-scale-60 .gap-4 { gap: calc(1rem * 0.6) !important; }
+  .tv-scale-60 .gap-6 { gap: calc(1.5rem * 0.6) !important; }
+  .tv-scale-60 .rounded-lg { border-radius: calc(0.5rem * 0.6) !important; }
 }
 
 /**

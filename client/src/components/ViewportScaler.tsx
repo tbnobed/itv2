@@ -10,7 +10,20 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
   const applyScale = (newScale: number) => {
     setScale(newScale);
     localStorage.setItem('obtv-ui-scale', newScale.toString());
-    console.log(`Applied scale: ${newScale} via wrapper transform`);
+    
+    // Set CSS variables for element sizing
+    const root = document.documentElement;
+    root.style.setProperty('--tv-scale', newScale.toString());
+    root.style.setProperty('--base-font-size', `${16 * newScale}px`);
+    root.style.setProperty('--tile-width', `${320 * newScale}px`);
+    root.style.setProperty('--tile-height', `${180 * newScale}px`);
+    root.style.setProperty('--spacing-unit', `${16 * newScale}px`);
+    
+    // Apply size class to body
+    document.body.className = document.body.className.replace(/tv-scale-\d+/g, '');
+    document.body.classList.add(`tv-scale-${Math.round(newScale * 100)}`);
+    
+    console.log(`Applied scale: ${newScale} via CSS variables and size classes`);
   };
 
   useEffect(() => {
@@ -75,18 +88,8 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
         <span style={{color: '#fbbf24'}}>Active: {scale}</span>
       </div>
       
-      {/* Wrapper that actually gets scaled */}
-      <div
-        style={{
-          transform: `scale(${scale})`,
-          transformOrigin: '0 0',
-          width: `${100 / scale}%`,
-          height: `${100 / scale}%`,
-          position: 'absolute',
-          top: 0,
-          left: 0
-        }}
-      >
+      {/* Content with CSS variable sizing */}
+      <div style={{width: '100%', height: '100%'}}>
         {children}
       </div>
     </div>
