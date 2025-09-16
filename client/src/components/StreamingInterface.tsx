@@ -177,35 +177,35 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
       case 'featured':
         return { 
           title: 'Featured', 
-          streams: sortStreamsByTitle(streamData.featured.map(convertStreamToStreamData)), 
+          streams: sortStreamsByTitle((streamData.featured || []).map(convertStreamToStreamData)), 
           featured: true,
           useGrid: false
         };
       case 'overTheAir':
         return { 
           title: 'Over The Air', 
-          streams: sortStreamsByTitle(streamData.overTheAir.map(convertStreamToStreamData)), 
+          streams: sortStreamsByTitle((streamData.overTheAir || []).map(convertStreamToStreamData)), 
           featured: false,
           useGrid: true
         };
       case 'liveFeeds':
         return { 
           title: 'Live Feeds', 
-          streams: sortStreamsByTitle(streamData.liveFeeds.map(convertStreamToStreamData)), 
+          streams: sortStreamsByTitle((streamData.liveFeeds || []).map(convertStreamToStreamData)), 
           featured: false,
           useGrid: true
         };
       case 'uhd':
         return { 
           title: 'UHD Streams', 
-          streams: sortStreamsByTitle(streamData.uhd.map(convertStreamToStreamData)), 
+          streams: sortStreamsByTitle((streamData.uhd || []).map(convertStreamToStreamData)), 
           featured: false,
           useGrid: true
         };
       default:
         return { 
           title: 'Featured', 
-          streams: sortStreamsByTitle(streamData.featured.map(convertStreamToStreamData)), 
+          streams: sortStreamsByTitle((streamData.featured || []).map(convertStreamToStreamData)), 
           featured: true,
           useGrid: false
         };

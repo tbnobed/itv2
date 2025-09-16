@@ -92,11 +92,11 @@ export default function StreamsListPage() {
 
   // Combine all streams for the table
   const allStreams = streamData ? [
-    ...streamData.featured,
-    ...streamData.overTheAir,
-    ...streamData.liveFeeds,
-    ...streamData.studios,
-    ...streamData.uhd,
+    ...(streamData.featured || []),
+    ...(streamData.overTheAir || []),
+    ...(streamData.liveFeeds || []),
+    ...(streamData.studios || []),
+    ...(streamData.uhd || []),
   ] : [];
 
   // Filter streams based on search query
