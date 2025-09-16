@@ -47,6 +47,20 @@ export default function TopNavigation({
     }
   }, []);
 
+  // Refocus navigation when section changes to maintain keyboard navigation
+  useEffect(() => {
+    // Find the button for the currently active section and focus it
+    const activeButton = document.querySelector(`[data-testid="nav-${activeSection}"]`) as HTMLElement;
+    if (activeButton) {
+      activeButton.focus();
+      // Update focused index to match the active section
+      const activeIndex = navigationItems.findIndex(item => item.id === activeSection);
+      if (activeIndex !== -1) {
+        setFocusedIndex(activeIndex);
+      }
+    }
+  }, [activeSection]);
+
   const handleKeyDown = (e: React.KeyboardEvent, index: number, action?: () => void) => {
     switch (e.key) {
       case 'ArrowLeft':
