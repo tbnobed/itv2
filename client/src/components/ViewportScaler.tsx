@@ -10,6 +10,7 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
   const applyScale = (newScale: number) => {
     setScale(newScale);
     localStorage.setItem('obtv-ui-scale', newScale.toString());
+    localStorage.setItem('obtv-manual-override', 'true'); // Mark as manual override
     
     // Set CSS variables for element sizing
     const root = document.documentElement;
@@ -23,36 +24,60 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
     document.body.className = document.body.className.replace(/tv-scale-\d+/g, '');
     document.body.classList.add(`tv-scale-${Math.round(newScale * 100)}`);
     
-    console.log(`Applied scale: ${newScale} via CSS variables and size classes`);
+    console.log(`Manual scale applied: ${newScale} (will override auto-detection)`);
   };
 
   useEffect(() => {
-    // Check for saved scale first
-    const savedScale = localStorage.getItem('obtv-ui-scale');
-    if (savedScale) {
-      const parsed = parseFloat(savedScale);
-      if (!isNaN(parsed) && parsed > 0 && parsed <= 2) {
-        setScale(parsed);
-        return;
+    const detectAndApplyScale = () => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const screenWidth = window.screen?.width || 0;
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      
+      // Check for saved manual scale override first
+      const savedScale = localStorage.getItem('obtv-ui-scale');
+      const manualOverride = localStorage.getItem('obtv-manual-override');
+      
+      if (savedScale && manualOverride === 'true') {
+        const parsed = parseFloat(savedScale);
+        if (!isNaN(parsed) && parsed > 0 && parsed <= 2) {
+          console.log(`Using manual scale override: ${parsed}`);
+          setScale(parsed);
+          return;
+        }
       }
-    }
 
-    // Auto-detect based on viewport
-    const viewportWidth = window.innerWidth;
-    let autoScale = 1;
+      // Auto-detect scale based on TV/large display characteristics
+      let autoScale = 1;
+      
+      // Very large displays (75"+ 4K TVs)
+      if (viewportWidth >= 2400 || screenWidth >= 3840) {
+        autoScale = 0.3; // Very aggressive scaling for massive displays
+      } else if (viewportWidth >= 1920 || screenWidth >= 2560) {
+        autoScale = 0.45; // Large displays - good balance
+      } else if (viewportWidth >= 1600) {
+        autoScale = 0.6; // Medium large displays
+      } else if (viewportWidth >= 1280) {
+        autoScale = 0.75; // Smaller large displays
+      }
+      
+      console.log(`TV Auto-Scale Detection:`);
+      console.log(`  Viewport: ${viewportWidth}x${viewportHeight}`);
+      console.log(`  Screen: ${screenWidth}x${window.screen?.height || 0}`);
+      console.log(`  DPR: ${devicePixelRatio}`);
+      console.log(`  Applied Scale: ${autoScale}`);
+      
+      // Clear manual override flag and apply auto-detected scale
+      localStorage.removeItem('obtv-manual-override');
+      setScale(autoScale);
+    };
+
+    // Detect immediately
+    detectAndApplyScale();
     
-    if (viewportWidth >= 2400) {
-      autoScale = 0.3; // Massive displays
-    } else if (viewportWidth >= 1920) {
-      autoScale = 0.4; // Large displays  
-    } else if (viewportWidth >= 1600) {
-      autoScale = 0.5; // Medium large displays
-    } else if (viewportWidth >= 1280) {
-      autoScale = 0.6; // Smaller large displays
-    }
-    
-    console.log(`Auto-detected scale: ${autoScale} for viewport ${viewportWidth}px`);
-    setScale(autoScale);
+    // Re-detect on window resize
+    window.addEventListener('resize', detectAndApplyScale);
+    return () => window.removeEventListener('resize', detectAndApplyScale);
   }, []);
 
   return (
@@ -86,6 +111,11 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
         <button onClick={() => applyScale(0.6)} style={{padding: '8px 12px', backgroundColor: scale === 0.6 ? '#dc2626' : '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px'}}>0.6</button>
         <button onClick={() => applyScale(1.0)} style={{padding: '8px 12px', backgroundColor: scale === 1.0 ? '#dc2626' : '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px'}}>1.0</button>
         <span style={{color: '#fbbf24'}}>Active: {scale}</span>
+        <button onClick={() => {
+          localStorage.removeItem('obtv-ui-scale');
+          localStorage.removeItem('obtv-manual-override');
+          window.location.reload();
+        }} style={{padding: '4px 8px', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '12px'}}>AUTO</button>
       </div>
       
       {/* Content with CSS variable sizing */}
