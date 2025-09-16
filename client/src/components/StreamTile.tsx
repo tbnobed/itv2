@@ -397,11 +397,11 @@ const StreamTile = React.forwardRef(({
         />
       </div>
       
-      {/* Stream Info Below Image */}
-      <div className="mt-[0.4em] px-[0.2em]">
+      {/* Stream Info Below Image - Card Style */}
+      <div className="bg-gray-900/95 backdrop-blur-sm rounded-b-lg mt-1 p-3">
         {/* Stream Title */}
         <h3 
-          className="text-white font-medium leading-tight line-clamp-2 mb-[0.2em] stream-tile-title"
+          className="text-white font-medium leading-tight line-clamp-2 mb-2 stream-tile-title"
           data-testid={`text-title-${streamId}`}
           title={title}
         >
@@ -412,12 +412,12 @@ const StreamTile = React.forwardRef(({
         <div className="flex items-center justify-between">
           {/* Live Indicator */}
           <div className="flex items-center">
-            <div className="bg-red-500 rounded-full animate-pulse mr-[0.3em] stream-tile-live-dot" />
-            <span className="text-red-500 font-medium uppercase tracking-wide stream-tile-meta">LIVE</span>
+            <div className="bg-red-500 rounded-full animate-pulse mr-2 w-2 h-2" />
+            <span className="text-red-500 font-medium uppercase tracking-wide text-xs">LIVE</span>
           </div>
           
           {/* Stream ID */}
-          <div className="px-[0.3em] py-[0.1em] text-white/80 font-mono stream-tile-badge">
+          <div className="text-white/60 font-mono text-xs">
             {streamId}
           </div>
         </div>
