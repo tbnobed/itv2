@@ -97,6 +97,7 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
   const cardClasses = variant === 'compact' ? {
     wrapper: cn(
       "relative cursor-pointer group rounded-xl",
+      "hover:ring-4 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-neutral-900 hover:z-10",
       "focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 focus-visible:z-10",
       size === 'featured' ? 'w-[480px]' : 'w-[360px]',
       className
@@ -104,7 +105,7 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
     container: cn(
       "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
       "transition-all duration-300 ease-out will-change-transform",
-      "focus-within:scale-105 hover:scale-102",
+      "hover:scale-102",
       isHovered && "scale-102 z-20"
     )
   } : {
