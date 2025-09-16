@@ -389,6 +389,15 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
               firstNavButton?.focus();
             }
             break;
+          case 'Enter':
+          case ' ':
+            e.preventDefault();
+            // Select the currently focused studio
+            if (focusedStudioIndex >= 0 && focusedStudioIndex < sortedStudios.length) {
+              const studio = sortedStudios[focusedStudioIndex];
+              handleStudioSelect(studio.id);
+            }
+            break;
         }
       };
       
