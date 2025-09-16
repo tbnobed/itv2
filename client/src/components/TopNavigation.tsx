@@ -66,6 +66,14 @@ export default function TopNavigation({
           nextButton?.focus();
         }
         break;
+      case 'ArrowDown':
+        e.preventDefault();
+        // Navigate down to content area - focus first tile in current section
+        const firstTile = document.querySelector('.stream-tile') as HTMLElement;
+        if (firstTile) {
+          firstTile.focus();
+        }
+        break;
       case 'Enter':
       case ' ':
         e.preventDefault();
