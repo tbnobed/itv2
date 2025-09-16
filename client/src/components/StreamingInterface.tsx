@@ -7,6 +7,7 @@ import nashvilleStudiosImg from '@assets/Nashvillestudios_1758041495269.png';
 import plexStudiosImg from '@assets/PlexStudios_1758041495269.jpg';
 import { useQuery } from '@tanstack/react-query';
 import CategoryRow from './CategoryRow';
+import StreamGrid from './StreamGrid';
 import StreamModal from './StreamModal';
 import StudioCard from './StudioCard';
 import TopNavigation from './TopNavigation';
@@ -147,44 +148,49 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     setSelectedStream(null);
   };
 
+  // Helper to sort streams alphabetically by title
+  const sortStreamsByTitle = (streams: StreamData[]) => 
+    streams.sort((a, b) => a.title.localeCompare(b.title));
+
   // Function to get current section data with alphabetical sorting
   const getCurrentSectionData = () => {
-    if (!streamData) return { title: 'Loading...', streams: [], featured: false };
-
-    // Helper to sort streams alphabetically by title
-    const sortStreamsByTitle = (streams: StreamData[]) => 
-      streams.sort((a, b) => a.title.localeCompare(b.title));
+    if (!streamData) return { title: 'Loading...', streams: [], featured: false, useGrid: false };
 
     switch (activeSection) {
       case 'featured':
         return { 
           title: 'Featured', 
           streams: sortStreamsByTitle(streamData.featured.map(convertStreamToStreamData)), 
-          featured: true 
+          featured: true,
+          useGrid: false
         };
       case 'overTheAir':
         return { 
           title: 'Over The Air', 
           streams: sortStreamsByTitle(streamData.overTheAir.map(convertStreamToStreamData)), 
-          featured: false 
+          featured: false,
+          useGrid: true
         };
       case 'liveFeeds':
         return { 
           title: 'Live Feeds', 
           streams: sortStreamsByTitle(streamData.liveFeeds.map(convertStreamToStreamData)), 
-          featured: false 
+          featured: false,
+          useGrid: true
         };
       case 'uhd':
         return { 
           title: 'UHD Streams', 
           streams: sortStreamsByTitle(streamData.uhd.map(convertStreamToStreamData)), 
-          featured: false 
+          featured: false,
+          useGrid: true
         };
       default:
         return { 
           title: 'Featured', 
           streams: sortStreamsByTitle(streamData.featured.map(convertStreamToStreamData)), 
-          featured: true 
+          featured: true,
+          useGrid: false
         };
     }
   };
@@ -419,6 +425,12 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
             renderStudiosSection()
           ) : activeSection === 'featured' ? (
             renderFeaturedSection()
+          ) : currentSection.useGrid ? (
+            <StreamGrid
+              title={currentSection.title}
+              streams={currentSection.streams}
+              onStreamSelect={handleStreamSelect}
+            />
           ) : (
             <CategoryRow
               title={currentSection.title}
