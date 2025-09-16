@@ -68,14 +68,7 @@ export default function TopNavigation({
         break;
       case 'ArrowDown':
         e.preventDefault();
-        // Navigate down to content area - focus first tile in currently focused section
-        const targetSectionId = navigationItems[index]?.id;
-        
-        // If we're not already in the target section, switch to it first
-        if (targetSectionId && targetSectionId !== activeSection) {
-          onSectionChange(targetSectionId);
-        }
-        
+        // Navigate down to content area - focus first tile in currently active section
         // Map section IDs to actual section titles for data-testid lookup
         const sectionTitleMap: Record<string, string> = {
           'featured': 'featured',
@@ -85,26 +78,16 @@ export default function TopNavigation({
           'studios': 'studios'
         };
         
-        // Focus first tile with retry to handle async rendering
-        const sectionTestId = sectionTitleMap[targetSectionId] || targetSectionId?.toLowerCase().replace(/\s+/g, '-');
-        const attemptFocus = (attempts = 0) => {
-          const targetSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`);
-          if (targetSectionElement) {
-            const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
-            if (firstTile) {
-              firstTile.focus();
-              return;
-            }
-          }
-          
-          // Retry up to 10 times (500ms total) to wait for render/data loading
-          if (attempts < 10) {
-            setTimeout(() => attemptFocus(attempts + 1), 50);
-          }
-        };
+        // Use activeSection since that's what's currently rendered
+        const sectionTestId = sectionTitleMap[activeSection] || activeSection.toLowerCase().replace(/\s+/g, '-');
+        const targetSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`);
         
-        // Start focus attempt immediately or after a short delay if section changed
-        setTimeout(attemptFocus, targetSectionId !== activeSection ? 100 : 0);
+        if (targetSectionElement) {
+          const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
+          if (firstTile) {
+            firstTile.focus();
+          }
+        }
         break;
       case 'Enter':
       case ' ':

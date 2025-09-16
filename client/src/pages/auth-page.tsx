@@ -122,6 +122,16 @@ export default function PasscodeAuthPage() {
       } else if (key === 'Escape' || key === 'Delete') {
         event.preventDefault();
         handleClear();
+      } else if (key === 'ArrowDown') {
+        event.preventDefault();
+        // Focus on the input OTP field or first number button
+        const inputOTP = document.querySelector('[data-testid="input-passcode"]') as HTMLElement;
+        const firstDigitButton = document.querySelector('[data-testid="button-digit-1"]') as HTMLElement;
+        if (inputOTP) {
+          inputOTP.focus();
+        } else if (firstDigitButton) {
+          firstDigitButton.focus();
+        }
       }
     };
 
