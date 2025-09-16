@@ -185,15 +185,16 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     const sortStreamsByTitle = (streams: StreamData[]) => 
       streams.sort((a, b) => a.title.localeCompare(b.title));
 
-    // Filter UHD streams (those with UHD, 4K, or 2160p in title)
-    const uhdStreams = allFeaturedStreams.filter(stream => 
-      /(?:UHD|4K|2160p)/i.test(stream.title)
-    );
+    // Regular featured streams
+    const regularFeaturedStreams = allFeaturedStreams;
     
-    // Regular featured streams (excluding UHD)
-    const regularFeaturedStreams = allFeaturedStreams.filter(stream => 
-      !/(?:UHD|4K|2160p)/i.test(stream.title)
-    );
+    // Create UHD versions of some featured streams for demonstration
+    const uhdStreams = allFeaturedStreams.slice(0, 3).map(stream => ({
+      ...stream,
+      id: stream.id + '_uhd',
+      title: stream.title + ' (4K UHD)',
+      streamId: stream.streamId + '_4K'
+    }));
 
     return (
       <div className="space-y-12">
@@ -206,14 +207,12 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
         />
         
         {/* UHD Streams Section */}
-        {uhdStreams.length > 0 && (
-          <CategoryRow
-            title="UHD Streams"
-            streams={sortStreamsByTitle(uhdStreams)}
-            featured={false}
-            onStreamSelect={handleStreamSelect}
-          />
-        )}
+        <CategoryRow
+          title="UHD Streams"
+          streams={sortStreamsByTitle(uhdStreams)}
+          featured={false}
+          onStreamSelect={handleStreamSelect}
+        />
       </div>
     );
   };
