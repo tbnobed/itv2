@@ -348,7 +348,7 @@ const StreamTile = React.forwardRef(({
     <div
       ref={setRef}
       style={tileStyle}
-      className="relative cursor-pointer group outline-none flex flex-col stream-tile focus-visible:scale-110 focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]"
+      className="relative cursor-pointer group outline-none stream-tile"
       tabIndex={tabIndex ?? 0}
       onClick={handleClick}
       onKeyDown={handleKeyPress}
@@ -357,68 +357,70 @@ const StreamTile = React.forwardRef(({
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
     >
-      {/* Image Container */}
+      {/* Single Card Wrapper */}
       <div className={cn(
-        "relative overflow-hidden shadow-sm bg-gray-800 transition-all duration-300 ease-out",
-        "aspect-[16/9] rounded-lg",
-        "focus-within:scale-110 focus-within:z-30",
-        "focus-within:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+        "rounded-lg overflow-hidden bg-gray-900 shadow-sm transition-all duration-300 ease-out",
+        "focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900",
+        "focus-visible:scale-110 focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
         size === 'featured' ? 'w-[300px]' : 'w-[220px]',
         isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
       )}>
-        {/* Loading Skeleton */}
-        {isLoading || !isImageLoaded ? (
-          <div className="w-full h-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
-        ) : null}
-        
-        {/* Live Preview Image */}
-        <img
-          src={currentImage}
-          alt={title}
-          className={cn(
-            "w-full h-full object-cover transition-opacity duration-200",
-            isImageLoaded ? "opacity-100" : "opacity-0"
-          )}
-          onLoad={() => {
-            setIsImageLoaded(true);
-          }}
-          onError={(e) => {
-            // Fallback to thumbnail when server snapshot is not available
-            if (currentImage !== thumbnail) {
-              console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
-              setCurrentImage(thumbnail);
-              setIsImageLoaded(false); // Reset to show skeleton while fallback loads
-            } else {
-              console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
-              setIsImageLoaded(true); // Stop skeleton even if image failed
-            }
-          }}
-        />
-      </div>
-      
-      {/* Stream Info Below Image - Card Style */}
-      <div className="bg-gray-900/95 backdrop-blur-sm rounded-b-lg -mt-2 mx-0 p-2" style={{ width: size === 'featured' ? '300px' : '220px' }}>
-        {/* Stream Title */}
-        <h3 
-          className="text-white font-medium leading-tight line-clamp-2 mb-2 stream-tile-title"
-          data-testid={`text-title-${streamId}`}
-          title={title}
-        >
-          {title}
-        </h3>
-        
-        {/* Bottom Row - Live Indicator and Stream ID */}
-        <div className="flex items-center justify-between">
-          {/* Live Indicator */}
-          <div className="flex items-center">
-            <div className="bg-red-500 rounded-full animate-pulse mr-2 w-2 h-2" />
-            <span className="text-red-500 font-medium uppercase tracking-wide text-xs">LIVE</span>
-          </div>
+        {/* Image Area */}
+        <div className="relative aspect-[16/9] bg-gray-800">
+          {/* Loading Skeleton */}
+          {isLoading || !isImageLoaded ? (
+            <div className="w-full h-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
+          ) : null}
           
-          {/* Stream ID */}
-          <div className="text-white/60 font-mono text-xs">
-            {streamId}
+          {/* Live Preview Image */}
+          <img
+            src={currentImage}
+            alt={title}
+            className={cn(
+              "w-full h-full object-cover transition-opacity duration-200",
+              isImageLoaded ? "opacity-100" : "opacity-0"
+            )}
+            onLoad={() => {
+              setIsImageLoaded(true);
+            }}
+            onError={(e) => {
+              // Fallback to thumbnail when server snapshot is not available
+              if (currentImage !== thumbnail) {
+                console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
+                setCurrentImage(thumbnail);
+                setIsImageLoaded(false); // Reset to show skeleton while fallback loads
+              } else {
+                console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
+                setIsImageLoaded(true); // Stop skeleton even if image failed
+              }
+            }}
+          />
+        </div>
+        
+        {/* Info Footer - Inside Same Card */}
+        <div className="p-3 bg-black/60 backdrop-blur-sm">
+          {/* Stream Title */}
+          <h3 
+            className="text-white font-medium leading-tight line-clamp-2 mb-2 stream-tile-title"
+            data-testid={`text-title-${streamId}`}
+            title={title}
+          >
+            {title}
+          </h3>
+          
+          {/* Bottom Row - Live Indicator and Stream ID */}
+          <div className="flex items-center justify-between">
+            {/* Live Indicator */}
+            <div className="flex items-center">
+              <div className="bg-red-500 rounded-full animate-pulse mr-2 w-2 h-2" />
+              <span className="text-red-500 font-medium uppercase tracking-wide text-xs">LIVE</span>
+            </div>
+            
+            {/* Stream ID */}
+            <div className="bg-black/40 px-2 py-1 rounded text-white/60 font-mono text-xs">
+              {streamId}
+            </div>
           </div>
         </div>
       </div>
