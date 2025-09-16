@@ -99,7 +99,7 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
       "relative cursor-pointer group rounded-xl",
       "hover:ring-4 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-neutral-900 hover:z-10",
       "focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 focus-visible:z-10",
-      size === 'featured' ? 'w-[480px]' : 'w-[360px]',
+      size === 'featured' ? 'w-[280px]' : 'w-[210px]',
       className
     ),
     container: cn(
@@ -115,7 +115,7 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
       "transition-all duration-300 ease-out",
       "focus-visible:scale-110 focus-visible:z-30",
       "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
-      size === 'featured' ? 'w-[320px]' : 'w-[240px]',
+      size === 'featured' ? 'w-[200px]' : 'w-[150px]',
       isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
       className
     )
