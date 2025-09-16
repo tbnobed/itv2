@@ -84,6 +84,7 @@ export default function StreamTile({
     <div
       className={cn(
         "relative cursor-pointer group outline-none",
+        "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
         "transition-all duration-200 ease-out",
         "focus-visible:scale-105 focus-visible:z-20",
         "focus-visible:ring-4 focus-visible:ring-[hsl(240,100%,60%)]",
@@ -99,59 +100,65 @@ export default function StreamTile({
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
     >
-      {/* 16:9 Aspect Ratio Container */}
-      <div className="aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800">
+      {/* Card Content */}
+      <div className="relative w-full h-full">
         {/* Loading Skeleton */}
-        {isLoading ? (
-          <div className="w-full h-full animate-pulse bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
-        ) : (
-          <>
-            {/* Live Preview Image */}
-            <img
-              src={currentImage}
-              alt={title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                // Fallback to thumbnail when server snapshot is not available
-                if (currentImage !== thumbnail) {
-                  console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
-                  setCurrentImage(thumbnail);
-                } else {
-                  console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
-                }
-              }}
-            />
-            
-            {/* Bottom Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            
-            {/* Content - Bottom Left */}
-            <div className="absolute inset-0 p-3 flex flex-col justify-end">
-              <h3 
-                className={cn(
-                  "text-white font-medium leading-tight line-clamp-2 mb-1",
-                  size === 'featured' ? 'text-base' : 'text-sm'
-                )}
-                data-testid={`text-title-${streamId}`}
-              >
-                {title}
-              </h3>
-              
-              {/* Live Indicator */}
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
-                <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
-              </div>
-            </div>
-            
-            {/* Stream ID Badge - Bottom Right */}
-            <div className="absolute bottom-2 right-2">
-              <div className="bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs text-white/80 font-mono">
-                {streamId}
-              </div>
-            </div>
-          </>
-        )}
+        {isLoading || !isImageLoaded ? (
+          <div className="w-full h-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
+        ) : null}
+        
+        {/* Live Preview Image */}
+        <img
+          src={currentImage}
+          alt={title}
+          className={cn(
+            "w-full h-full object-cover transition-opacity duration-200",
+            isImageLoaded ? "opacity-100" : "opacity-0"
+          )}
+          onLoad={() => {
+            setIsImageLoaded(true);
+          }}
+          onError={(e) => {
+            // Fallback to thumbnail when server snapshot is not available
+            if (currentImage !== thumbnail) {
+              console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
+              setCurrentImage(thumbnail);
+              setIsImageLoaded(false); // Reset to show skeleton while fallback loads
+            } else {
+              console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
+              setIsImageLoaded(true); // Stop skeleton even if image failed
+            }
+          }}
+        />
+        
+        {/* Bottom Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        
+        {/* Content - Bottom Left */}
+        <div className="absolute inset-0 p-3 flex flex-col justify-end">
+          <h3 
+            className={cn(
+              "text-white font-medium leading-tight line-clamp-2 mb-1",
+              size === 'featured' ? 'text-base' : 'text-sm'
+            )}
+            data-testid={`text-title-${streamId}`}
+          >
+            {title}
+          </h3>
+          
+          {/* Live Indicator */}
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
+            <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
+          </div>
+        </div>
+        
+        {/* Stream ID Badge - Bottom Right */}
+        <div className="absolute bottom-2 right-2">
+          <div className="bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs text-white/80 font-mono">
+            {streamId}
+          </div>
+        </div>
       </div>
     </div>
   );
