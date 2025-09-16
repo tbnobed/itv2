@@ -280,6 +280,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
         onSectionChange={setActiveSection}
         onLogout={handleLogout}
         username={user?.username}
+        userRole={user?.role}
       />
 
       {/* Main Content with Android TV styling */}

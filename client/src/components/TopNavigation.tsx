@@ -1,13 +1,22 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Search, User, LogOut } from 'lucide-react';
+import { Search, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { useLocation } from 'wouter';
 
 interface TopNavigationProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
   onLogout: () => void;
   username?: string;
+  userRole?: string;
 }
 
 const navigationItems = [
@@ -21,9 +30,13 @@ export default function TopNavigation({
   activeSection, 
   onSectionChange, 
   onLogout,
-  username 
+  username,
+  userRole
 }: TopNavigationProps) {
   const [focusedIndex, setFocusedIndex] = useState(0);
+  const [, navigate] = useLocation();
+  
+  const isAdmin = userRole === 'admin';
 
   const handleKeyDown = (e: React.KeyboardEvent, index: number, action?: () => void) => {
     switch (e.key) {
@@ -95,6 +108,39 @@ export default function TopNavigation({
             Search
           </Button>
         </div>
+
+        {/* Admin Menu - Only visible for admin users */}
+        {isAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="px-4 py-2 rounded-full text-gray-300 hover:text-white hover:bg-white/10 hover-elevate active-elevate-2 focus-visible:ring-2 focus-visible:ring-white"
+                data-testid="nav-admin-menu"
+              >
+                <Settings className="w-5 h-5 mr-2" />
+                Admin
+                <ChevronDown className="w-4 h-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => navigate('/admin/users')} data-testid="admin-manage-users">
+                Manage Users
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/admin/streams')} data-testid="admin-manage-streams">
+                Manage Streams
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/admin/studios')} data-testid="admin-manage-studios">
+                Manage Studios
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/admin/streams/new')} data-testid="admin-add-stream">
+                Add Stream
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* User Profile/Logout */}
         <div className="flex items-center gap-3">
