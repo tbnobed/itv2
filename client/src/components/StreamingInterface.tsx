@@ -21,6 +21,7 @@ interface GroupedStreams {
   overTheAir: Stream[];
   liveFeeds: Stream[];
   studios: Stream[];
+  uhd: Stream[];
 }
 
 interface StreamingInterfaceProps {
@@ -181,38 +182,31 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
   const renderFeaturedSection = () => {
     if (!streamData) return null;
 
-    const allFeaturedStreams = streamData.featured.map(convertStreamToStreamData);
     const sortStreamsByTitle = (streams: StreamData[]) => 
       streams.sort((a, b) => a.title.localeCompare(b.title));
 
-    // Regular featured streams
-    const regularFeaturedStreams = allFeaturedStreams;
-    
-    // Create UHD versions of some featured streams for demonstration
-    const uhdStreams = allFeaturedStreams.slice(0, 3).map(stream => ({
-      ...stream,
-      id: stream.id + '_uhd',
-      title: stream.title + ' (4K UHD)',
-      streamId: stream.streamId + '_4K'
-    }));
+    const featuredStreams = streamData.featured.map(convertStreamToStreamData);
+    const uhdStreams = streamData.uhd?.map(convertStreamToStreamData) || [];
 
     return (
       <div className="space-y-12">
         {/* Regular Featured Section */}
         <CategoryRow
           title="Featured"
-          streams={sortStreamsByTitle(regularFeaturedStreams)}
+          streams={sortStreamsByTitle(featuredStreams)}
           featured={true}
           onStreamSelect={handleStreamSelect}
         />
         
         {/* UHD Streams Section */}
-        <CategoryRow
-          title="UHD Streams"
-          streams={sortStreamsByTitle(uhdStreams)}
-          featured={false}
-          onStreamSelect={handleStreamSelect}
-        />
+        {uhdStreams.length > 0 && (
+          <CategoryRow
+            title="UHD Streams"
+            streams={sortStreamsByTitle(uhdStreams)}
+            featured={false}
+            onStreamSelect={handleStreamSelect}
+          />
+        )}
       </div>
     );
   };

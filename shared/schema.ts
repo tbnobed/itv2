@@ -18,7 +18,7 @@ export const streams = pgTable("streams", {
   thumbnail: text("thumbnail").notNull(),
   streamId: text("stream_id").notNull().unique(),
   url: text("url").notNull(),
-  category: text("category").notNull(), // featured, overTheAir, liveFeeds
+  category: text("category").notNull(), // featured, overTheAir, liveFeeds, studios, uhd
   studioId: text("studio_id"), // optional, for studio-specific feeds
 });
 

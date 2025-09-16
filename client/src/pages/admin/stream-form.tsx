@@ -41,7 +41,7 @@ const streamFormSchema = insertStreamSchema.extend({
     'Must be a valid stream URL (webrtc://, http://, or https://)'
   ),
   thumbnail: z.string().optional(),
-  category: z.enum(['featured', 'overTheAir', 'liveFeeds', 'studios'], {
+  category: z.enum(['featured', 'overTheAir', 'liveFeeds', 'studios', 'uhd'], {
     required_error: 'Category is required',
   }),
   studioId: z.string().optional(),
@@ -157,6 +157,7 @@ export default function StreamFormPage() {
     { value: 'overTheAir', label: 'Over The Air' },
     { value: 'liveFeeds', label: 'Live Feeds' },
     { value: 'studios', label: 'Studios' },
+    { value: 'uhd', label: 'UHD Streams' },
   ];
 
   if (streamLoading && isEditing) {
