@@ -91,7 +91,7 @@ export default function StreamTile({
         "focus-visible:shadow-[0_0_20px_rgba(51,102,255,0.6)]",
         "focus-visible:drop-shadow-2xl",
         cardWidth,
-        isHovered && "scale-[1.02] z-10",
+        isHovered && "scale-105 z-20 ring-4 ring-[hsl(240,100%,60%)] shadow-[0_0_15px_rgba(51,102,255,0.4)] drop-shadow-xl",
         className
       )}
       tabIndex={0}
