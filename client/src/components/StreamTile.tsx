@@ -25,6 +25,7 @@ export default function StreamTile({
 }: StreamTileProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [currentImage, setCurrentImage] = useState(thumbnail);
 
   // Register for server-side snapshots and update image URL periodically
@@ -74,20 +75,21 @@ export default function StreamTile({
   };
 
 
-  // Android TV card sizing - more consistent with TV interface standards
-  const tileSize = size === 'featured' 
-    ? 'w-72 h-40'  // Featured cards are larger
-    : 'w-56 h-32'; // Regular cards
+  // Android TV card sizing - proper 16:9 aspect ratios
+  const cardWidth = size === 'featured' 
+    ? 'w-[320px]'  // Featured cards: 320x180px (16:9)
+    : 'w-[240px]'; // Regular cards: 240x135px (16:9)
 
   return (
     <div
       className={cn(
-        "relative cursor-pointer transition-all duration-300 rounded-xl overflow-hidden group",
-        "focus-visible:ring-4 focus-visible:ring-white focus-visible:outline-none",
-        "bg-gray-800 shadow-lg hover:shadow-2xl",
-        tileSize,
-        isHovered && "scale-105 z-10 ring-4 ring-white/80 shadow-2xl",
-        isLoading && "opacity-50",
+        "relative cursor-pointer group outline-none",
+        "transition-all duration-200 ease-out",
+        "focus-visible:scale-105 focus-visible:z-20",
+        "focus-visible:ring-4 focus-visible:ring-[hsl(240,100%,60%)]",
+        "focus-visible:drop-shadow-lg",
+        cardWidth,
+        isHovered && "scale-[1.02] z-10",
         className
       )}
       tabIndex={0}
@@ -97,57 +99,60 @@ export default function StreamTile({
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
     >
-      {/* Live Preview Image */}
-      <img
-        src={currentImage}
-        alt={title}
-        className="w-full h-full object-cover bg-card"
-        onError={(e) => {
-          // Fallback to thumbnail when server snapshot is not available
-          if (currentImage !== thumbnail) {
-            console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
-            setCurrentImage(thumbnail);
-          } else {
-            console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
-          }
-        }}
-      />
-      
-      {/* Overlay Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-      
-      {/* Content */}
-      <div className="absolute inset-0 p-3 flex flex-col justify-end">
-        
-        {/* Title */}
-        <h3 
-          className={cn(
-            "text-white font-medium leading-tight line-clamp-2",
-            size === 'featured' ? 'text-lg' : 'text-sm'
-          )}
-          data-testid={`text-title-${streamId}`}
-        >
-          {title}
-        </h3>
-        
-        {/* Live Indicator */}
-        <div className="flex items-center mt-1">
-          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
-          <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
-        </div>
+      {/* 16:9 Aspect Ratio Container */}
+      <div className="aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800">
+        {/* Loading Skeleton */}
+        {isLoading ? (
+          <div className="w-full h-full animate-pulse bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
+        ) : (
+          <>
+            {/* Live Preview Image */}
+            <img
+              src={currentImage}
+              alt={title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to thumbnail when server snapshot is not available
+                if (currentImage !== thumbnail) {
+                  console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
+                  setCurrentImage(thumbnail);
+                } else {
+                  console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
+                }
+              }}
+            />
+            
+            {/* Bottom Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            
+            {/* Content - Bottom Left */}
+            <div className="absolute inset-0 p-3 flex flex-col justify-end">
+              <h3 
+                className={cn(
+                  "text-white font-medium leading-tight line-clamp-2 mb-1",
+                  size === 'featured' ? 'text-base' : 'text-sm'
+                )}
+                data-testid={`text-title-${streamId}`}
+              >
+                {title}
+              </h3>
+              
+              {/* Live Indicator */}
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
+                <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
+              </div>
+            </div>
+            
+            {/* Stream ID Badge - Bottom Right */}
+            <div className="absolute bottom-2 right-2">
+              <div className="bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs text-white/80 font-mono">
+                {streamId}
+              </div>
+            </div>
+          </>
+        )}
       </div>
-      
-      {/* Hover Glow Effect */}
-      {isHovered && (
-        <div className="absolute inset-0 ring-2 ring-primary/60 rounded-md pointer-events-none" />
-      )}
-      
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
     </div>
   );
 }

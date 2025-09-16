@@ -39,17 +39,13 @@ export default function CategoryRow({
         {title}
       </h2>
 
-      {/* Android TV Grid Layout */}
-      <div className="w-full px-8" data-testid="grid-container">
-        <div className={cn(
-          "grid gap-6 pb-8",
-          featured 
-            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" // Featured items get more space
-            : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6" // Regular items are more compact
-        )}>
-          {streams.map((stream) => (
-            <div key={stream.id} className="flex justify-center">
+      {/* Android TV Horizontal Scroll Layout */}
+      <div className="w-full" data-testid="scroll-container">
+        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide px-8">
+          <div className="flex gap-6 pb-8 w-max">
+            {streams.map((stream) => (
               <StreamTile
+                key={stream.id}
                 id={stream.id}
                 title={stream.title}
                 thumbnail={stream.thumbnail}
@@ -57,10 +53,10 @@ export default function CategoryRow({
                 streamUrl={stream.url}
                 size={featured ? 'featured' : 'regular'}
                 onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
-                className=""
+                className="flex-shrink-0"
               />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
