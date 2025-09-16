@@ -87,7 +87,7 @@ export default function StreamTile({
   const cardClasses = variant === 'compact' ? {
     container: cn(
       "relative cursor-pointer group outline-none",
-      "aspect-[4/1] rounded-lg overflow-hidden shadow-lg bg-gray-900",
+      "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
       "transition-all duration-300 ease-out will-change-transform",
       "focus-visible:scale-105 focus-visible:z-30 focus-visible:ring-4 focus-visible:ring-blue-500/50",
       "hover:scale-102 hover:z-20",
@@ -120,7 +120,7 @@ export default function StreamTile({
         data-testid={`stream-tile-${streamId}`}
       >
         {/* Compact Layout: Grid with Image Left, Info Right */}
-        <div className="grid grid-cols-[1fr_3fr] w-full h-full">
+        <div className="grid grid-cols-[1fr_2fr] w-full h-full">
           {/* Left: Image (1/3) */}
           <div className="relative overflow-hidden">
             {/* Loading Skeleton - Image */}
@@ -152,8 +152,8 @@ export default function StreamTile({
           
           {/* Right: Info Panel (2/3) */}
           <div className="relative">
-            {/* Solid Red Background */}
-            <div className="absolute inset-0 bg-red-500" />
+            {/* Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-red-900/30 to-red-800/40" />
             
             {/* Loading Skeleton - Text */}
             {isLoading || !isImageLoaded ? (
@@ -164,49 +164,51 @@ export default function StreamTile({
               </div>
             ) : (
               <div className={cn(
-                "absolute inset-0 flex flex-col text-white",
-                size === 'featured' ? 'p-6' : 'p-4'
+                "absolute inset-0 flex flex-col justify-center text-white",
+                size === 'featured' ? 'p-4 gap-1' : 'p-3 gap-1'
               )}>
-                {/* Main Content Area - Title & Subtitle centered */}
-                <div className="flex flex-col justify-center flex-1">
-                  {/* Large Title like "him" */}
-                  <h3 
-                    className={cn(
-                      "font-bold leading-none mb-2",
-                      size === 'featured' ? 'text-4xl' : 'text-3xl'
-                    )}
-                    data-testid={`text-title-${streamId}`}
-                  >
-                    {title}
-                  </h3>
-                  
-                  {/* Subtitle like "A BEN FRANK'S LOVE STORY" */}
-                  {subtitle && (
-                    <p 
-                      className={cn(
-                        "text-white/90 uppercase tracking-wider font-medium",
-                        size === 'featured' ? 'text-sm' : 'text-xs'
-                      )}
-                      data-testid={`text-subtitle-${streamId}`}
-                    >
-                      {subtitle}
-                    </p>
+                {/* Main Title */}
+                <h3 
+                  className={cn(
+                    "font-semibold line-clamp-2 leading-tight",
+                    size === 'featured' ? 'text-lg' : 'text-base'
                   )}
-                </div>
+                  data-testid={`text-title-${streamId}`}
+                >
+                  {title}
+                </h3>
                 
-                {/* Bottom Left - Metadata like "2016 • Drama • 2h 8m" */}
-                <div className={cn(
-                  "text-white/90",
-                  size === 'featured' ? 'text-sm' : 'text-xs'
-                )}>
-                  {metaLeft && metaRight ? (
-                    <span>{metaLeft} • {metaRight}</span>
-                  ) : metaLeft ? (
-                    <span>{metaLeft}</span>
-                  ) : metaRight ? (
-                    <span>{metaRight}</span>
-                  ) : (
-                    <span>Live Stream</span>
+                {/* Subtitle */}
+                {subtitle && (
+                  <p 
+                    className="text-sm text-white/70 line-clamp-1 leading-tight"
+                    data-testid={`text-subtitle-${streamId}`}
+                  >
+                    {subtitle}
+                  </p>
+                )}
+                
+                {/* Metadata Row */}
+                <div className="flex items-center gap-3 mt-1">
+                  {/* Live Badge */}
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1" />
+                    <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
+                  </div>
+                  
+                  {/* Stream ID */}
+                  <div className="bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs text-white/80 font-mono">
+                    {streamId}
+                  </div>
+                  
+                  {/* Meta Left */}
+                  {metaLeft && (
+                    <span className="text-xs text-white/60">{metaLeft}</span>
+                  )}
+                  
+                  {/* Meta Right */}
+                  {metaRight && (
+                    <span className="text-xs text-white/60">{metaRight}</span>
                   )}
                 </div>
               </div>
