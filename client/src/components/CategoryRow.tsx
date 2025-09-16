@@ -44,7 +44,7 @@ export default function CategoryRow({
 
       {/* Android TV Horizontal Scroll Layout */}
       <div className="w-full" data-testid="scroll-container">
-        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide px-8">
+        <div className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2">
           <div className={cn(
             "flex pb-8 w-max",
             variant === 'compact' ? 'gap-4' : 'gap-6'
