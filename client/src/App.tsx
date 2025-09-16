@@ -127,37 +127,52 @@ function App() {
       // Large screen detection (75"+ TVs typically have these dimensions)
       const isLargeTV = viewportWidth >= 1920 && viewportHeight >= 1080;
       
-      // Apply TV scaling to confirmed TV devices (including Firestick Silk browser)
-      if (isTVBrowser || isLargeTV) {
+      // Apply aggressive scaling for large displays (including web wrappers)
+      if (isTVBrowser || isLargeTV || viewportWidth >= 1920) {
         const rootElement = document.getElementById('root');
         if (rootElement) {
-          // Scale appropriately for TV viewing distance and size
+          // Much more aggressive scaling for large displays
           let scale = 1;
           
-          // For very large TVs (4K), use smaller scale to fit more content
-          if (viewportWidth >= 3840 || (viewportWidth >= 1920 && viewportHeight >= 1080 && devicePixelRatio >= 2)) {
-            scale = 0.6; // Large 4K TVs - much smaller to fit more content
-          } else if (viewportWidth >= 1920 && viewportHeight >= 1080) {
-            scale = 0.7; // 1080p large TVs - scale down to fit content
-          } else if (viewportWidth >= 1280 && viewportHeight >= 720) {
-            scale = 0.8; // Smaller TVs - minimal scaling
+          // Very large displays (75"+ 4K TVs) - aggressive scaling
+          if (viewportWidth >= 2400 || screenWidth >= 4000) {
+            scale = 0.45; // Very large displays - much smaller UI
+          } else if (viewportWidth >= 1920 || screenWidth >= 3000) {
+            scale = 0.5; // Large displays - smaller UI to fit more content
+          } else if (viewportWidth >= 1600) {
+            scale = 0.65; // Medium large displays
+          } else if (viewportWidth >= 1280) {
+            scale = 0.75; // Smaller large displays
           }
           
           // Only apply scaling to non-auth pages
           if (!location.startsWith('/auth')) {
             document.documentElement.style.setProperty('--tv-scale', scale.toString());
             rootElement.classList.add('tv-scale');
+            // Force style recalculation
+            rootElement.style.transform = `scale(${scale})`;
+            rootElement.style.transformOrigin = '0 0';
+            rootElement.style.width = `${100 / scale}%`;
+            rootElement.style.minHeight = `${100 / scale}vh`;
           } else {
             rootElement.classList.remove('tv-scale');
+            rootElement.style.removeProperty('transform');
+            rootElement.style.removeProperty('transform-origin');
+            rootElement.style.removeProperty('width');
+            rootElement.style.removeProperty('min-height');
           }
           
-          console.log(`Large TV detected: ${userAgent}, Viewport: ${viewportWidth}x${viewportHeight}, Screen: ${screenWidth}x${screenHeight}, DPR: ${devicePixelRatio}, Scale: ${scale}`);
+          console.log(`Large display detected: ${userAgent}, Viewport: ${viewportWidth}x${viewportHeight}, Screen: ${screenWidth}x${screenHeight}, DPR: ${devicePixelRatio}, Scale: ${scale}`);
         }
       } else {
-        // Remove scaling for non-TV devices
+        // Remove scaling for non-large devices
         const rootElement = document.getElementById('root');
         if (rootElement) {
           rootElement.classList.remove('tv-scale');
+          rootElement.style.removeProperty('transform');
+          rootElement.style.removeProperty('transform-origin');
+          rootElement.style.removeProperty('width');
+          rootElement.style.removeProperty('min-height');
           document.documentElement.style.removeProperty('--tv-scale');
         }
       }
