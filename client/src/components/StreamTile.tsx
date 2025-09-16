@@ -136,7 +136,7 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
       >
         <div className={cardClasses.container}>
         {/* Compact Layout: Grid with Image Left, Info Right */}
-        <div className="grid grid-cols-[1fr_2fr] w-full h-full">
+        <div className="grid grid-cols-[1fr_2.5fr] w-full h-full">
           {/* Left: Image (1/3) */}
           <div className="relative overflow-hidden">
             {/* Loading Skeleton - Image */}
@@ -180,16 +180,17 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
               </div>
             ) : (
               <div className={cn(
-                "absolute inset-0 flex flex-col justify-center text-white",
-                size === 'featured' ? 'p-3 gap-0.5' : 'p-2 gap-0.5'
+                "absolute inset-0 flex flex-col justify-center text-white overflow-hidden",
+                size === 'featured' ? 'p-2 gap-0' : 'p-1.5 gap-0'
               )}>
                 {/* Main Title */}
                 <h3 
                   className={cn(
-                    "font-semibold line-clamp-1 leading-tight",
-                    size === 'featured' ? 'text-sm' : 'text-xs'
+                    "font-medium line-clamp-1 leading-none text-ellipsis overflow-hidden",
+                    size === 'featured' ? 'text-[11px]' : 'text-[10px]'
                   )}
                   data-testid={`text-title-${streamId}`}
+                  title={title}
                 >
                   {title}
                 </h3>
@@ -197,35 +198,34 @@ const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function St
                 {/* Subtitle */}
                 {subtitle && (
                   <p 
-                    className="text-xs text-white/70 line-clamp-1 leading-tight"
+                    className="text-[9px] text-white/70 line-clamp-1 leading-none overflow-hidden"
                     data-testid={`text-subtitle-${streamId}`}
+                    title={subtitle}
                   >
                     {subtitle}
                   </p>
                 )}
                 
                 {/* Metadata Row */}
-                <div className="flex items-center gap-2 mt-0.5">
-                  {/* Live Badge */}
-                  <div className="flex items-center">
-                    <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse mr-1" />
-                    <span className="text-red-500 text-[10px] font-medium uppercase tracking-wide">LIVE</span>
+                <div className="flex items-center justify-between w-full mt-0.5">
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Live Badge */}
+                    <div className="flex items-center">
+                      <div className="w-1 h-1 bg-red-500 rounded-full animate-pulse mr-0.5" />
+                      <span className="text-red-500 text-[8px] font-medium uppercase tracking-wide">LIVE</span>
+                    </div>
+                    
+                    {/* Stream ID */}
+                    <div className="bg-black/40 backdrop-blur-sm px-1 py-0.5 rounded text-[8px] text-white/80 font-mono">
+                      {streamId}
+                    </div>
                   </div>
                   
-                  {/* Stream ID */}
-                  <div className="bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-white/80 font-mono">
-                    {streamId}
+                  {/* Right side metadata */}
+                  <div className="flex items-center gap-1 text-[8px] text-white/60 flex-shrink-0">
+                    {metaLeft && <span>{metaLeft}</span>}
+                    {metaRight && <span>{metaRight}</span>}
                   </div>
-                  
-                  {/* Meta Left */}
-                  {metaLeft && (
-                    <span className="text-[10px] text-white/60">{metaLeft}</span>
-                  )}
-                  
-                  {/* Meta Right */}
-                  {metaRight && (
-                    <span className="text-[10px] text-white/60">{metaRight}</span>
-                  )}
                 </div>
               </div>
             )}
