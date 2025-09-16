@@ -267,7 +267,7 @@ const StreamTile = React.forwardRef(({
           "transition-all duration-300 ease-out",
           "focus-visible:scale-110 focus-visible:z-30",
           "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
-          size === 'featured' ? 'w-[200px]' : 'w-[150px]',
+          size === 'featured' ? 'w-[300px]' : 'w-[220px]',
           isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
           className
         )}
@@ -358,7 +358,7 @@ const StreamTile = React.forwardRef(({
         "aspect-[16/9] rounded-lg",
         "focus-visible:scale-110 focus-visible:z-30",
         "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
-        size === 'featured' ? 'w-[200px]' : 'w-[150px]',
+        size === 'featured' ? 'w-[300px]' : 'w-[220px]',
         isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
       )}>

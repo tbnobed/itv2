@@ -115,14 +115,14 @@ export default function StreamGrid({
                     textPosition="below"
                     tabIndex={isActive ? 0 : -1}
                     onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
-                    className="w-[110px] flex-shrink-0"
+                    className="w-[220px] flex-shrink-0"
                   />
                 );
               })}
               
               {/* Fill empty slots in incomplete rows */}
               {row.length < 4 && Array.from({ length: 4 - row.length }).map((_, emptyIndex) => (
-                <div key={`empty-${emptyIndex}`} className="w-[110px]" />
+                <div key={`empty-${emptyIndex}`} className="w-[220px]" />
               ))}
             </div>
           ))}
