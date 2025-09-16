@@ -69,9 +69,9 @@ export default function TopNavigation({
       case 'ArrowDown':
         e.preventDefault();
         // Navigate down to content area - focus first tile in current active section
-        const activeSection = document.querySelector(`[data-testid="section-${activeSection.toLowerCase().replace(/\s+/g, '-')}"]`)?.closest('div');
-        if (activeSection) {
-          const firstTile = activeSection.querySelector('.stream-tile') as HTMLElement;
+        const activeSectionElement = document.querySelector(`[data-testid="section-${activeSection.toLowerCase().replace(/\s+/g, '-')}"]`)?.closest('div');
+        if (activeSectionElement) {
+          const firstTile = activeSectionElement.querySelector('.stream-tile') as HTMLElement;
           firstTile?.focus();
         }
         break;
