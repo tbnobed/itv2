@@ -303,6 +303,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
             streams={sortStreamsByTitle(featuredStreams)}
             featured={true}
             onStreamSelect={handleStreamSelect}
+            sectionId="featured"
           />
           
           {/* UHD Streams Section */}
@@ -313,6 +314,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
               featured={false}
               variant="compact"
               onStreamSelect={handleStreamSelect}
+              sectionId="uhd"
             />
           )}
         </div>
@@ -463,6 +465,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
             streams={(studioFeeds || []).map(convertStreamToStreamData).sort((a, b) => a.title.localeCompare(b.title))}
             featured={false}
             onStreamSelect={handleStreamSelect}
+            sectionId="studios"
           />
         </div>
       );
@@ -493,6 +496,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
               title={currentSection.title}
               streams={currentSection.streams}
               onStreamSelect={handleStreamSelect}
+              sectionId={activeSection === 'overTheAir' ? 'over-the-air' : activeSection === 'liveFeeds' ? 'live-feeds' : activeSection}
             />
           ) : (
             <CategoryRow
@@ -500,6 +504,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
               streams={currentSection.streams}
               featured={currentSection.featured}
               onStreamSelect={handleStreamSelect}
+              sectionId={activeSection === 'overTheAir' ? 'over-the-air' : activeSection === 'liveFeeds' ? 'live-feeds' : activeSection}
             />
           )}
         </div>

@@ -15,13 +15,15 @@ interface StreamGridProps {
   streams: StreamData[];
   onStreamSelect?: (streamId: string, url: string) => void;
   className?: string;
+  sectionId: string;
 }
 
 export default function StreamGrid({ 
   title, 
   streams, 
   onStreamSelect,
-  className 
+  className,
+  sectionId
 }: StreamGridProps) {
   const [focusedRow, setFocusedRow] = useState(0);
   const [focusedCol, setFocusedCol] = useState(0);
@@ -74,7 +76,7 @@ export default function StreamGrid({
           tileRefs.current[focusedRow - 1]?.[newCol]?.focus();
         } else {
           // Exit grid to top navigation when on first row
-          const activeNavButton = document.querySelector('[data-nav-index][data-testid*="nav-"][class*="bg-white"]') as HTMLElement;
+          const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
           if (activeNavButton) {
             activeNavButton.focus();
           } else {
@@ -98,12 +100,9 @@ export default function StreamGrid({
   };
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn("w-full", className)} data-testid={`section-${sectionId}`}>
       {/* Section Title */}
-      <h2 
-        className="text-white font-bold text-2xl mb-6 px-8 text-center"
-        data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}
-      >
+      <h2 className="text-white font-bold text-2xl mb-6 px-8 text-center">
         {title}
       </h2>
 

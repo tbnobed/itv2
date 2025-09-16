@@ -18,6 +18,7 @@ interface CategoryRowProps {
   variant?: 'poster' | 'compact';
   onStreamSelect?: (streamId: string, url: string) => void;
   className?: string;
+  sectionId: string;
 }
 
 export default function CategoryRow({ 
@@ -26,7 +27,8 @@ export default function CategoryRow({
   featured = false,
   variant = 'poster',
   onStreamSelect,
-  className 
+  className,
+  sectionId
 }: CategoryRowProps) {
   const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [focusedIndex, setFocusedIndex] = useState(0);
@@ -61,7 +63,7 @@ export default function CategoryRow({
       case 'ArrowUp':
         e.preventDefault();
         // Exit to top navigation
-        const activeNavButton = document.querySelector('[data-nav-index][data-testid*="nav-"][class*="bg-white"]') as HTMLElement;
+        const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
         if (activeNavButton) {
           activeNavButton.focus();
         } else {
@@ -74,14 +76,13 @@ export default function CategoryRow({
   };
 
   return (
-    <div className={cn("relative mb-10 w-full", className)}>
+    <div className={cn("relative mb-10 w-full", className)} data-testid={`section-${sectionId}`}>
       {/* Section Title */}
       <h2 
         className={cn(
           "text-white font-semibold mb-6 px-8",
           featured ? "text-2xl" : "text-xl"
         )}
-        data-testid={`section-${title.toLowerCase().replace(/\s+/g, '-')}`}
       >
         {title}
       </h2>

@@ -91,8 +91,8 @@ export default function TopNavigation({
       case 'ArrowDown':
         e.preventDefault();
         // Navigate down to content area - focus first tile in currently active section
-        // Map section IDs to actual section titles for data-testid lookup
-        const sectionTitleMap: Record<string, string> = {
+        // Map section IDs to data-testid values
+        const sectionIdMap: Record<string, string> = {
           'featured': 'featured',
           'overTheAir': 'over-the-air', 
           'liveFeeds': 'live-feeds',
@@ -100,15 +100,21 @@ export default function TopNavigation({
           'studios': 'studios'
         };
         
-        // Use activeSection since that's what's currently rendered
-        const sectionTestId = sectionTitleMap[activeSection] || activeSection.toLowerCase().replace(/\s+/g, '-');
-        const targetSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`);
+        const sectionId = sectionIdMap[activeSection] || activeSection;
+        const targetSectionElement = document.querySelector(`[data-testid="section-${sectionId}"]`);
         
         if (targetSectionElement) {
-          const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
-          if (firstTile) {
-            firstTile.focus();
-          }
+          // Use requestAnimationFrame to ensure DOM is ready
+          requestAnimationFrame(() => {
+            const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
+            if (firstTile) {
+              firstTile.focus();
+            } else {
+              // Fallback: try to find any .stream-tile on the page
+              const anyTile = document.querySelector('.stream-tile') as HTMLElement;
+              anyTile?.focus();
+            }
+          });
         }
         break;
       case 'Enter':
@@ -139,6 +145,7 @@ export default function TopNavigation({
               onKeyDown={(e) => handleKeyDown(e, index, () => onSectionChange(item.id))}
               data-testid={`nav-${item.id}`}
               data-nav-index={index}
+              data-active={activeSection === item.id ? "true" : "false"}
             >
               {item.label}
             </Button>
