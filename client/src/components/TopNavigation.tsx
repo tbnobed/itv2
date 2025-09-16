@@ -68,7 +68,7 @@ export default function TopNavigation({
         break;
       case 'ArrowDown':
         e.preventDefault();
-        // Navigate down to content area - focus first tile in current active section
+        // Navigate down to content area - focus first tile in currently focused section
         // Map section IDs to actual section titles
         const sectionTitleMap: Record<string, string> = {
           'featured': 'featured',
@@ -78,11 +78,24 @@ export default function TopNavigation({
           'studios': 'studios'
         };
         
-        const sectionTestId = sectionTitleMap[activeSection] || activeSection.toLowerCase().replace(/\s+/g, '-');
-        const activeSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`)?.closest('div');
-        if (activeSectionElement) {
-          const firstTile = activeSectionElement.querySelector('.stream-tile') as HTMLElement;
+        // Use the currently focused navigation item instead of activeSection
+        const targetSectionId = navigationItems[index]?.id;
+        const sectionTestId = sectionTitleMap[targetSectionId] || targetSectionId?.toLowerCase().replace(/\s+/g, '-');
+        const targetSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`)?.closest('div');
+        
+        if (targetSectionElement) {
+          const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
           firstTile?.focus();
+        } else {
+          // Fallback: try with activeSection as a second attempt
+          const fallbackTestId = sectionTitleMap[activeSection] || activeSection.toLowerCase().replace(/\s+/g, '-');
+          const fallbackElement = document.querySelector(`[data-testid="section-${fallbackTestId}"]`)?.closest('div');
+          if (fallbackElement) {
+            const firstTile = fallbackElement.querySelector('.stream-tile') as HTMLElement;
+            firstTile?.focus();
+          } else {
+            console.warn('Could not find section element for navigation:', targetSectionId, activeSection);
+          }
         }
         break;
       case 'Enter':
