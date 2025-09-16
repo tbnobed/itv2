@@ -87,11 +87,11 @@ export default function StreamTile({
   const cardClasses = variant === 'compact' ? {
     container: cn(
       "relative cursor-pointer group outline-none",
-      "aspect-[16/6] rounded-lg overflow-hidden shadow-lg bg-gray-900",
+      "aspect-[4/1] rounded-lg overflow-hidden shadow-lg bg-gray-900",
       "transition-all duration-300 ease-out will-change-transform",
       "focus-visible:scale-105 focus-visible:z-30 focus-visible:ring-4 focus-visible:ring-blue-500/50",
       "hover:scale-102 hover:z-20",
-      size === 'featured' ? 'w-[400px]' : 'w-[320px]',
+      size === 'featured' ? 'w-[480px]' : 'w-[360px]',
       isHovered && "scale-102 z-20",
       className
     )
@@ -120,7 +120,7 @@ export default function StreamTile({
         data-testid={`stream-tile-${streamId}`}
       >
         {/* Compact Layout: Grid with Image Left, Info Right */}
-        <div className="grid grid-cols-[1fr_2fr] w-full h-full">
+        <div className="grid grid-cols-[1fr_3fr] w-full h-full">
           {/* Left: Image (1/3) */}
           <div className="relative overflow-hidden">
             {/* Loading Skeleton - Image */}
@@ -152,8 +152,8 @@ export default function StreamTile({
           
           {/* Right: Info Panel (2/3) */}
           <div className="relative">
-            {/* Gradient Background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-red-600/95 via-red-500/90 to-red-600/95" />
+            {/* Solid Red Background */}
+            <div className="absolute inset-0 bg-red-500" />
             
             {/* Loading Skeleton - Text */}
             {isLoading || !isImageLoaded ? (
@@ -164,27 +164,27 @@ export default function StreamTile({
               </div>
             ) : (
               <div className={cn(
-                "absolute inset-0 flex flex-col justify-between text-white",
-                size === 'featured' ? 'p-4' : 'p-3'
+                "absolute inset-0 flex flex-col text-white",
+                size === 'featured' ? 'p-6' : 'p-4'
               )}>
-                {/* Top Section - Title & Subtitle */}
+                {/* Main Content Area - Title & Subtitle centered */}
                 <div className="flex flex-col justify-center flex-1">
-                  {/* Main Title */}
+                  {/* Large Title like "him" */}
                   <h3 
                     className={cn(
-                      "font-bold line-clamp-2 leading-tight mb-1",
-                      size === 'featured' ? 'text-2xl' : 'text-xl'
+                      "font-bold leading-none mb-2",
+                      size === 'featured' ? 'text-4xl' : 'text-3xl'
                     )}
                     data-testid={`text-title-${streamId}`}
                   >
                     {title}
                   </h3>
                   
-                  {/* Subtitle */}
+                  {/* Subtitle like "A BEN FRANK'S LOVE STORY" */}
                   {subtitle && (
                     <p 
                       className={cn(
-                        "text-white/90 line-clamp-1 leading-tight uppercase tracking-wide font-medium",
+                        "text-white/90 uppercase tracking-wider font-medium",
                         size === 'featured' ? 'text-sm' : 'text-xs'
                       )}
                       data-testid={`text-subtitle-${streamId}`}
@@ -194,25 +194,20 @@ export default function StreamTile({
                   )}
                 </div>
                 
-                {/* Bottom Section - Metadata */}
+                {/* Bottom Left - Metadata like "2016 • Drama • 2h 8m" */}
                 <div className={cn(
-                  "flex items-center gap-2 text-white/80",
+                  "text-white/90",
                   size === 'featured' ? 'text-sm' : 'text-xs'
                 )}>
-                  {/* Meta Left & Right for Android TV style */}
-                  {metaLeft && (
-                    <span className="font-medium">{metaLeft}</span>
+                  {metaLeft && metaRight ? (
+                    <span>{metaLeft} • {metaRight}</span>
+                  ) : metaLeft ? (
+                    <span>{metaLeft}</span>
+                  ) : metaRight ? (
+                    <span>{metaRight}</span>
+                  ) : (
+                    <span>Live Stream</span>
                   )}
-                  {metaLeft && metaRight && (
-                    <span className="text-white/60">•</span>
-                  )}
-                  {metaRight && (
-                    <span className="font-medium">{metaRight}</span>
-                  )}
-                  {(metaLeft || metaRight) && (
-                    <span className="text-white/60">•</span>
-                  )}
-                  <span className="font-medium">Live Stream</span>
                 </div>
               </div>
             )}
