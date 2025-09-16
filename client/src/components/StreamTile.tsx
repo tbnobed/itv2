@@ -87,11 +87,9 @@ export default function StreamTile({
         "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
         "transition-all duration-300 ease-out",
         "focus-visible:scale-110 focus-visible:z-30",
-        "focus-visible:ring-6 focus-visible:ring-[hsl(240,100%,60%)]",
-        "focus-visible:shadow-[0_0_20px_rgba(51,102,255,0.6)]",
-        "focus-visible:drop-shadow-2xl",
+        "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
         cardWidth,
-        isHovered && "scale-105 z-20 ring-4 ring-[hsl(240,100%,60%)] shadow-[0_0_15px_rgba(51,102,255,0.4)] drop-shadow-xl",
+        isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
       )}
       tabIndex={0}
