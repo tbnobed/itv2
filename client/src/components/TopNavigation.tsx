@@ -1,4 +1,4 @@
-import { useState, forwardRef } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Search, User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,6 @@ interface TopNavigationProps {
   onLogout: () => void;
   username?: string;
   userRole?: string;
-  focusArea?: 'navigation' | 'content';
-  navigationIndex?: number;
 }
 
 const navigationItems = [
@@ -28,15 +26,13 @@ const navigationItems = [
   { id: 'studios', label: 'Studios' },
 ];
 
-const TopNavigation = forwardRef<HTMLElement, TopNavigationProps>(({ 
+export default function TopNavigation({ 
   activeSection, 
   onSectionChange, 
   onLogout,
   username,
-  userRole,
-  focusArea,
-  navigationIndex
-}, ref) => {
+  userRole
+}: TopNavigationProps) {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [, navigate] = useLocation();
   
@@ -168,8 +164,4 @@ const TopNavigation = forwardRef<HTMLElement, TopNavigationProps>(({
       </div>
     </nav>
   );
-});
-
-TopNavigation.displayName = 'TopNavigation';
-
-export default TopNavigation;
+}

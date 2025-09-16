@@ -108,7 +108,49 @@ function App() {
   const isAuthRoute = location.startsWith('/auth');
   const isAdminRoute = location.startsWith('/admin');
   
-  // TV device detection removed - no scaling transforms applied
+  // TV Device Detection and Scaling
+  React.useEffect(() => {
+    const detectTVDevice = () => {
+      const userAgent = navigator.userAgent;
+      const screenWidth = screen.width;
+      const screenHeight = screen.height;
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      const actualWidth = screenWidth * devicePixelRatio;
+      const actualHeight = screenHeight * devicePixelRatio;
+      
+      // TV/OTT device detection - apply to actual TV devices including Firestick
+      const isTVBrowser = /Silk|AFT|BRAVIA|Tizen|webOS|SmartTV|NetCast/i.test(userAgent) ||
+                          /CrKey|GoogleTV|AndroidTV/i.test(userAgent);
+      
+      // Apply TV scaling to confirmed TV devices (including Firestick Silk browser)
+      if (isTVBrowser) {
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+          // Scale DOWN to fit more content on TV screens
+          let scale = 1;
+          if (actualWidth >= 3840 && actualHeight >= 2160) {
+            scale = 0.7; // 4K TVs - scale down to fit more content
+          } else if (actualWidth >= 1920 && actualHeight >= 1080) {
+            scale = 0.75; // 1080p TVs - scale down moderately
+          } else if (actualWidth >= 1280 && actualHeight >= 720) {
+            scale = 0.85; // 720p TVs - scale down slightly
+          }
+          
+          // Only apply scaling to non-auth pages
+          if (!location.startsWith('/auth')) {
+            document.documentElement.style.setProperty('--tv-scale', scale.toString());
+            rootElement.classList.add('tv-scale');
+          } else {
+            rootElement.classList.remove('tv-scale');
+          }
+          
+          console.log(`TV device detected: ${userAgent}, Resolution: ${actualWidth}x${actualHeight}, Scale: ${scale}, Auth route: ${location.startsWith('/auth')}`);
+        }
+      }
+    };
+    
+    detectTVDevice();
+  }, [location]);
   
   // Custom sidebar width for streaming application
   const style = {

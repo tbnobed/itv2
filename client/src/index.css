@@ -211,81 +211,27 @@
     @apply border-border;
   }
 
-  html {
-    height: 100vh;
-    width: 100%;
-    overflow: hidden;
-    zoom: 1 !important;
-    transform: scale(1) !important;
-  }
-  
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    height: 100vh;
-    width: 100%;
-    overflow: hidden;
-    margin: 0;
-    zoom: 1 !important;
-    transform: scale(1) !important;
-  }
-  
-  #root {
-    height: 100vh;
-    width: 100%;
-    overflow: hidden;
-    zoom: 1 !important;
-    transform: scale(1) !important;
   }
 
-  /* Android TV Safe Area and Full-Screen Layout */
-  .tv-stage {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    overflow: hidden;
+  /* TV Browser Scaling Variables */
+  :root {
+    --tv-scale: 1;
   }
 
-  .tv-bg {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
+  /* TV Browser Compatibility - Single Transform Approach */
+  .tv-scale {
+    transform: scale(var(--tv-scale));
+    transform-origin: 0 0;
+    width: calc(100% / var(--tv-scale));
+    min-height: calc(100vh / var(--tv-scale));
+    overflow: visible;
   }
 
-  .tv-safe {
-    position: relative;
-    z-index: 1;
-    box-sizing: border-box;
-    padding: 24px 48px; /* Android TV safe area: 24px top/bottom, 48px left/right */
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  /* TV-specific styling removed - keep normal font sizing */
-
-  /* Debug safe area outline */
-  .tv-safe.debug {
-    outline: 2px dashed rgba(0, 255, 255, 0.35);
-  }
-  
-  /* Horizontal scrolling safe padding for TV */
-  .tv-scroll-safe {
-    scroll-padding-left: 48px;
-    scroll-padding-right: 48px;
-  }
-  
-  /* Ensure proper carousel behavior within safe areas */
-  .tv-safe .overflow-x-auto {
-    /* Allow horizontal overflow to extend slightly beyond safe area for smooth scrolling */
-    margin-left: -24px;
-    margin-right: -24px;
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-  
-  /* Smooth scrolling for TV navigation */
-  .tv-safe .overflow-x-auto {
-    scroll-behavior: smooth;
+  /* Ensure auth page content is properly contained on TV devices */
+  .tv-scale .min-h-screen {
+    min-height: calc(100vh / var(--tv-scale));
   }
 }
 
