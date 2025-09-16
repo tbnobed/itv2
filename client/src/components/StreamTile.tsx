@@ -348,7 +348,10 @@ const StreamTile = React.forwardRef(({
     <div
       ref={setRef}
       style={tileStyle}
-      className="relative cursor-pointer group outline-none stream-tile"
+      className={cn(
+        "relative cursor-pointer group outline-none stream-tile",
+        "focus-visible:scale-110 focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]"
+      )}
       tabIndex={tabIndex ?? 0}
       onClick={handleClick}
       onKeyDown={handleKeyPress}
@@ -360,8 +363,6 @@ const StreamTile = React.forwardRef(({
       {/* Single Card Wrapper */}
       <div className={cn(
         "rounded-lg overflow-hidden bg-gray-900 shadow-sm transition-all duration-300 ease-out",
-        "focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900",
-        "focus-visible:scale-110 focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
         size === 'featured' ? 'w-[300px]' : 'w-[220px]',
         isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
