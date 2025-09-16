@@ -177,6 +177,47 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
 
   const currentSection = getCurrentSectionData();
 
+  // Function to render the Featured section with multiple rows
+  const renderFeaturedSection = () => {
+    if (!streamData) return null;
+
+    const allFeaturedStreams = streamData.featured.map(convertStreamToStreamData);
+    const sortStreamsByTitle = (streams: StreamData[]) => 
+      streams.sort((a, b) => a.title.localeCompare(b.title));
+
+    // Filter UHD streams (those with UHD, 4K, or 2160p in title)
+    const uhdStreams = allFeaturedStreams.filter(stream => 
+      /(?:UHD|4K|2160p)/i.test(stream.title)
+    );
+    
+    // Regular featured streams (excluding UHD)
+    const regularFeaturedStreams = allFeaturedStreams.filter(stream => 
+      !/(?:UHD|4K|2160p)/i.test(stream.title)
+    );
+
+    return (
+      <div className="space-y-12">
+        {/* Regular Featured Section */}
+        <CategoryRow
+          title="Featured"
+          streams={sortStreamsByTitle(regularFeaturedStreams)}
+          featured={true}
+          onStreamSelect={handleStreamSelect}
+        />
+        
+        {/* UHD Streams Section */}
+        {uhdStreams.length > 0 && (
+          <CategoryRow
+            title="UHD Streams"
+            streams={sortStreamsByTitle(uhdStreams)}
+            featured={false}
+            onStreamSelect={handleStreamSelect}
+          />
+        )}
+      </div>
+    );
+  };
+
   // Show loading state
   if (streamsLoading || (activeSection === 'studios' && studiosLoading)) {
     return (
@@ -289,6 +330,8 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
           {/* Render based on active section */}
           {activeSection === 'studios' ? (
             renderStudiosSection()
+          ) : activeSection === 'featured' ? (
+            renderFeaturedSection()
           ) : (
             <CategoryRow
               title={currentSection.title}
