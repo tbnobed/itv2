@@ -101,20 +101,28 @@ export default function TopNavigation({
         };
         
         const sectionId = sectionIdMap[activeSection] || activeSection;
+        console.log('TopNav ArrowDown: Looking for section:', `section-${sectionId}`, 'activeSection:', activeSection);
         const targetSectionElement = document.querySelector(`[data-testid="section-${sectionId}"]`);
+        console.log('TopNav ArrowDown: Found section element:', !!targetSectionElement);
         
         if (targetSectionElement) {
           // Use requestAnimationFrame to ensure DOM is ready
           requestAnimationFrame(() => {
             const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
+            console.log('TopNav ArrowDown: Found first tile:', !!firstTile);
             if (firstTile) {
+              console.log('TopNav ArrowDown: Focusing first tile');
               firstTile.focus();
             } else {
+              console.log('TopNav ArrowDown: No tiles found in section, trying fallback');
               // Fallback: try to find any .stream-tile on the page
               const anyTile = document.querySelector('.stream-tile') as HTMLElement;
+              console.log('TopNav ArrowDown: Found fallback tile:', !!anyTile);
               anyTile?.focus();
             }
           });
+        } else {
+          console.log('TopNav ArrowDown: Section not found!');
         }
         break;
       case 'Enter':
