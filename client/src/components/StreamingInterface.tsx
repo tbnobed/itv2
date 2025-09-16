@@ -194,11 +194,11 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     plexStudiosImg
   ];
 
-  // Rotate background images every 8 seconds
+  // Rotate background images every 12 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgIndex((prev) => (prev + 1) % studioImages.length);
-    }, 8000);
+    }, 12000);
     return () => clearInterval(interval);
   }, []);
 
@@ -219,7 +219,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
           {studioImages.map((image, index) => (
             <div
               key={index}
-              className={`absolute inset-0 transition-opacity duration-1000 ${
+              className={`absolute inset-0 transition-opacity duration-2000 ease-in-out ${
                 index === currentBgIndex ? 'opacity-100' : 'opacity-0'
               }`}
               style={{
@@ -230,12 +230,12 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
               }}
             />
           ))}
-          {/* Dark overlay to ensure text readability */}
-          <div className="absolute inset-0 bg-black/60" />
+          {/* Darker overlay to dim images and ensure text readability */}
+          <div className="absolute inset-0 bg-black/75" />
         </div>
 
-        {/* Content positioned lower on the page */}
-        <div className="relative z-10 pt-80 pb-20 space-y-12">
+        {/* Content positioned much lower on the page */}
+        <div className="relative z-10 pt-96 pb-20 space-y-12">
           {/* Regular Featured Section */}
           <CategoryRow
             title="Featured"
