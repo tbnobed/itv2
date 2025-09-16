@@ -82,15 +82,23 @@ export default function StreamTile({
     }
   };
 
+  const handleFocus = (e: React.FocusEvent) => {
+    console.log(`StreamTile[${streamId}]: FOCUS EVENT received`);
+  };
+
+  const handleBlur = (e: React.FocusEvent) => {
+    console.log(`StreamTile[${streamId}]: BLUR EVENT received`);
+  };
+
 
   // Card sizing based on variant and size
   const cardClasses = variant === 'compact' ? {
     container: cn(
-      "relative cursor-pointer group outline-none",
+      "relative cursor-pointer group",
       "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
       "transition-all duration-300 ease-out will-change-transform",
-      "focus:scale-105 focus:z-30 focus:ring-4 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-transparent",
-      "focus-visible:scale-105 focus-visible:z-30 focus-visible:ring-4 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+      "focus:bg-blue-900 focus:scale-105 focus:z-30",
+      "focus-visible:bg-blue-900 focus-visible:scale-105 focus-visible:z-30",
       "hover:scale-102 hover:z-20",
       size === 'featured' ? 'w-[480px]' : 'w-[360px]',
       isHovered && "scale-102 z-20",
@@ -116,6 +124,8 @@ export default function StreamTile({
         tabIndex={0}
         onClick={handleClick}
         onKeyDown={handleKeyPress}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         data-testid={`stream-tile-${streamId}`}
