@@ -44,19 +44,25 @@ export default function TopNavigation({
         e.preventDefault();
         if (index > 0) {
           setFocusedIndex(index - 1);
-          // Focus the previous element
-          const prevElement = e.currentTarget.parentElement?.previousElementSibling?.firstChild as HTMLElement;
-          prevElement?.focus();
+          // Find and focus the previous focusable element
+          const allButtons = document.querySelectorAll('[data-nav-index]');
+          const prevButton = Array.from(allButtons).find(btn => 
+            btn.getAttribute('data-nav-index') === String(index - 1)
+          ) as HTMLElement;
+          prevButton?.focus();
         }
         break;
       case 'ArrowRight':
         e.preventDefault();
-        const totalItems = navigationItems.length + 1; // +1 for profile button
+        const totalItems = navigationItems.length + (isAdmin ? 2 : 1); // nav items + admin (if admin) + logout
         if (index < totalItems - 1) {
           setFocusedIndex(index + 1);
-          // Focus the next element
-          const nextElement = e.currentTarget.parentElement?.nextElementSibling?.firstChild as HTMLElement;
-          nextElement?.focus();
+          // Find and focus the next focusable element
+          const allButtons = document.querySelectorAll('[data-nav-index]');
+          const nextButton = Array.from(allButtons).find(btn => 
+            btn.getAttribute('data-nav-index') === String(index + 1)
+          ) as HTMLElement;
+          nextButton?.focus();
         }
         break;
       case 'Enter':
@@ -86,6 +92,7 @@ export default function TopNavigation({
               onClick={() => onSectionChange(item.id)}
               onKeyDown={(e) => handleKeyDown(e, index, () => onSectionChange(item.id))}
               data-testid={`nav-${item.id}`}
+              data-nav-index={index}
             >
               {item.label}
             </Button>
@@ -103,7 +110,9 @@ export default function TopNavigation({
                 variant="ghost"
                 size="sm"
                 className="px-4 py-2 rounded-full text-gray-300 hover:text-white hover:bg-white/10 hover-elevate active-elevate-2 focus-visible:ring-2 focus-visible:ring-white"
+                onKeyDown={(e) => handleKeyDown(e, navigationItems.length)}
                 data-testid="nav-admin-menu"
+                data-nav-index={navigationItems.length}
               >
                 <Settings className="w-5 h-5 mr-2" />
                 Admin
@@ -141,8 +150,9 @@ export default function TopNavigation({
             size="sm"
             onClick={onLogout}
             className="px-3 py-2 rounded-full text-gray-300 hover:text-white hover:bg-red-500/20 hover-elevate active-elevate-2 focus-visible:ring-2 focus-visible:ring-white"
-            onKeyDown={(e) => handleKeyDown(e, navigationItems.length, onLogout)}
+            onKeyDown={(e) => handleKeyDown(e, isAdmin ? navigationItems.length + 1 : navigationItems.length, onLogout)}
             data-testid="nav-logout"
+            data-nav-index={isAdmin ? navigationItems.length + 1 : navigationItems.length}
           >
             <LogOut className="w-5 h-5" />
           </Button>
