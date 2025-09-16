@@ -69,7 +69,14 @@ export default function TopNavigation({
       case 'ArrowDown':
         e.preventDefault();
         // Navigate down to content area - focus first tile in currently focused section
-        // Map section IDs to actual section titles
+        const targetSectionId = navigationItems[index]?.id;
+        
+        // If we're not already in the target section, switch to it first
+        if (targetSectionId && targetSectionId !== activeSection) {
+          onSectionChange(targetSectionId);
+        }
+        
+        // Map section IDs to actual section titles for data-testid lookup
         const sectionTitleMap: Record<string, string> = {
           'featured': 'featured',
           'overTheAir': 'over-the-air', 
@@ -78,27 +85,26 @@ export default function TopNavigation({
           'studios': 'studios'
         };
         
-        // Use the currently focused navigation item instead of activeSection
-        const targetSectionId = navigationItems[index]?.id;
+        // Focus first tile with retry to handle async rendering
         const sectionTestId = sectionTitleMap[targetSectionId] || targetSectionId?.toLowerCase().replace(/\s+/g, '-');
-        const targetSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`);
-        
-        if (targetSectionElement) {
-          const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
-          if (firstTile) {
-            firstTile.focus();
-          }
-        } else {
-          // Fallback: try with activeSection as a second attempt
-          const fallbackTestId = sectionTitleMap[activeSection] || activeSection.toLowerCase().replace(/\s+/g, '-');
-          const fallbackElement = document.querySelector(`[data-testid="section-${fallbackTestId}"]`);
-          if (fallbackElement) {
-            const firstTile = fallbackElement.querySelector('.stream-tile') as HTMLElement;
+        const attemptFocus = (attempts = 0) => {
+          const targetSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`);
+          if (targetSectionElement) {
+            const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
             if (firstTile) {
               firstTile.focus();
+              return;
             }
           }
-        }
+          
+          // Retry up to 10 times (500ms total) to wait for render/data loading
+          if (attempts < 10) {
+            setTimeout(() => attemptFocus(attempts + 1), 50);
+          }
+        };
+        
+        // Start focus attempt immediately or after a short delay if section changed
+        setTimeout(attemptFocus, targetSectionId !== activeSection ? 100 : 0);
         break;
       case 'Enter':
       case ' ':
