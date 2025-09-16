@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,14 @@ export default function TopNavigation({
   const [, navigate] = useLocation();
   
   const isAdmin = userRole === 'admin';
+
+  // Auto-focus first navigation button when component mounts
+  useEffect(() => {
+    const firstButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
+    if (firstButton) {
+      firstButton.focus();
+    }
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent, index: number, action?: () => void) => {
     switch (e.key) {
