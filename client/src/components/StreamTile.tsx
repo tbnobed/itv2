@@ -413,12 +413,12 @@ const StreamTile = React.forwardRef(({
           <div className="flex items-center justify-between">
             {/* Live Indicator */}
             <div className="flex items-center">
-              <div className="bg-red-500 rounded-full animate-pulse mr-2 w-2 h-2" />
-              <span className="text-red-500 font-medium uppercase tracking-wide text-xs">LIVE</span>
+              <div className="bg-red-500 rounded-full animate-pulse mr-1 w-1.5 h-1.5" />
+              <span className="text-red-500 font-medium uppercase tracking-wide text-[10px]">LIVE</span>
             </div>
             
             {/* Stream ID */}
-            <div className="bg-black/40 px-2 py-1 rounded text-white/60 font-mono text-xs">
+            <div className="bg-black/40 px-1.5 py-0.5 rounded text-white/60 font-mono text-[10px]">
               {streamId}
             </div>
           </div>
