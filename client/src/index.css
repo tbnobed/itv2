@@ -211,27 +211,68 @@
     @apply border-border;
   }
 
+  html {
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+  }
+  
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+    margin: 0;
+  }
+  
+  #root {
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
   }
 
-  /* TV Browser Scaling Variables */
+  /* Android TV Safe Area and Full-Screen Layout */
+  .tv-stage {
+    position: relative;
+    width: 100vw;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .tv-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .tv-safe {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    padding: 24px 48px; /* Android TV safe area: 24px top/bottom, 48px left/right */
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* TV DPI Scaling */
   :root {
-    --tv-scale: 1;
+    --tv-dp: 1;
   }
 
-  /* TV Browser Compatibility - Single Transform Approach */
-  .tv-scale {
-    transform: scale(var(--tv-scale));
-    transform-origin: 0 0;
-    width: calc(100% / var(--tv-scale));
-    min-height: calc(100vh / var(--tv-scale));
-    overflow: visible;
+  html[data-tv="true"] {
+    font-size: calc(16px * var(--tv-dp));
   }
 
-  /* Ensure auth page content is properly contained on TV devices */
-  .tv-scale .min-h-screen {
-    min-height: calc(100vh / var(--tv-scale));
+  /* Debug safe area outline */
+  .tv-safe.debug {
+    outline: 2px dashed rgba(0, 255, 255, 0.35);
+  }
+  
+  /* Horizontal scrolling safe padding for TV */
+  .tv-scroll-safe {
+    scroll-padding-left: 48px;
+    scroll-padding-right: 48px;
   }
 }
 

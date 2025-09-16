@@ -197,6 +197,27 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     nashvilleStudiosImg,
     plexStudiosImg
   ];
+  
+  // TV detection and DPI setup
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const isTV = isFireTV || /Android.*TV|webOS|Tizen/i.test(navigator.userAgent);
+      if (isTV) {
+        document.documentElement.setAttribute('data-tv', 'true');
+        // Set DPI scaling based on devicePixelRatio
+        const dpr = window.devicePixelRatio || 1;
+        let dpScale = 1;
+        if (dpr >= 4) dpScale = 4;
+        else if (dpr >= 2) dpScale = 2;
+        else if (dpr >= 1.33) dpScale = 1.33;
+        document.documentElement.style.setProperty('--tv-dp', dpScale.toString());
+      }
+    }
+  }, [isFireTV]);
+  
+  // Helper function for sorting streams
+  const sortStreamsByTitle = (streams: StreamData[]) => 
+    streams.sort((a, b) => a.title.localeCompare(b.title));
 
   // Preload and rotate background images every 12 seconds
   useEffect(() => {
@@ -234,70 +255,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     return () => clearInterval(interval);
   }, [currentBgIndex, nextBgIndex, studioImages, isFireTV]);
 
-  // Function to render the Featured section with multiple rows
-  const renderFeaturedSection = () => {
-    if (!streamData) return null;
-
-    const sortStreamsByTitle = (streams: StreamData[]) => 
-      streams.sort((a, b) => a.title.localeCompare(b.title));
-
-    const featuredStreams = streamData.featured.map(convertStreamToStreamData);
-    const uhdStreams = streamData.uhd?.map(convertStreamToStreamData) || [];
-
-    return (
-      <div className="relative min-h-screen">
-        {/* Optimized Studio Background Images - Only 2 in memory */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Current background image */}
-          <img
-            src={studioImages[currentBgIndex]}
-            alt="Studio background"
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-2000 ease-in-out will-change-[opacity] [transform:translateZ(0)] opacity-100"
-            loading="eager"
-            decoding="async"
-          />
-          
-          {/* Next background image - only visible during fade */}
-          {!isFireTV && (
-            <img
-              src={studioImages[nextBgIndex]}
-              alt="Next studio background"
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-2000 ease-in-out will-change-[opacity] [transform:translateZ(0)] ${
-                isFading ? 'opacity-100' : 'opacity-0'
-              }`}
-              loading="lazy"
-              decoding="async"
-            />
-          )}
-          
-          {/* Darker overlay to dim images and ensure text readability */}
-          <div className="absolute inset-0 bg-black/75" />
-        </div>
-
-        {/* Content positioned at the top */}
-        <div className="relative z-10 pt-8 pb-20 space-y-12">
-          {/* Regular Featured Section */}
-          <CategoryRow
-            title="Featured"
-            streams={sortStreamsByTitle(featuredStreams)}
-            featured={true}
-            onStreamSelect={handleStreamSelect}
-          />
-          
-          {/* UHD Streams Section */}
-          {uhdStreams.length > 0 && (
-            <CategoryRow
-              title="UHD Streams"
-              streams={sortStreamsByTitle(uhdStreams)}
-              featured={false}
-              variant="compact"
-              onStreamSelect={handleStreamSelect}
-            />
-          )}
-        </div>
-      </div>
-    );
-  };
+  // renderFeaturedSection is now integrated into the main return statement
 
   // Show loading state
   if (streamsLoading || (activeSection === 'studios' && studiosLoading)) {
@@ -395,34 +353,91 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
   };
 
   return (
-    <div className={`min-h-screen w-full bg-black ${className}`}>
-      {/* Android TV Top Navigation */}
-      <TopNavigation
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        onLogout={handleLogout}
-        username={user?.username}
-        userRole={user?.role}
-      />
-
-      {/* Main Content with Android TV styling */}
-      <main className="min-h-screen overflow-y-auto bg-gradient-to-b from-black via-gray-900 to-black">
-        <div className="py-8">
-          {/* Render based on active section */}
-          {activeSection === 'studios' ? (
-            renderStudiosSection()
-          ) : activeSection === 'featured' ? (
-            renderFeaturedSection()
-          ) : (
-            <CategoryRow
-              title={currentSection.title}
-              streams={currentSection.streams}
-              featured={currentSection.featured}
-              onStreamSelect={handleStreamSelect}
+    <div className={`tv-stage ${className}`}>
+      {/* TV Background Layer - Full Bleed */}
+      {activeSection === 'featured' && (
+        <div className="tv-bg">
+          {/* Optimized Studio Background Images - Only 2 in memory */}
+          <div className="absolute inset-0 overflow-hidden">
+            {/* Current background image */}
+            <img
+              src={studioImages[currentBgIndex]}
+              alt="Studio background"
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-2000 ease-in-out will-change-[opacity] [transform:translateZ(0)] opacity-100"
+              loading="eager"
+              decoding="async"
             />
-          )}
+            
+            {/* Next background image - only visible during fade */}
+            {!isFireTV && (
+              <img
+                src={studioImages[nextBgIndex]}
+                alt="Next studio background"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-2000 ease-in-out will-change-[opacity] [transform:translateZ(0)] ${
+                  isFading ? 'opacity-100' : 'opacity-0'
+                }`}
+                loading="lazy"
+                decoding="async"
+              />
+            )}
+            
+            {/* Darker overlay to dim images and ensure text readability */}
+            <div className="absolute inset-0 bg-black/75" />
+          </div>
         </div>
-      </main>
+      )}
+      
+      {/* TV Safe Area Content */}
+      <div className="tv-safe">
+        <TopNavigation
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+          onLogout={handleLogout}
+          username={user?.username}
+          userRole={user?.role}
+        />
+        <main className="h-full overflow-y-auto scrollbar-hide">
+          {/* Render based on active section */}
+          {activeSection === 'featured' ? (
+            <div className="h-full">
+              {/* Content positioned at the top */}
+              <div className="relative z-10 pt-8 pb-20 space-y-12 tv-scroll-safe">
+                {/* Regular Featured Section */}
+                <CategoryRow
+                  title="Featured"
+                  streams={sortStreamsByTitle(streamData?.featured?.map(convertStreamToStreamData) || [])}
+                  featured={true}
+                  onStreamSelect={handleStreamSelect}
+                />
+                
+                {/* UHD Streams Section */}
+                {streamData?.uhd && streamData.uhd.length > 0 && (
+                  <CategoryRow
+                    title="UHD Streams"
+                    streams={sortStreamsByTitle(streamData.uhd.map(convertStreamToStreamData))}
+                    featured={false}
+                    variant="compact"
+                    onStreamSelect={handleStreamSelect}
+                  />
+                )}
+              </div>
+            </div>
+          ) : activeSection === 'studios' ? (
+            <div className="pt-6">
+              {renderStudiosSection()}
+            </div>
+          ) : (
+            <div className="pt-6 tv-scroll-safe">
+              <CategoryRow
+                title={currentSection.title}
+                streams={currentSection.streams}
+                featured={currentSection.featured}
+                onStreamSelect={handleStreamSelect}
+              />
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* Stream Modal */}
       {selectedStream && (
