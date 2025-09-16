@@ -19,6 +19,7 @@ interface CategoryRowProps {
   onStreamSelect?: (streamId: string, url: string) => void;
   className?: string;
   sectionId: string;
+  onBackToStudios?: () => void;
 }
 
 export default function CategoryRow({ 
@@ -28,12 +29,22 @@ export default function CategoryRow({
   variant = 'poster',
   onStreamSelect,
   className,
-  sectionId
+  sectionId,
+  onBackToStudios
 }: CategoryRowProps) {
   const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [focusedIndex, setFocusedIndex] = useState(0);
   
   if (!streams.length) return null;
+
+  // Auto-focus first tile when this is a studio page
+  useEffect(() => {
+    if (onBackToStudios && tileRefs.current[0]) {
+      setTimeout(() => {
+        tileRefs.current[0]?.focus();
+      }, 200);
+    }
+  }, [onBackToStudios]);
 
   // Update focusedIndex when tiles receive focus from external navigation
   const updateFocusedIndex = (index: number) => {
@@ -49,6 +60,9 @@ export default function CategoryRow({
           setFocusedIndex(newIndex);
           tileRefs.current[newIndex]?.focus();
           tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+        } else if (onBackToStudios) {
+          // If we're at the first tile and in a studio page, go back to studios
+          onBackToStudios();
         }
         break;
       case 'ArrowRight':
@@ -62,21 +76,14 @@ export default function CategoryRow({
         break;
       case 'ArrowUp':
         e.preventDefault();
-        // Check if we're in a studio page first
-        const backButton = document.querySelector('[data-testid="button-back-to-studios"]') as HTMLElement;
-        if (backButton) {
-          // We're in a studio page, go to back button
-          backButton.focus();
+        // Always go to top navigation since there's no back button anymore
+        const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
+        if (activeNavButton) {
+          activeNavButton.focus();
         } else {
-          // Exit to top navigation
-          const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
-          if (activeNavButton) {
-            activeNavButton.focus();
-          } else {
-            // Fallback to first nav button if active one isn't found
-            const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
-            firstNavButton?.focus();
-          }
+          // Fallback to first nav button if active one isn't found
+          const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
+          firstNavButton?.focus();
         }
         break;
     }

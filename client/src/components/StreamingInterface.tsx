@@ -466,49 +466,15 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
         );
       }
       
-      const handleStudioPageKeyDown = (e: React.KeyboardEvent) => {
-        switch (e.key) {
-          case 'ArrowLeft':
-          case 'Backspace':
-            e.preventDefault();
-            handleBackToStudios();
-            break;
-          case 'ArrowDown':
-            e.preventDefault();
-            // Focus first stream tile in the studio feeds
-            const firstStudioFeedTile = document.querySelector('[data-testid="section-studios"] .stream-tile') as HTMLElement;
-            if (firstStudioFeedTile) {
-              firstStudioFeedTile.focus();
-            }
-            break;
-        }
-      };
-
       return (
         <div>
-          <div className="flex items-center gap-4 mb-6 px-6">
-            <button
-              ref={(el) => {
-                // Auto-focus the back button when studio page loads
-                if (el && !document.activeElement?.closest('.stream-tile')) {
-                  setTimeout(() => el.focus(), 100);
-                }
-              }}
-              onClick={handleBackToStudios}
-              onKeyDown={handleStudioPageKeyDown}
-              className="text-primary hover:text-primary/80 font-medium focus:outline-none focus:ring-4 focus:ring-primary focus:ring-opacity-70 rounded px-2 py-1"
-              data-testid="button-back-to-studios"
-              tabIndex={0}
-            >
-              ← Back to Studios
-            </button>
-          </div>
           <CategoryRow
             title={`${selectedStudioData?.name} - Camera Feeds`}
             streams={(studioFeeds || []).map(convertStreamToStreamData).sort((a, b) => a.title.localeCompare(b.title))}
             featured={false}
             onStreamSelect={handleStreamSelect}
             sectionId="studios"
+            onBackToStudios={handleBackToStudios}
           />
         </div>
       );
