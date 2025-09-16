@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Import studio background images
 import socalStudioImg from '@assets/SocalStudio_1758041495268.png';
@@ -12,6 +12,7 @@ import StudioCard from './StudioCard';
 import TopNavigation from './TopNavigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
+import { setupGlobalTVKeys } from '@/utils/tv-fixes';
 import type { Stream, Studio } from '@shared/schema';
 
 interface StreamData {
@@ -54,6 +55,10 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     url: string;
   } | null>(null);
   const [selectedStudio, setSelectedStudio] = useState<string | null>(null);
+  const [focusArea, setFocusArea] = useState<'navigation' | 'content'>('navigation');
+  const [navigationIndex, setNavigationIndex] = useState(0);
+  const navigationRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
 
   // Fetch streams data
   const { data: streamData, isLoading: streamsLoading, error: streamsError } = useQuery<GroupedStreams>({
@@ -77,6 +82,69 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
   useEffect(() => {
     if (activeSection !== 'studios') {
       setSelectedStudio(null);
+    }
+  }, [activeSection]);
+
+  // TV Navigation Setup
+  useEffect(() => {
+    const navigationItems = ['featured', 'overTheAir', 'liveFeeds', 'studios'];
+    
+    const cleanup = setupGlobalTVKeys({
+      onNavigateUp: () => {
+        if (focusArea === 'content') {
+          setFocusArea('navigation');
+          // Focus the navigation
+          const navElement = navigationRef.current?.querySelector(`[data-section="${activeSection}"]`) as HTMLElement;
+          navElement?.focus();
+        }
+      },
+      onNavigateDown: () => {
+        if (focusArea === 'navigation') {
+          setFocusArea('content');
+          // Focus the content area
+          const contentElement = contentRef.current?.querySelector('[tabindex="0"]') as HTMLElement;
+          contentElement?.focus();
+        }
+      },
+      onNavigateLeft: () => {
+        if (focusArea === 'navigation') {
+          const currentIndex = navigationItems.indexOf(activeSection);
+          if (currentIndex > 0) {
+            const newSection = navigationItems[currentIndex - 1];
+            setActiveSection(newSection);
+            setNavigationIndex(currentIndex - 1);
+          }
+        }
+      },
+      onNavigateRight: () => {
+        if (focusArea === 'navigation') {
+          const currentIndex = navigationItems.indexOf(activeSection);
+          if (currentIndex < navigationItems.length - 1) {
+            const newSection = navigationItems[currentIndex + 1];
+            setActiveSection(newSection);
+            setNavigationIndex(currentIndex + 1);
+          }
+        }
+      },
+      onSelect: () => {
+        // Handle selection based on current focus area
+        if (focusArea === 'navigation') {
+          setFocusArea('content');
+          const contentElement = contentRef.current?.querySelector('[tabindex="0"]') as HTMLElement;
+          contentElement?.focus();
+        }
+      }
+    });
+
+    return cleanup;
+  }, [activeSection, focusArea]);
+
+  // Set initial navigation index based on active section
+  useEffect(() => {
+    const navigationItems = ['featured', 'overTheAir', 'liveFeeds', 'studios'];
+    const index = navigationItems.indexOf(activeSection);
+    if (index !== -1) {
+      setNavigationIndex(index);
     }
   }, [activeSection]);
 
@@ -383,13 +451,16 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
       {/* TV Safe Area Content */}
       <div className="tv-safe">
         <TopNavigation
+          ref={navigationRef}
           activeSection={activeSection}
           onSectionChange={setActiveSection}
           onLogout={handleLogout}
           username={user?.username}
           userRole={user?.role}
+          focusArea={focusArea}
+          navigationIndex={navigationIndex}
         />
-        <main className="h-full overflow-y-auto scrollbar-hide">
+        <main ref={contentRef} className="h-full overflow-y-auto scrollbar-hide" tabIndex={0}>
           {/* Render based on active section */}
           {activeSection === 'featured' ? (
             <div className="h-full">

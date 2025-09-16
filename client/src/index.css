@@ -212,30 +212,36 @@
   }
 
   html {
-    height: 100dvh;
-    width: 100vw;
+    height: 100vh;
+    width: 100%;
     overflow: hidden;
+    zoom: 1 !important;
+    transform: scale(1) !important;
   }
   
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    height: 100dvh;
-    width: 100vw;
+    height: 100vh;
+    width: 100%;
     overflow: hidden;
     margin: 0;
+    zoom: 1 !important;
+    transform: scale(1) !important;
   }
   
   #root {
-    height: 100dvh;
-    width: 100vw;
+    height: 100vh;
+    width: 100%;
     overflow: hidden;
+    zoom: 1 !important;
+    transform: scale(1) !important;
   }
 
   /* Android TV Safe Area and Full-Screen Layout */
   .tv-stage {
     position: relative;
-    width: 100vw;
-    height: 100dvh;
+    width: 100%;
+    height: 100vh;
     overflow: hidden;
   }
 
