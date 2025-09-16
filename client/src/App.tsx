@@ -117,23 +117,30 @@ function App() {
       const devicePixelRatio = window.devicePixelRatio || 1;
       const actualWidth = screenWidth * devicePixelRatio;
       const actualHeight = screenHeight * devicePixelRatio;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       
       // TV/OTT device detection - apply to actual TV devices including Firestick
       const isTVBrowser = /Silk|AFT|BRAVIA|Tizen|webOS|SmartTV|NetCast/i.test(userAgent) ||
                           /CrKey|GoogleTV|AndroidTV/i.test(userAgent);
       
+      // Large screen detection (75"+ TVs typically have these dimensions)
+      const isLargeTV = viewportWidth >= 1920 && viewportHeight >= 1080;
+      
       // Apply TV scaling to confirmed TV devices (including Firestick Silk browser)
-      if (isTVBrowser) {
+      if (isTVBrowser || isLargeTV) {
         const rootElement = document.getElementById('root');
         if (rootElement) {
-          // Scale DOWN to fit more content on TV screens
+          // Scale appropriately for TV viewing distance and size
           let scale = 1;
-          if (actualWidth >= 3840 && actualHeight >= 2160) {
-            scale = 0.7; // 4K TVs - scale down to fit more content
-          } else if (actualWidth >= 1920 && actualHeight >= 1080) {
-            scale = 0.75; // 1080p TVs - scale down moderately
-          } else if (actualWidth >= 1280 && actualHeight >= 720) {
-            scale = 0.85; // 720p TVs - scale down slightly
+          
+          // For very large TVs (4K), use smaller scale to fit more content
+          if (viewportWidth >= 3840 || (viewportWidth >= 1920 && viewportHeight >= 1080 && devicePixelRatio >= 2)) {
+            scale = 0.6; // Large 4K TVs - much smaller to fit more content
+          } else if (viewportWidth >= 1920 && viewportHeight >= 1080) {
+            scale = 0.7; // 1080p large TVs - scale down to fit content
+          } else if (viewportWidth >= 1280 && viewportHeight >= 720) {
+            scale = 0.8; // Smaller TVs - minimal scaling
           }
           
           // Only apply scaling to non-auth pages
@@ -144,12 +151,23 @@ function App() {
             rootElement.classList.remove('tv-scale');
           }
           
-          console.log(`TV device detected: ${userAgent}, Resolution: ${actualWidth}x${actualHeight}, Scale: ${scale}, Auth route: ${location.startsWith('/auth')}`);
+          console.log(`Large TV detected: ${userAgent}, Viewport: ${viewportWidth}x${viewportHeight}, Screen: ${screenWidth}x${screenHeight}, DPR: ${devicePixelRatio}, Scale: ${scale}`);
+        }
+      } else {
+        // Remove scaling for non-TV devices
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+          rootElement.classList.remove('tv-scale');
+          document.documentElement.style.removeProperty('--tv-scale');
         }
       }
     };
     
     detectTVDevice();
+    
+    // Re-detect on window resize
+    window.addEventListener('resize', detectTVDevice);
+    return () => window.removeEventListener('resize', detectTVDevice);
   }, [location]);
   
   // Custom sidebar width for streaming application
