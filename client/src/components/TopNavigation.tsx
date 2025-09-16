@@ -68,6 +68,7 @@ export default function TopNavigation({
         break;
       case 'ArrowDown':
         e.preventDefault();
+        console.log('TopNavigation ArrowDown pressed - index:', index, 'activeSection:', activeSection);
         // Navigate down to content area - focus first tile in currently focused section
         // Map section IDs to actual section titles
         const sectionTitleMap: Record<string, string> = {
@@ -80,19 +81,32 @@ export default function TopNavigation({
         
         // Use the currently focused navigation item instead of activeSection
         const targetSectionId = navigationItems[index]?.id;
+        console.log('Target section ID:', targetSectionId);
         const sectionTestId = sectionTitleMap[targetSectionId] || targetSectionId?.toLowerCase().replace(/\s+/g, '-');
+        console.log('Looking for section with testid:', `section-${sectionTestId}`);
         const targetSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`)?.closest('div');
+        console.log('Target section element found:', !!targetSectionElement);
         
         if (targetSectionElement) {
           const firstTile = targetSectionElement.querySelector('.stream-tile') as HTMLElement;
-          firstTile?.focus();
+          console.log('First tile found:', !!firstTile);
+          if (firstTile) {
+            console.log('Focusing first tile:', firstTile);
+            firstTile.focus();
+          }
         } else {
           // Fallback: try with activeSection as a second attempt
+          console.log('Fallback: trying activeSection:', activeSection);
           const fallbackTestId = sectionTitleMap[activeSection] || activeSection.toLowerCase().replace(/\s+/g, '-');
+          console.log('Fallback testid:', `section-${fallbackTestId}`);
           const fallbackElement = document.querySelector(`[data-testid="section-${fallbackTestId}"]`)?.closest('div');
+          console.log('Fallback element found:', !!fallbackElement);
           if (fallbackElement) {
             const firstTile = fallbackElement.querySelector('.stream-tile') as HTMLElement;
-            firstTile?.focus();
+            console.log('Fallback first tile found:', !!firstTile);
+            if (firstTile) {
+              firstTile.focus();
+            }
           } else {
             console.warn('Could not find section element for navigation:', targetSectionId, activeSection);
           }
