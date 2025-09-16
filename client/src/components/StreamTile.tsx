@@ -270,7 +270,7 @@ const StreamTile = React.forwardRef(({
           "transition-all duration-300 ease-out",
           "focus-visible:scale-110 focus-visible:z-30",
           "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
-          size === 'featured' ? 'w-[300px]' : 'w-[220px]',
+          size === 'featured' ? 'w-[255px]' : 'w-[187px]',
           isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
           className
         )}
@@ -363,7 +363,7 @@ const StreamTile = React.forwardRef(({
       {/* Single Card Wrapper */}
       <div className={cn(
         "rounded-lg overflow-hidden bg-gray-900 shadow-sm transition-all duration-300 ease-out",
-        size === 'featured' ? 'w-[300px]' : 'w-[220px]',
+        size === 'featured' ? 'w-[255px]' : 'w-[187px]',
         isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
       )}>
@@ -403,7 +403,10 @@ const StreamTile = React.forwardRef(({
         <div className="p-3 bg-black/60 backdrop-blur-sm">
           {/* Stream Title */}
           <h3 
-            className="text-white font-medium leading-tight line-clamp-2 mb-2 stream-tile-title"
+            className={cn(
+              "text-white font-medium leading-tight line-clamp-2 mb-2 stream-tile-title",
+              size === 'featured' ? 'text-sm' : 'text-xs'
+            )}
             data-testid={`text-title-${streamId}`}
             title={title}
           >
