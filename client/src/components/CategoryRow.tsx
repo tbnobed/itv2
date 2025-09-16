@@ -106,13 +106,7 @@ export default function CategoryRow({
               return (
                 <StreamTile
                   key={stream.id}
-                  ref={(el) => {
-                    tileRefs.current[index] = el;
-                    // Set up focus listener to sync focusedIndex
-                    if (el) {
-                      el.addEventListener('focus', () => updateFocusedIndex(index));
-                    }
-                  }}
+                  ref={(el) => tileRefs.current[index] = el}
                   id={stream.id}
                   title={stream.title}
                   thumbnail={stream.thumbnail}
@@ -125,6 +119,7 @@ export default function CategoryRow({
                   metaRight={metaRight}
                   tabIndex={index === focusedIndex ? 0 : -1}
                   onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
+                  onFocus={() => updateFocusedIndex(index)}
                   className="flex-shrink-0"
                 />
               );

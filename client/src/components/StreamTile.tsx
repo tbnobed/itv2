@@ -17,6 +17,7 @@ interface StreamTileProps {
   metaRight?: string;
   tabIndex?: number;
   onSelect?: (streamId: string) => void;
+  onFocus?: () => void;
   className?: string;
 }
 
@@ -34,6 +35,7 @@ const StreamTile = React.forwardRef(({
   metaRight,
   tabIndex,
   onSelect,
+  onFocus,
   className 
 }: StreamTileProps, ref: React.Ref<HTMLDivElement>) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -261,6 +263,7 @@ const StreamTile = React.forwardRef(({
     // Original overlay layout for Featured section
     return (
       <div
+        ref={ref}
         className={cn(
           "relative cursor-pointer group outline-none stream-tile",
           "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
@@ -274,6 +277,7 @@ const StreamTile = React.forwardRef(({
         tabIndex={tabIndex ?? 0}
         onClick={handleClick}
         onKeyDown={handleKeyPress}
+        onFocus={onFocus}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         data-testid={`stream-tile-${streamId}`}
@@ -348,6 +352,7 @@ const StreamTile = React.forwardRef(({
       tabIndex={tabIndex ?? 0}
       onClick={handleClick}
       onKeyDown={handleKeyPress}
+      onFocus={onFocus}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
