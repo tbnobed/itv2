@@ -62,14 +62,21 @@ export default function CategoryRow({
         break;
       case 'ArrowUp':
         e.preventDefault();
-        // Exit to top navigation
-        const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
-        if (activeNavButton) {
-          activeNavButton.focus();
+        // Check if we're in a studio page first
+        const backButton = document.querySelector('[data-testid="button-back-to-studios"]') as HTMLElement;
+        if (backButton) {
+          // We're in a studio page, go to back button
+          backButton.focus();
         } else {
-          // Fallback to first nav button if active one isn't found
-          const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
-          firstNavButton?.focus();
+          // Exit to top navigation
+          const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
+          if (activeNavButton) {
+            activeNavButton.focus();
+          } else {
+            // Fallback to first nav button if active one isn't found
+            const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
+            firstNavButton?.focus();
+          }
         }
         break;
     }
