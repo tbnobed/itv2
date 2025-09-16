@@ -35,15 +35,18 @@ export default function StreamGrid({
 
   // Tile refs are initialized by ref callbacks - no need to pre-initialize
 
-  // Auto-focus first tile when component mounts or becomes active
+  // Only auto-focus on initial mount, not on navigation returns
+  const [hasInitialized, setHasInitialized] = useState(false);
+  
   useEffect(() => {
-    if (streamRows.length > 0 && tileRefs.current[0]?.[0]) {
+    if (streamRows.length > 0 && !hasInitialized && tileRefs.current[0]?.[0]) {
       const timer = setTimeout(() => {
         tileRefs.current[0][0]?.focus();
+        setHasInitialized(true);
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [streamRows.length]);
+  }, [streamRows.length, hasInitialized]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
