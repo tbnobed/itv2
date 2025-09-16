@@ -343,21 +343,28 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
   // Render studios section with two-level navigation
   const renderStudiosSection = () => {
     if (!selectedStudio) {
-      // Show studio grid
+      // Show studio carousel
       return (
-        <div>
-          <h2 className="text-white font-bold mb-8 px-6 text-center text-2xl" data-testid="section-studios">
+        <div className="relative mb-10 w-full">
+          <h2 className="text-white font-bold mb-8 px-8 text-2xl" data-testid="section-studios">
             Studios
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-6 w-full max-w-full">
-            {studiosData?.sort((a, b) => a.name.localeCompare(b.name)).map((studio) => (
-              <StudioCard
-                key={studio.id}
-                studio={studio}
-                onClick={handleStudioSelect}
-                data-testid={`studio-card-${studio.id}`}
-              />
-            ))}
+          
+          {/* Studio Carousel */}
+          <div className="w-full" data-testid="studio-scroll-container">
+            <div className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2">
+              <div className="flex gap-6 pb-8 w-max">
+                {studiosData?.sort((a, b) => a.name.localeCompare(b.name)).map((studio) => (
+                  <StudioCard
+                    key={studio.id}
+                    studio={studio}
+                    onClick={handleStudioSelect}
+                    className="flex-shrink-0"
+                    data-testid={`studio-card-${studio.id}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       );
