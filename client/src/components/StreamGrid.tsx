@@ -89,9 +89,9 @@ export default function StreamGrid({
 
       {/* 8-Column Grid - No Scrolling */}
       <div className="w-full px-8" onKeyDown={handleKeyDown}>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-8">
           {streamRows.map((row, rowIndex) => (
-            <div key={rowIndex} className="grid grid-cols-8 gap-2 w-full">
+            <div key={rowIndex} className="grid grid-cols-8 gap-6 w-full">
               {row.map((stream, colIndex) => {
                 const globalIndex = rowIndex * 8 + colIndex;
                 const isActive = rowIndex === focusedRow && colIndex === focusedCol;
