@@ -19,7 +19,7 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
       }
     }
 
-    // Auto-detect appropriate scale
+    // Auto-detect appropriate scale - much more aggressive for large TVs
     const detectScale = () => {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
@@ -27,15 +27,15 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
       
       let autoScale = 1;
       
-      // Very large displays get aggressive scaling
+      // VERY aggressive scaling for large displays
       if (viewportWidth >= 2400) {
-        autoScale = 0.45; // Very large displays - much smaller UI
+        autoScale = 0.3; // Massive displays - tiny UI
       } else if (viewportWidth >= 1920) {
-        autoScale = 0.5; // Large displays - smaller UI
+        autoScale = 0.4; // Large displays - very small UI
       } else if (viewportWidth >= 1600) {
-        autoScale = 0.65; // Medium large displays
+        autoScale = 0.5; // Medium large displays
       } else if (viewportWidth >= 1280) {
-        autoScale = 0.75; // Smaller large displays
+        autoScale = 0.6; // Smaller large displays
       }
       
       console.log(`Auto-detected scale: ${autoScale} for viewport ${viewportWidth}x${viewportHeight}`);
@@ -62,7 +62,14 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
   }, [effectiveScale]);
 
   return (
-    <div className="w-full h-full overflow-auto relative">
+    <div 
+      className="w-full h-full overflow-auto relative"
+      style={{
+        zoom: effectiveScale,
+        width: '100%',
+        height: '100%'
+      }}
+    >
       {/* Temporary scale controls - remove later */}
       <div className="fixed top-2 right-2 z-50 bg-black/80 text-white p-2 rounded space-x-2 text-sm">
         <span>Scale:</span>
@@ -73,19 +80,7 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
         <span className="ml-2">Current: {effectiveScale}</span>
       </div>
       
-      <div 
-        id="app-viewport" 
-        className="scaled-viewport"
-        style={{
-          transform: `scale(${effectiveScale})`,
-          transformOrigin: '0 0',
-          width: `${100 / effectiveScale}%`,
-          minHeight: `${100 / effectiveScale}vh`,
-          overflow: 'visible'
-        }}
-      >
-        {children}
-      </div>
+      {children}
     </div>
   );
 };
