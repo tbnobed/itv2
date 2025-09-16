@@ -35,6 +35,7 @@ interface GroupedStreams {
   overTheAir: Stream[];
   liveFeeds: Stream[];
   studios: Stream[];
+  uhd: Stream[];
 }
 
 export default function StreamsListPage() {
@@ -95,6 +96,7 @@ export default function StreamsListPage() {
     ...streamData.overTheAir,
     ...streamData.liveFeeds,
     ...streamData.studios,
+    ...streamData.uhd,
   ] : [];
 
   // Filter streams based on search query
@@ -114,6 +116,8 @@ export default function StreamsListPage() {
         return 'bg-green-500 text-white';
       case 'studios':
         return 'bg-purple-500 text-white';
+      case 'uhd':
+        return 'bg-orange-500 text-white';
       default:
         return 'bg-secondary text-secondary-foreground';
     }
@@ -125,6 +129,8 @@ export default function StreamsListPage() {
         return 'Over The Air';
       case 'liveFeeds':
         return 'Live Feeds';
+      case 'uhd':
+        return 'UHD Streams';
       default:
         return category.charAt(0).toUpperCase() + category.slice(1);
     }
