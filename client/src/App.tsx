@@ -127,33 +127,30 @@ function App() {
               <Router />
               <Toaster />
             </div>
-          ) : (
-            // All non-auth routes get viewport scaling
-            <ViewportScaler>
-              {isAdminRoute ? (
-                // Admin routes use traditional sidebar layout
-                <SidebarProvider style={style as React.CSSProperties}>
-                  <div className="flex min-h-screen w-full">
-                    <AppSidebar 
-                      activeSection="admin" 
-                      onSectionChange={() => {}}
-                    />
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <AppHeader />
-                      <main className="flex-1 min-w-0">
-                        <Router />
-                      </main>
-                    </div>
-                  </div>
-                  <Toaster />
-                </SidebarProvider>
-              ) : (
-                // Main streaming interface uses Android TV full-screen layout
-                <div className="h-screen w-full overflow-auto">
-                  <Router />
-                  <Toaster />
+          ) : isAdminRoute ? (
+            // Admin routes use traditional sidebar layout (NO SCALING)
+            <SidebarProvider style={style as React.CSSProperties}>
+              <div className="flex min-h-screen w-full">
+                <AppSidebar 
+                  activeSection="admin" 
+                  onSectionChange={() => {}}
+                />
+                <div className="flex flex-col flex-1 min-w-0">
+                  <AppHeader />
+                  <main className="flex-1 min-w-0">
+                    <Router />
+                  </main>
                 </div>
-              )}
+              </div>
+              <Toaster />
+            </SidebarProvider>
+          ) : (
+            // Main streaming interface uses Android TV full-screen layout with scaling
+            <ViewportScaler>
+              <div className="h-screen w-full overflow-auto">
+                <Router />
+                <Toaster />
+              </div>
             </ViewportScaler>
           )}
         </TooltipProvider>
