@@ -33,15 +33,7 @@ export default function CategoryRow({
   
   if (!streams.length) return null;
 
-  // Auto-focus first tile when component mounts or becomes active
-  useEffect(() => {
-    if (streams.length > 0) {
-      const timer = setTimeout(() => {
-        tileRefs.current[0]?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [streams.length]);
+  // Focus management is handled by parent navigation
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {

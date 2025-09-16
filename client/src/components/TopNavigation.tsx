@@ -68,10 +68,11 @@ export default function TopNavigation({
         break;
       case 'ArrowDown':
         e.preventDefault();
-        // Navigate down to content area - focus first tile in current section
-        const firstTile = document.querySelector('.stream-tile') as HTMLElement;
-        if (firstTile) {
-          firstTile.focus();
+        // Navigate down to content area - focus first tile in current active section
+        const activeSection = document.querySelector(`[data-testid="section-${activeSection.toLowerCase().replace(/\s+/g, '-')}"]`)?.closest('div');
+        if (activeSection) {
+          const firstTile = activeSection.querySelector('.stream-tile') as HTMLElement;
+          firstTile?.focus();
         }
         break;
       case 'Enter':
