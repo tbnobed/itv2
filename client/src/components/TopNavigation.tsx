@@ -69,7 +69,17 @@ export default function TopNavigation({
       case 'ArrowDown':
         e.preventDefault();
         // Navigate down to content area - focus first tile in current active section
-        const activeSectionElement = document.querySelector(`[data-testid="section-${activeSection.toLowerCase().replace(/\s+/g, '-')}"]`)?.closest('div');
+        // Map section IDs to actual section titles
+        const sectionTitleMap: Record<string, string> = {
+          'featured': 'featured',
+          'overTheAir': 'over-the-air', 
+          'liveFeeds': 'live-feeds',
+          'uhd': 'uhd',
+          'studios': 'studios'
+        };
+        
+        const sectionTestId = sectionTitleMap[activeSection] || activeSection.toLowerCase().replace(/\s+/g, '-');
+        const activeSectionElement = document.querySelector(`[data-testid="section-${sectionTestId}"]`)?.closest('div');
         if (activeSectionElement) {
           const firstTile = activeSectionElement.querySelector('.stream-tile') as HTMLElement;
           firstTile?.focus();
