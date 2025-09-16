@@ -398,7 +398,7 @@ const StreamTile = React.forwardRef(({
       </div>
       
       {/* Stream Info Below Image - Card Style */}
-      <div className="bg-gray-900/95 backdrop-blur-sm rounded-b-lg mt-1 p-3">
+      <div className="bg-gray-900/95 backdrop-blur-sm rounded-b-lg -mt-2 mx-0 p-2" style={{ width: size === 'featured' ? '300px' : '220px' }}>
         {/* Stream Title */}
         <h3 
           className="text-white font-medium leading-tight line-clamp-2 mb-2 stream-tile-title"
