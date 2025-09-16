@@ -460,6 +460,55 @@ export class MemStorage implements IStorage {
         url: 'http://cdn4.obedtv.live:2023/rtc/v1/whep/?app=live&stream=RR001',
         category: 'studios',
         studioId: studioIds[4]
+      },
+      // UHD Streams
+      {
+        title: 'UHD Main Production',
+        thumbnail: '/generated_images/Featured_live_production_15b7d8b1.png',
+        streamId: 'UHD001',
+        url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=UHD001',
+        category: 'uhd',
+        studioId: null
+      },
+      {
+        title: 'UHD Special Event',
+        thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
+        streamId: 'UHD002',
+        url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=UHD002',
+        category: 'uhd',
+        studioId: null
+      },
+      {
+        title: 'UHD Documentary Feed',
+        thumbnail: '/generated_images/Studio_A_control_room_42819489.png',
+        streamId: 'UHD003',
+        url: 'http://cdn3.obedtv.live:2020/rtc/v1/whep/?app=live&stream=UHD003',
+        category: 'uhd',
+        studioId: null
+      },
+      {
+        title: 'UHD Sports Broadcast',
+        thumbnail: '/generated_images/Over-the-air_broadcast_tower_04c20672.png',
+        streamId: 'UHD004',
+        url: 'http://cdn4.obedtv.live:2023/rtc/v1/whep/?app=live&stream=UHD004',
+        category: 'uhd',
+        studioId: null
+      },
+      {
+        title: 'UHD Nature Cam',
+        thumbnail: '/generated_images/Featured_live_production_15b7d8b1.png',
+        streamId: 'UHD005',
+        url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=UHD005',
+        category: 'uhd',
+        studioId: null
+      },
+      {
+        title: 'UHD City Skyline',
+        thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
+        streamId: 'UHD006',
+        url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=UHD006',
+        category: 'uhd',
+        studioId: null
       }
     ];
 

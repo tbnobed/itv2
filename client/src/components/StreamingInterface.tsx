@@ -84,6 +84,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
         ...streamData.overTheAir,
         ...streamData.liveFeeds,
         ...streamData.studios,
+        ...streamData.uhd,
       ];
       
       const stream = allStreams.find(s => s.streamId === streamId);
