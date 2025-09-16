@@ -23,6 +23,7 @@ const navigationItems = [
   { id: 'featured', label: 'Featured' },
   { id: 'overTheAir', label: 'Over The Air' },
   { id: 'liveFeeds', label: 'Live Feeds' },
+  { id: 'uhd', label: 'UHD' },
   { id: 'studios', label: 'Studios' },
 ];
 

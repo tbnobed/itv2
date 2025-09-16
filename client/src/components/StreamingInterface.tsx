@@ -174,6 +174,12 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
           streams: sortStreamsByTitle(streamData.liveFeeds.map(convertStreamToStreamData)), 
           featured: false 
         };
+      case 'uhd':
+        return { 
+          title: 'UHD Streams', 
+          streams: sortStreamsByTitle(streamData.uhd.map(convertStreamToStreamData)), 
+          featured: false 
+        };
       default:
         return { 
           title: 'Featured', 
