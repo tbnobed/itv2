@@ -135,6 +135,14 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
 
   const handleBackToStudios = () => {
     setSelectedStudio(null);
+    // Restore focus to the first studio card after returning to studios list
+    setTimeout(() => {
+      setFocusedStudioIndex(0);
+      const firstStudioCard = studioRefs.current[0];
+      if (firstStudioCard) {
+        firstStudioCard.focus();
+      }
+    }, 100);
   };
 
   const handlePageChange = (page: number) => {
