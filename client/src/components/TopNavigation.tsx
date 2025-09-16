@@ -44,26 +44,26 @@ export default function TopNavigation({
       case 'ArrowLeft':
         e.preventDefault();
         if (index > 0) {
-          setFocusedIndex(index - 1);
-          // Find and focus the previous focusable element
-          const allButtons = document.querySelectorAll('[data-nav-index]');
-          const prevButton = Array.from(allButtons).find(btn => 
-            btn.getAttribute('data-nav-index') === String(index - 1)
-          ) as HTMLElement;
-          prevButton?.focus();
+          const targetIndex = index - 1;
+          setFocusedIndex(targetIndex);
+          // Use setTimeout to ensure DOM is updated
+          setTimeout(() => {
+            const targetButton = document.querySelector(`[data-nav-index="${targetIndex}"]`) as HTMLElement;
+            targetButton?.focus();
+          }, 0);
         }
         break;
       case 'ArrowRight':
         e.preventDefault();
         const totalItems = navigationItems.length + (isAdmin ? 2 : 1); // nav items + admin (if admin) + logout
         if (index < totalItems - 1) {
-          setFocusedIndex(index + 1);
-          // Find and focus the next focusable element
-          const allButtons = document.querySelectorAll('[data-nav-index]');
-          const nextButton = Array.from(allButtons).find(btn => 
-            btn.getAttribute('data-nav-index') === String(index + 1)
-          ) as HTMLElement;
-          nextButton?.focus();
+          const targetIndex = index + 1;
+          setFocusedIndex(targetIndex);
+          // Use setTimeout to ensure DOM is updated
+          setTimeout(() => {
+            const targetButton = document.querySelector(`[data-nav-index="${targetIndex}"]`) as HTMLElement;
+            targetButton?.focus();
+          }, 0);
         }
         break;
       case 'ArrowDown':
