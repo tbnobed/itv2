@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Search, User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -51,7 +51,7 @@ export default function TopNavigation({
         break;
       case 'ArrowRight':
         e.preventDefault();
-        const totalItems = navigationItems.length + 2; // +2 for search and profile buttons
+        const totalItems = navigationItems.length + 1; // +1 for profile button
         if (index < totalItems - 1) {
           setFocusedIndex(index + 1);
           // Focus the next element
@@ -95,20 +95,6 @@ export default function TopNavigation({
 
       {/* Right Section - Search and User */}
       <div className="flex items-center gap-4">
-        {/* Search Button */}
-        <div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="px-4 py-2 rounded-full text-gray-300 hover:text-white hover:bg-white/10 hover-elevate active-elevate-2 focus-visible:ring-2 focus-visible:ring-white"
-            onKeyDown={(e) => handleKeyDown(e, navigationItems.length)}
-            data-testid="nav-search"
-          >
-            <Search className="w-5 h-5 mr-2" />
-            Search
-          </Button>
-        </div>
-
         {/* Admin Menu - Only visible for admin users */}
         {isAdmin && (
           <DropdownMenu>
@@ -155,7 +141,7 @@ export default function TopNavigation({
             size="sm"
             onClick={onLogout}
             className="px-3 py-2 rounded-full text-gray-300 hover:text-white hover:bg-red-500/20 hover-elevate active-elevate-2 focus-visible:ring-2 focus-visible:ring-white"
-            onKeyDown={(e) => handleKeyDown(e, navigationItems.length + 1, onLogout)}
+            onKeyDown={(e) => handleKeyDown(e, navigationItems.length, onLogout)}
             data-testid="nav-logout"
           >
             <LogOut className="w-5 h-5" />
