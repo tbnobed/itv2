@@ -124,12 +124,16 @@ export default function PasscodeAuthPage() {
         handleClear();
       } else if (key === 'ArrowDown') {
         event.preventDefault();
+        console.log('ArrowDown pressed on auth page');
         // Focus on the input OTP field or first number button
         const inputOTP = document.querySelector('[data-testid="input-passcode"]') as HTMLElement;
         const firstDigitButton = document.querySelector('[data-testid="button-digit-1"]') as HTMLElement;
+        console.log('InputOTP found:', !!inputOTP, 'FirstDigitButton found:', !!firstDigitButton);
         if (inputOTP) {
+          console.log('Focusing inputOTP');
           inputOTP.focus();
         } else if (firstDigitButton) {
+          console.log('Focusing firstDigitButton');
           firstDigitButton.focus();
         }
       }
