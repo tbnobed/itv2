@@ -27,10 +27,10 @@ export default function StreamGrid({
   const [focusedCol, setFocusedCol] = useState(0);
   const tileRefs = useRef<(HTMLDivElement | null)[][]>([]);
   
-  // Group streams into rows of 8
+  // Group streams into rows of 4
   const streamRows: StreamData[][] = [];
-  for (let i = 0; i < streams.length; i += 8) {
-    streamRows.push(streams.slice(i, i + 8));
+  for (let i = 0; i < streams.length; i += 4) {
+    streamRows.push(streams.slice(i, i + 4));
   }
 
   // Initialize tile refs array
@@ -91,9 +91,9 @@ export default function StreamGrid({
       <div className="w-full px-8" onKeyDown={handleKeyDown}>
         <div className="flex flex-col gap-8">
           {streamRows.map((row, rowIndex) => (
-            <div key={rowIndex} className="grid grid-cols-8 gap-6 w-full">
+            <div key={rowIndex} className="grid grid-cols-4 gap-6 w-full">
               {row.map((stream, colIndex) => {
-                const globalIndex = rowIndex * 8 + colIndex;
+                const globalIndex = rowIndex * 4 + colIndex;
                 const isActive = rowIndex === focusedRow && colIndex === focusedCol;
                 
                 return (
@@ -121,7 +121,7 @@ export default function StreamGrid({
               })}
               
               {/* Fill empty slots in incomplete rows */}
-              {row.length < 8 && Array.from({ length: 8 - row.length }).map((_, emptyIndex) => (
+              {row.length < 4 && Array.from({ length: 4 - row.length }).map((_, emptyIndex) => (
                 <div key={`empty-${emptyIndex}`} className="w-[110px]" />
               ))}
             </div>
