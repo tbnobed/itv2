@@ -146,23 +146,7 @@ export default function PasscodeAuthPage() {
     '', '0', ''
   ];
 
-  // Apply TV-specific scaling for auth page
-  React.useEffect(() => {
-    const userAgent = navigator.userAgent;
-    const isSilkBrowser = /Silk|AFT/i.test(userAgent);
-    const isLargeScreen = screen.width >= 1280 && screen.height >= 720;
-    
-    if (isSilkBrowser || isLargeScreen) {
-      const authContainer = document.querySelector('.auth-container');
-      if (authContainer) {
-        // Apply moderate scaling for TV browsers
-        (authContainer as HTMLElement).style.transform = 'scale(0.8)';
-        (authContainer as HTMLElement).style.transformOrigin = 'top center';
-        (authContainer as HTMLElement).style.width = '125%'; // Compensate for scale
-        console.log('Applied TV scaling to auth page');
-      }
-    }
-  }, []);
+  // TV scaling removed - no transform scaling applied
 
   return (
     <div className="min-h-screen bg-background overflow-auto">
