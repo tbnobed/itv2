@@ -185,8 +185,12 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
 
   const currentSection = getCurrentSectionData();
 
-  // Rotating studio background images
+  // Optimized background rotator for TV devices - only keeps 2 images in memory
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const [nextBgIndex, setNextBgIndex] = useState(1);
+  const [isFading, setIsFading] = useState(false);
+  const [isFireTV] = useState(() => typeof navigator !== 'undefined' && navigator.userAgent.includes('AFT'));
+  
   const studioImages = [
     socalStudioImg,
     irvingStudiosImg,
@@ -194,13 +198,41 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     plexStudiosImg
   ];
 
-  // Rotate background images every 12 seconds
+  // Preload and rotate background images every 12 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBgIndex((prev) => (prev + 1) % studioImages.length);
-    }, 12000);
+    const rotateBackground = async () => {
+      if (isFireTV) {
+        // Simple instant swap for Fire TV to reduce memory pressure
+        setCurrentBgIndex((prev) => (prev + 1) % studioImages.length);
+        setNextBgIndex((prev) => (prev + 1) % studioImages.length);
+        return;
+      }
+
+      try {
+        // Preload next image
+        const nextImage = new Image();
+        nextImage.src = studioImages[nextBgIndex];
+        await nextImage.decode();
+        
+        // Start fade transition
+        setIsFading(true);
+        
+        // After transition, update indices
+        setTimeout(() => {
+          setCurrentBgIndex(nextBgIndex);
+          setNextBgIndex((nextBgIndex + 1) % studioImages.length);
+          setIsFading(false);
+        }, 2000);
+      } catch (error) {
+        console.warn('Background preload failed, using instant swap:', error);
+        setCurrentBgIndex((prev) => (prev + 1) % studioImages.length);
+        setNextBgIndex((prev) => (prev + 1) % studioImages.length);
+      }
+    };
+
+    const interval = setInterval(rotateBackground, 12000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentBgIndex, nextBgIndex, studioImages, isFireTV]);
 
   // Function to render the Featured section with multiple rows
   const renderFeaturedSection = () => {
@@ -214,28 +246,36 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
 
     return (
       <div className="relative min-h-screen">
-        {/* Rotating Studio Background Images */}
+        {/* Optimized Studio Background Images - Only 2 in memory */}
         <div className="absolute inset-0 overflow-hidden">
-          {studioImages.map((image, index) => (
-            <div
-              key={index}
-              className={`absolute inset-0 transition-opacity duration-2000 ease-in-out ${
-                index === currentBgIndex ? 'opacity-100' : 'opacity-0'
+          {/* Current background image */}
+          <img
+            src={studioImages[currentBgIndex]}
+            alt="Studio background"
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-2000 ease-in-out will-change-[opacity] [transform:translateZ(0)] opacity-100"
+            loading="eager"
+            decoding="async"
+          />
+          
+          {/* Next background image - only visible during fade */}
+          {!isFireTV && (
+            <img
+              src={studioImages[nextBgIndex]}
+              alt="Next studio background"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-2000 ease-in-out will-change-[opacity] [transform:translateZ(0)] ${
+                isFading ? 'opacity-100' : 'opacity-0'
               }`}
-              style={{
-                backgroundImage: `url(${image})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
-              }}
+              loading="lazy"
+              decoding="async"
             />
-          ))}
+          )}
+          
           {/* Darker overlay to dim images and ensure text readability */}
           <div className="absolute inset-0 bg-black/75" />
         </div>
 
-        {/* Content positioned much lower on the page */}
-        <div className="relative z-10 pt-96 pb-20 space-y-12">
+        {/* Content positioned at the top */}
+        <div className="relative z-10 pt-8 pb-20 space-y-12">
           {/* Regular Featured Section */}
           <CategoryRow
             title="Featured"
