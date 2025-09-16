@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import StreamingInterface from "@/components/StreamingInterface";
+import { ViewportScaler } from "@/components/ViewportScaler";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
@@ -108,82 +109,7 @@ function App() {
   const isAuthRoute = location.startsWith('/auth');
   const isAdminRoute = location.startsWith('/admin');
   
-  // TV Device Detection and Scaling
-  React.useEffect(() => {
-    const detectTVDevice = () => {
-      const userAgent = navigator.userAgent;
-      const screenWidth = screen.width;
-      const screenHeight = screen.height;
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      const actualWidth = screenWidth * devicePixelRatio;
-      const actualHeight = screenHeight * devicePixelRatio;
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      // TV/OTT device detection - apply to actual TV devices including Firestick
-      const isTVBrowser = /Silk|AFT|BRAVIA|Tizen|webOS|SmartTV|NetCast/i.test(userAgent) ||
-                          /CrKey|GoogleTV|AndroidTV/i.test(userAgent);
-      
-      // Large screen detection (75"+ TVs typically have these dimensions)
-      const isLargeTV = viewportWidth >= 1920 && viewportHeight >= 1080;
-      
-      // Apply aggressive scaling for large displays (including web wrappers)
-      if (isTVBrowser || isLargeTV || viewportWidth >= 1920) {
-        const rootElement = document.getElementById('root');
-        if (rootElement) {
-          // Much more aggressive scaling for large displays
-          let scale = 1;
-          
-          // Very large displays (75"+ 4K TVs) - aggressive scaling
-          if (viewportWidth >= 2400 || screenWidth >= 4000) {
-            scale = 0.45; // Very large displays - much smaller UI
-          } else if (viewportWidth >= 1920 || screenWidth >= 3000) {
-            scale = 0.5; // Large displays - smaller UI to fit more content
-          } else if (viewportWidth >= 1600) {
-            scale = 0.65; // Medium large displays
-          } else if (viewportWidth >= 1280) {
-            scale = 0.75; // Smaller large displays
-          }
-          
-          // Only apply scaling to non-auth pages
-          if (!location.startsWith('/auth')) {
-            document.documentElement.style.setProperty('--tv-scale', scale.toString());
-            rootElement.classList.add('tv-scale');
-            // Force style recalculation
-            rootElement.style.transform = `scale(${scale})`;
-            rootElement.style.transformOrigin = '0 0';
-            rootElement.style.width = `${100 / scale}%`;
-            rootElement.style.minHeight = `${100 / scale}vh`;
-          } else {
-            rootElement.classList.remove('tv-scale');
-            rootElement.style.removeProperty('transform');
-            rootElement.style.removeProperty('transform-origin');
-            rootElement.style.removeProperty('width');
-            rootElement.style.removeProperty('min-height');
-          }
-          
-          console.log(`Large display detected: ${userAgent}, Viewport: ${viewportWidth}x${viewportHeight}, Screen: ${screenWidth}x${screenHeight}, DPR: ${devicePixelRatio}, Scale: ${scale}`);
-        }
-      } else {
-        // Remove scaling for non-large devices
-        const rootElement = document.getElementById('root');
-        if (rootElement) {
-          rootElement.classList.remove('tv-scale');
-          rootElement.style.removeProperty('transform');
-          rootElement.style.removeProperty('transform-origin');
-          rootElement.style.removeProperty('width');
-          rootElement.style.removeProperty('min-height');
-          document.documentElement.style.removeProperty('--tv-scale');
-        }
-      }
-    };
-    
-    detectTVDevice();
-    
-    // Re-detect on window resize
-    window.addEventListener('resize', detectTVDevice);
-    return () => window.removeEventListener('resize', detectTVDevice);
-  }, [location]);
+  // Removed old TV detection logic - now handled by ViewportScaler component
   
   // Custom sidebar width for streaming application
   const style = {
@@ -196,34 +122,39 @@ function App() {
       <AuthProvider>
         <TooltipProvider>
           {isAuthRoute ? (
-            // Auth page renders without sidebar/header layout constraints
+            // Auth page renders without scaling or sidebar
             <div className="h-screen w-full overflow-auto">
               <Router />
               <Toaster />
             </div>
-          ) : isAdminRoute ? (
-            // Admin routes use traditional sidebar layout
-            <SidebarProvider style={style as React.CSSProperties}>
-              <div className="flex min-h-screen w-full">
-                <AppSidebar 
-                  activeSection="admin" 
-                  onSectionChange={() => {}}
-                />
-                <div className="flex flex-col flex-1 min-w-0">
-                  <AppHeader />
-                  <main className="flex-1 min-w-0">
-                    <Router />
-                  </main>
-                </div>
-              </div>
-              <Toaster />
-            </SidebarProvider>
           ) : (
-            // Main streaming interface uses Android TV full-screen layout
-            <div className="h-screen w-full overflow-auto">
-              <Router />
-              <Toaster />
-            </div>
+            // All non-auth routes get viewport scaling
+            <ViewportScaler>
+              {isAdminRoute ? (
+                // Admin routes use traditional sidebar layout
+                <SidebarProvider style={style as React.CSSProperties}>
+                  <div className="flex min-h-screen w-full">
+                    <AppSidebar 
+                      activeSection="admin" 
+                      onSectionChange={() => {}}
+                    />
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <AppHeader />
+                      <main className="flex-1 min-w-0">
+                        <Router />
+                      </main>
+                    </div>
+                  </div>
+                  <Toaster />
+                </SidebarProvider>
+              ) : (
+                // Main streaming interface uses Android TV full-screen layout
+                <div className="h-screen w-full overflow-auto">
+                  <Router />
+                  <Toaster />
+                </div>
+              )}
+            </ViewportScaler>
           )}
         </TooltipProvider>
       </AuthProvider>
