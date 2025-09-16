@@ -400,8 +400,6 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
           <div className="w-full" data-testid="studio-scroll-container">
             <div 
               className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2"
-              onKeyDown={handleStudioKeyDown}
-              tabIndex={-1}
             >
               <div className="flex gap-6 pb-8 w-max">
                 {sortedStudios.map((studio, index) => (
@@ -410,6 +408,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
                     ref={(el) => studioRefs.current[index] = el}
                     tabIndex={index === focusedStudioIndex ? 0 : -1}
                     onFocus={() => setFocusedStudioIndex(index)}
+                    onKeyDown={handleStudioKeyDown}
                     className="flex-shrink-0 outline-none stream-tile"
                   >
                     <StudioCard
