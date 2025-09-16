@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import serverSnapshotService from '@/lib/ServerSnapshotService';
 
@@ -13,11 +13,12 @@ interface StreamTileProps {
   subtitle?: string;
   metaLeft?: string;
   metaRight?: string;
+  tabIndex?: number;
   onSelect?: (streamId: string) => void;
   className?: string;
 }
 
-export default function StreamTile({ 
+const StreamTile = React.forwardRef<HTMLDivElement, StreamTileProps>(function StreamTile({ 
   id, 
   title, 
   thumbnail, 
@@ -28,9 +29,10 @@ export default function StreamTile({
   subtitle,
   metaLeft,
   metaRight,
+  tabIndex,
   onSelect,
   className 
-}: StreamTileProps) {
+}, ref) {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -93,16 +95,17 @@ export default function StreamTile({
 
   // Card sizing based on variant and size
   const cardClasses = variant === 'compact' ? {
+    wrapper: cn(
+      "relative cursor-pointer group rounded-xl",
+      "focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 focus-visible:z-10",
+      size === 'featured' ? 'w-[480px]' : 'w-[360px]',
+      className
+    ),
     container: cn(
-      "relative cursor-pointer group",
       "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
       "transition-all duration-300 ease-out will-change-transform",
-      "focus:bg-blue-900 focus:scale-105 focus:z-30",
-      "focus-visible:bg-blue-900 focus-visible:scale-105 focus-visible:z-30",
-      "hover:scale-102 hover:z-20",
-      size === 'featured' ? 'w-[480px]' : 'w-[360px]',
-      isHovered && "scale-102 z-20",
-      className
+      "focus-within:scale-105 hover:scale-102",
+      isHovered && "scale-102 z-20"
     )
   } : {
     container: cn(
@@ -120,7 +123,7 @@ export default function StreamTile({
   if (variant === 'compact') {
     return (
       <div
-        className={cardClasses.container}
+        className={cardClasses.wrapper}
         tabIndex={0}
         onClick={handleClick}
         onKeyDown={handleKeyPress}
@@ -130,6 +133,7 @@ export default function StreamTile({
         onMouseLeave={() => setIsHovered(false)}
         data-testid={`stream-tile-${streamId}`}
       >
+        <div className={cardClasses.container}>
         {/* Compact Layout: Grid with Image Left, Info Right */}
         <div className="grid grid-cols-[1fr_2fr] w-full h-full">
           {/* Left: Image (1/3) */}
@@ -226,6 +230,7 @@ export default function StreamTile({
             )}
           </div>
         </div>
+        </div>
       </div>
     );
   }
@@ -303,4 +308,6 @@ export default function StreamTile({
       </div>
     </div>
   );
-}
+});
+
+export default StreamTile;

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import StreamTile from './StreamTile';
+import { useRef, useState } from 'react';
 
 interface StreamData {
   id: string;
@@ -27,7 +28,26 @@ export default function CategoryRow({
   onStreamSelect,
   className 
 }: CategoryRowProps) {
+  const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  
   if (!streams.length) return null;
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft' && focusedIndex > 0) {
+      e.preventDefault();
+      const newIndex = focusedIndex - 1;
+      setFocusedIndex(newIndex);
+      tileRefs.current[newIndex]?.focus();
+      tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    } else if (e.key === 'ArrowRight' && focusedIndex < streams.length - 1) {
+      e.preventDefault();
+      const newIndex = focusedIndex + 1;
+      setFocusedIndex(newIndex);
+      tileRefs.current[newIndex]?.focus();
+      tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    }
+  };
 
   return (
     <div className={cn("relative mb-10 w-full", className)}>
@@ -44,12 +64,15 @@ export default function CategoryRow({
 
       {/* Android TV Horizontal Scroll Layout */}
       <div className="w-full" data-testid="scroll-container">
-        <div className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2">
+        <div 
+          className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2"
+          onKeyDown={handleKeyDown}
+        >
           <div className={cn(
             "flex pb-8 w-max",
             variant === 'compact' ? 'gap-4' : 'gap-6'
           )}>
-            {streams.map((stream) => {
+            {streams.map((stream, index) => {
               // Generate subtitle and metadata for compact cards
               const subtitle = variant === 'compact' ? `Streaming from ${stream.category || 'Live'} feed` : undefined;
               const metaLeft = variant === 'compact' ? '4K UHD' : undefined;
@@ -58,6 +81,7 @@ export default function CategoryRow({
               return (
                 <StreamTile
                   key={stream.id}
+                  ref={(el) => tileRefs.current[index] = el}
                   id={stream.id}
                   title={stream.title}
                   thumbnail={stream.thumbnail}
@@ -68,6 +92,7 @@ export default function CategoryRow({
                   subtitle={subtitle}
                   metaLeft={metaLeft}
                   metaRight={metaRight}
+                  tabIndex={index === focusedIndex ? 0 : -1}
                   onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
                   className="flex-shrink-0"
                 />
