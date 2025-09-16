@@ -198,19 +198,12 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     plexStudiosImg
   ];
   
-  // TV detection and DPI setup
+  // Simple TV detection for safe area margins only
   useEffect(() => {
     if (typeof document !== 'undefined') {
       const isTV = isFireTV || /Android.*TV|webOS|Tizen/i.test(navigator.userAgent);
       if (isTV) {
         document.documentElement.setAttribute('data-tv', 'true');
-        // Set DPI scaling based on devicePixelRatio
-        const dpr = window.devicePixelRatio || 1;
-        let dpScale = 1;
-        if (dpr >= 4) dpScale = 4;
-        else if (dpr >= 2) dpScale = 2;
-        else if (dpr >= 1.33) dpScale = 1.33;
-        document.documentElement.style.setProperty('--tv-dp', dpScale.toString());
       }
     }
   }, [isFireTV]);

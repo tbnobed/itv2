@@ -255,14 +255,7 @@
     overflow: hidden;
   }
 
-  /* TV DPI Scaling */
-  :root {
-    --tv-dp: 1;
-  }
-
-  html[data-tv="true"] {
-    font-size: calc(16px * var(--tv-dp));
-  }
+  /* TV-specific styling removed - keep normal font sizing */
 
   /* Debug safe area outline */
   .tv-safe.debug {
