@@ -7,7 +7,6 @@ interface StreamData {
   thumbnail: string;
   streamId: string;
   url: string;
-  category: string;
 }
 
 interface CategoryRowProps {

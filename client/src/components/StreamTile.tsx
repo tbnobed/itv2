@@ -8,7 +8,6 @@ interface StreamTileProps {
   thumbnail: string;
   streamId: string;
   streamUrl?: string;
-  category?: string;
   size?: 'featured' | 'regular';
   onSelect?: (streamId: string) => void;
   className?: string;
@@ -20,7 +19,6 @@ export default function StreamTile({
   thumbnail, 
   streamId,
   streamUrl,
-  category = 'Live',
   size = 'regular', 
   onSelect,
   className 
@@ -77,31 +75,20 @@ export default function StreamTile({
   };
 
 
-  // Netflix-style horizontal card sizing
-  const cardDimensions = size === 'featured'
-    ? 'w-[380px] h-[160px]'  // Featured cards: wider horizontal format
-    : 'w-[320px] h-[130px]'; // Regular cards: compact horizontal format
-
-  const getCategoryLabel = (cat: string) => {
-    switch (cat) {
-      case 'overTheAir': return 'Over The Air';
-      case 'liveFeeds': return 'Live Feeds';
-      case 'uhd': return 'UHD • 4K';
-      case 'featured': return 'Featured';
-      case 'studios': return 'Studios';
-      default: return cat.charAt(0).toUpperCase() + cat.slice(1);
-    }
-  };
+  // Android TV card sizing - proper 16:9 aspect ratios
+  const cardWidth = size === 'featured' 
+    ? 'w-[320px]'  // Featured cards: 320x180px (16:9)
+    : 'w-[240px]'; // Regular cards: 240x135px (16:9)
 
   return (
     <div
       className={cn(
         "relative cursor-pointer group outline-none",
-        "rounded-xl overflow-hidden shadow-sm bg-gray-900",
+        "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
         "transition-all duration-300 ease-out",
         "focus-visible:scale-110 focus-visible:z-30",
         "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
-        cardDimensions,
+        cardWidth,
         isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
       )}
@@ -112,90 +99,63 @@ export default function StreamTile({
       onMouseLeave={() => setIsHovered(false)}
       data-testid={`stream-tile-${streamId}`}
     >
-      {/* Horizontal Card Layout */}
-      <div className="flex h-full">
-        {/* Left Side - Preview Image */}
-        <div className="relative w-2/5 h-full">
-          {/* Loading Skeleton */}
-          {isLoading || !isImageLoaded ? (
-            <div className="w-full h-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
-          ) : null}
-          
-          {/* Live Preview Image */}
-          <img
-            src={currentImage}
-            alt={title}
+      {/* Card Content */}
+      <div className="relative w-full h-full">
+        {/* Loading Skeleton */}
+        {isLoading || !isImageLoaded ? (
+          <div className="w-full h-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
+        ) : null}
+        
+        {/* Live Preview Image */}
+        <img
+          src={currentImage}
+          alt={title}
+          className={cn(
+            "w-full h-full object-cover transition-opacity duration-200",
+            isImageLoaded ? "opacity-100" : "opacity-0"
+          )}
+          onLoad={() => {
+            setIsImageLoaded(true);
+          }}
+          onError={(e) => {
+            // Fallback to thumbnail when server snapshot is not available
+            if (currentImage !== thumbnail) {
+              console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
+              setCurrentImage(thumbnail);
+              setIsImageLoaded(false); // Reset to show skeleton while fallback loads
+            } else {
+              console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
+              setIsImageLoaded(true); // Stop skeleton even if image failed
+            }
+          }}
+        />
+        
+        {/* Bottom Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        
+        {/* Content - Bottom Left */}
+        <div className="absolute inset-0 p-3 flex flex-col justify-end">
+          <h3 
             className={cn(
-              "w-full h-full object-cover transition-opacity duration-200",
-              isImageLoaded ? "opacity-100" : "opacity-0"
+              "text-white font-medium leading-tight line-clamp-2 mb-1",
+              size === 'featured' ? 'text-base' : 'text-sm'
             )}
-            onLoad={() => {
-              setIsImageLoaded(true);
-            }}
-            onError={(e) => {
-              // Fallback to thumbnail when server snapshot is not available
-              if (currentImage !== thumbnail) {
-                console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
-                setCurrentImage(thumbnail);
-                setIsImageLoaded(false); // Reset to show skeleton while fallback loads
-              } else {
-                console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
-                setIsImageLoaded(true); // Stop skeleton even if image failed
-              }
-            }}
-          />
+            data-testid={`text-title-${streamId}`}
+          >
+            {title}
+          </h3>
           
-          {/* Live Indicator Overlay */}
-          <div className="absolute top-2 left-2 flex items-center">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1.5" />
-            <span className="text-red-500 text-[10px] font-medium uppercase tracking-wide bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded">LIVE</span>
+          {/* Live Indicator */}
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
+            <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
           </div>
         </div>
         
-        {/* Right Side - Stream Information */}
-        <div className="relative w-3/5 h-full">
-          {/* Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary to-primary/80" />
-          
-          {/* Content */}
-          <div className="relative h-full p-4 flex flex-col justify-center">
-            {/* Stream Title */}
-            <h3 
-              className={cn(
-                "text-white font-bold leading-tight mb-2 line-clamp-2",
-                size === 'featured' ? 'text-lg' : 'text-base'
-              )}
-              data-testid={`text-title-${streamId}`}
-            >
-              {title}
-            </h3>
-            
-            {/* Stream Metadata */}
-            <div className="text-white/90 space-y-1">
-              <div className={cn(
-                "font-medium text-white/80",
-                size === 'featured' ? 'text-sm' : 'text-xs'
-              )}>
-                {getCategoryLabel(category)}
-              </div>
-              
-              {/* Stream ID */}
-              <div className={cn(
-                "font-mono text-white/70",
-                size === 'featured' ? 'text-xs' : 'text-[10px]'
-              )}>
-                ID: {streamId}
-              </div>
-            </div>
-            
-            {/* Bottom Right Corner - Quality Badge */}
-            {category === 'uhd' && (
-              <div className="absolute bottom-2 right-2">
-                <div className="bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide">
-                  4K
-                </div>
-              </div>
-            )}
+        {/* Stream ID Badge - Bottom Right */}
+        <div className="absolute bottom-2 right-2">
+          <div className="bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs text-white/80 font-mono">
+            {streamId}
           </div>
         </div>
       </div>
