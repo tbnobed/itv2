@@ -43,7 +43,7 @@ export default function CategoryRow({
       <div className="w-full px-6" data-testid="grid-container">
         <div className={cn(
           "grid gap-4 justify-items-center pb-6",
-          "grid-cols-3"
+          "grid-cols-4"
         )}>
           {streams.map((stream) => (
             <StreamTile
