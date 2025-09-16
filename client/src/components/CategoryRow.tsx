@@ -7,12 +7,14 @@ interface StreamData {
   thumbnail: string;
   streamId: string;
   url: string;
+  category?: string;
 }
 
 interface CategoryRowProps {
   title: string;
   streams: StreamData[];
   featured?: boolean;
+  variant?: 'poster' | 'compact';
   onStreamSelect?: (streamId: string, url: string) => void;
   className?: string;
 }
@@ -20,7 +22,8 @@ interface CategoryRowProps {
 export default function CategoryRow({ 
   title, 
   streams, 
-  featured = false, 
+  featured = false,
+  variant = 'poster',
   onStreamSelect,
   className 
 }: CategoryRowProps) {
@@ -42,20 +45,35 @@ export default function CategoryRow({
       {/* Android TV Horizontal Scroll Layout */}
       <div className="w-full" data-testid="scroll-container">
         <div className="overflow-x-auto overflow-y-hidden scrollbar-hide px-8">
-          <div className="flex gap-6 pb-8 w-max">
-            {streams.map((stream) => (
-              <StreamTile
-                key={stream.id}
-                id={stream.id}
-                title={stream.title}
-                thumbnail={stream.thumbnail}
-                streamId={stream.streamId}
-                streamUrl={stream.url}
-                size={featured ? 'featured' : 'regular'}
-                onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
-                className="flex-shrink-0"
-              />
-            ))}
+          <div className={cn(
+            "flex pb-8 w-max",
+            variant === 'compact' ? 'gap-4' : 'gap-6'
+          )}>
+            {streams.map((stream) => {
+              // Generate subtitle and metadata for compact cards
+              const subtitle = variant === 'compact' ? `Streaming from ${stream.category || 'Live'} feed` : undefined;
+              const metaLeft = variant === 'compact' ? '4K UHD' : undefined;
+              const metaRight = variant === 'compact' ? 'HD' : undefined;
+              
+              return (
+                <StreamTile
+                  key={stream.id}
+                  id={stream.id}
+                  title={stream.title}
+                  thumbnail={stream.thumbnail}
+                  streamId={stream.streamId}
+                  streamUrl={stream.url}
+                  size={featured ? 'featured' : 'regular'}
+                  variant={variant}
+                  subtitle={subtitle}
+                  metaLeft={metaLeft}
+                  metaRight={metaRight}
+                  onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
+                  className="flex-shrink-0"
+                />
+              );
+            })}
+          
           </div>
         </div>
       </div>

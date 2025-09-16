@@ -9,6 +9,10 @@ interface StreamTileProps {
   streamId: string;
   streamUrl?: string;
   size?: 'featured' | 'regular';
+  variant?: 'poster' | 'compact';
+  subtitle?: string;
+  metaLeft?: string;
+  metaRight?: string;
   onSelect?: (streamId: string) => void;
   className?: string;
 }
@@ -19,7 +23,11 @@ export default function StreamTile({
   thumbnail, 
   streamId,
   streamUrl,
-  size = 'regular', 
+  size = 'regular',
+  variant = 'poster',
+  subtitle,
+  metaLeft,
+  metaRight,
   onSelect,
   className 
 }: StreamTileProps) {
@@ -75,23 +83,146 @@ export default function StreamTile({
   };
 
 
-  // Android TV card sizing - proper 16:9 aspect ratios
-  const cardWidth = size === 'featured' 
-    ? 'w-[320px]'  // Featured cards: 320x180px (16:9)
-    : 'w-[240px]'; // Regular cards: 240x135px (16:9)
+  // Card sizing based on variant and size
+  const cardClasses = variant === 'compact' ? {
+    container: cn(
+      "relative cursor-pointer group outline-none",
+      "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
+      "transition-all duration-300 ease-out will-change-transform",
+      "focus-visible:scale-105 focus-visible:z-30 focus-visible:ring-4 focus-visible:ring-blue-500/50",
+      "hover:scale-102 hover:z-20",
+      size === 'featured' ? 'w-[480px]' : 'w-[360px]',
+      isHovered && "scale-102 z-20",
+      className
+    )
+  } : {
+    container: cn(
+      "relative cursor-pointer group outline-none",
+      "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
+      "transition-all duration-300 ease-out",
+      "focus-visible:scale-110 focus-visible:z-30",
+      "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+      size === 'featured' ? 'w-[320px]' : 'w-[240px]',
+      isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+      className
+    )
+  };
 
+  if (variant === 'compact') {
+    return (
+      <div
+        className={cardClasses.container}
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={handleKeyPress}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        data-testid={`stream-tile-${streamId}`}
+      >
+        {/* Compact Layout: Grid with Image Left, Info Right */}
+        <div className="grid grid-cols-[1fr_2fr] w-full h-full">
+          {/* Left: Image (1/3) */}
+          <div className="relative overflow-hidden">
+            {/* Loading Skeleton - Image */}
+            {isLoading || !isImageLoaded ? (
+              <div className="w-full h-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
+            ) : null}
+            
+            <img
+              src={currentImage}
+              alt={title}
+              className={cn(
+                "w-full h-full object-cover transition-opacity duration-200",
+                "mask-image: linear-gradient(to right, black 85%, transparent)",
+                isImageLoaded ? "opacity-100" : "opacity-0"
+              )}
+              onLoad={() => setIsImageLoaded(true)}
+              onError={() => {
+                if (currentImage !== thumbnail) {
+                  console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
+                  setCurrentImage(thumbnail);
+                  setIsImageLoaded(false);
+                } else {
+                  console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
+                  setIsImageLoaded(true);
+                }
+              }}
+            />
+          </div>
+          
+          {/* Right: Info Panel (2/3) */}
+          <div className="relative">
+            {/* Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-red-900/30 to-red-800/40" />
+            
+            {/* Loading Skeleton - Text */}
+            {isLoading || !isImageLoaded ? (
+              <div className="absolute inset-0 p-4 flex flex-col justify-center gap-2">
+                <div className="h-4 bg-gray-700 rounded animate-pulse" />
+                <div className="h-3 bg-gray-700 rounded w-3/4 animate-pulse" />
+                <div className="h-3 bg-gray-700 rounded w-1/2 animate-pulse" />
+              </div>
+            ) : (
+              <div className={cn(
+                "absolute inset-0 flex flex-col justify-center text-white",
+                size === 'featured' ? 'p-4 gap-1' : 'p-3 gap-1'
+              )}>
+                {/* Main Title */}
+                <h3 
+                  className={cn(
+                    "font-semibold line-clamp-2 leading-tight",
+                    size === 'featured' ? 'text-lg' : 'text-base'
+                  )}
+                  data-testid={`text-title-${streamId}`}
+                >
+                  {title}
+                </h3>
+                
+                {/* Subtitle */}
+                {subtitle && (
+                  <p 
+                    className="text-sm text-white/70 line-clamp-1 leading-tight"
+                    data-testid={`text-subtitle-${streamId}`}
+                  >
+                    {subtitle}
+                  </p>
+                )}
+                
+                {/* Metadata Row */}
+                <div className="flex items-center gap-3 mt-1">
+                  {/* Live Badge */}
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1" />
+                    <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
+                  </div>
+                  
+                  {/* Stream ID */}
+                  <div className="bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs text-white/80 font-mono">
+                    {streamId}
+                  </div>
+                  
+                  {/* Meta Left */}
+                  {metaLeft && (
+                    <span className="text-xs text-white/60">{metaLeft}</span>
+                  )}
+                  
+                  {/* Meta Right */}
+                  {metaRight && (
+                    <span className="text-xs text-white/60">{metaRight}</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Poster Layout (existing)
   return (
     <div
-      className={cn(
-        "relative cursor-pointer group outline-none",
-        "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
-        "transition-all duration-300 ease-out",
-        "focus-visible:scale-110 focus-visible:z-30",
-        "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
-        cardWidth,
-        isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
-        className
-      )}
+      className={cardClasses.container}
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyPress}

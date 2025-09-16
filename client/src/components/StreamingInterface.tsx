@@ -204,6 +204,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
             title="UHD Streams"
             streams={sortStreamsByTitle(uhdStreams)}
             featured={false}
+            variant="compact"
             onStreamSelect={handleStreamSelect}
           />
         )}
