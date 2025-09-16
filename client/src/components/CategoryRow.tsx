@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import StreamTile from './StreamTile';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 interface StreamData {
   id: string;
@@ -33,19 +33,48 @@ export default function CategoryRow({
   
   if (!streams.length) return null;
 
+  // Auto-focus first tile when component mounts or becomes active
+  useEffect(() => {
+    if (streams.length > 0) {
+      const timer = setTimeout(() => {
+        tileRefs.current[0]?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [streams.length]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowLeft' && focusedIndex > 0) {
-      e.preventDefault();
-      const newIndex = focusedIndex - 1;
-      setFocusedIndex(newIndex);
-      tileRefs.current[newIndex]?.focus();
-      tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
-    } else if (e.key === 'ArrowRight' && focusedIndex < streams.length - 1) {
-      e.preventDefault();
-      const newIndex = focusedIndex + 1;
-      setFocusedIndex(newIndex);
-      tileRefs.current[newIndex]?.focus();
-      tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (focusedIndex > 0) {
+          const newIndex = focusedIndex - 1;
+          setFocusedIndex(newIndex);
+          tileRefs.current[newIndex]?.focus();
+          tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+        }
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        if (focusedIndex < streams.length - 1) {
+          const newIndex = focusedIndex + 1;
+          setFocusedIndex(newIndex);
+          tileRefs.current[newIndex]?.focus();
+          tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        // Exit to top navigation
+        const activeNavButton = document.querySelector('[data-nav-index][data-testid*="nav-"][class*="bg-white"]') as HTMLElement;
+        if (activeNavButton) {
+          activeNavButton.focus();
+        } else {
+          // Fallback to first nav button if active one isn't found
+          const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
+          firstNavButton?.focus();
+        }
+        break;
     }
   };
 
@@ -67,6 +96,7 @@ export default function CategoryRow({
         <div 
           className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2"
           onKeyDown={handleKeyDown}
+          tabIndex={-1}
         >
           <div className={cn(
             "flex pb-8 w-max",
