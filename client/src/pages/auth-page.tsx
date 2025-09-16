@@ -124,17 +124,41 @@ export default function PasscodeAuthPage() {
         handleClear();
       } else if (key === 'ArrowDown') {
         event.preventDefault();
-        console.log('ArrowDown pressed on auth page');
-        // Focus on the input OTP field or first number button
+        // Check if we're currently on the input field
         const inputOTP = document.querySelector('[data-testid="input-passcode"]') as HTMLElement;
-        const firstDigitButton = document.querySelector('[data-testid="button-digit-1"]') as HTMLElement;
-        console.log('InputOTP found:', !!inputOTP, 'FirstDigitButton found:', !!firstDigitButton);
-        if (inputOTP) {
-          console.log('Focusing inputOTP');
-          inputOTP.focus();
-        } else if (firstDigitButton) {
-          console.log('Focusing firstDigitButton');
-          firstDigitButton.focus();
+        const activeElement = document.activeElement;
+        
+        // If we're not focused on anything specific, or we're on the input field, go to first digit button
+        if (!activeElement || activeElement === inputOTP || inputOTP?.contains(activeElement)) {
+          const firstDigitButton = document.querySelector('[data-testid="button-digit-1"]') as HTMLElement;
+          firstDigitButton?.focus();
+        } else {
+          // Otherwise focus on the input field first
+          inputOTP?.focus();
+        }
+      } else if (key === 'ArrowUp') {
+        event.preventDefault();
+        // Go back to input field if we're on digit buttons
+        const inputOTP = document.querySelector('[data-testid="input-passcode"]') as HTMLElement;
+        inputOTP?.focus();
+      } else if (key === 'ArrowLeft' || key === 'ArrowRight') {
+        event.preventDefault();
+        // Navigate between digit buttons
+        const currentButton = document.activeElement as HTMLElement;
+        if (currentButton?.getAttribute('data-testid')?.startsWith('button-digit-')) {
+          const currentDigit = currentButton.getAttribute('data-testid')?.replace('button-digit-', '');
+          const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+          const currentIndex = digits.indexOf(currentDigit || '');
+          
+          let nextIndex = currentIndex;
+          if (key === 'ArrowRight') {
+            nextIndex = currentIndex < digits.length - 1 ? currentIndex + 1 : 0;
+          } else if (key === 'ArrowLeft') {
+            nextIndex = currentIndex > 0 ? currentIndex - 1 : digits.length - 1;
+          }
+          
+          const nextButton = document.querySelector(`[data-testid="button-digit-${digits[nextIndex]}"]`) as HTMLElement;
+          nextButton?.focus();
         }
       }
     };
