@@ -33,10 +33,7 @@ export default function StreamGrid({
     streamRows.push(streams.slice(i, i + 4));
   }
 
-  // Initialize tile refs array
-  useEffect(() => {
-    tileRefs.current = streamRows.map(row => new Array(row.length).fill(null));
-  }, [streamRows.length]);
+  // Tile refs are initialized by ref callbacks - no need to pre-initialize
 
   // Auto-focus first tile when component mounts or becomes active
   useEffect(() => {

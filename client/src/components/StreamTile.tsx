@@ -271,7 +271,7 @@ const StreamTile = React.forwardRef(({
           isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
           className
         )}
-        tabIndex={0}
+        tabIndex={tabIndex ?? 0}
         onClick={handleClick}
         onKeyDown={handleKeyPress}
         onMouseEnter={() => setIsHovered(true)}
@@ -344,8 +344,8 @@ const StreamTile = React.forwardRef(({
     <div
       ref={setRef}
       style={tileStyle}
-      className="relative cursor-pointer group outline-none flex flex-col stream-tile"
-      tabIndex={0}
+      className="relative cursor-pointer group outline-none flex flex-col stream-tile focus-visible:scale-110 focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]"
+      tabIndex={tabIndex ?? 0}
       onClick={handleClick}
       onKeyDown={handleKeyPress}
       onMouseEnter={() => setIsHovered(true)}
@@ -356,8 +356,8 @@ const StreamTile = React.forwardRef(({
       <div className={cn(
         "relative overflow-hidden shadow-sm bg-gray-800 transition-all duration-300 ease-out",
         "aspect-[16/9] rounded-lg",
-        "focus-visible:scale-110 focus-visible:z-30",
-        "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+        "focus-within:scale-110 focus-within:z-30",
+        "focus-within:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
         size === 'featured' ? 'w-[300px]' : 'w-[220px]',
         isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
