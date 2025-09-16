@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Import studio background images
 import socalStudioImg from '@assets/SocalStudio_1758041495268.png';
@@ -55,6 +55,8 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     url: string;
   } | null>(null);
   const [selectedStudio, setSelectedStudio] = useState<string | null>(null);
+  const [focusedStudioIndex, setFocusedStudioIndex] = useState(0);
+  const studioRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Fetch streams data
   const { data: streamData, isLoading: streamsLoading, error: streamsError } = useQuery<GroupedStreams>({
@@ -80,6 +82,13 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
       setSelectedStudio(null);
     }
   }, [activeSection]);
+
+  // Reset focused studio index when entering studios section
+  useEffect(() => {
+    if (activeSection === 'studios' && !selectedStudio) {
+      setFocusedStudioIndex(0);
+    }
+  }, [activeSection, selectedStudio]);
 
   const totalPages = 3; // todo: calculate based on actual stream count
 
@@ -344,6 +353,43 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
   const renderStudiosSection = () => {
     if (!selectedStudio) {
       // Show studio carousel
+      const sortedStudios = studiosData?.sort((a, b) => a.name.localeCompare(b.name)) || [];
+      
+      const handleStudioKeyDown = (e: React.KeyboardEvent) => {
+        switch (e.key) {
+          case 'ArrowLeft':
+            e.preventDefault();
+            if (focusedStudioIndex > 0) {
+              const newIndex = focusedStudioIndex - 1;
+              setFocusedStudioIndex(newIndex);
+              studioRefs.current[newIndex]?.focus();
+              studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+            }
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            if (focusedStudioIndex < sortedStudios.length - 1) {
+              const newIndex = focusedStudioIndex + 1;
+              setFocusedStudioIndex(newIndex);
+              studioRefs.current[newIndex]?.focus();
+              studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+            }
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            // Exit to top navigation
+            const activeNavButton = document.querySelector('[data-nav-index][data-testid*="nav-"][class*="bg-white"]') as HTMLElement;
+            if (activeNavButton) {
+              activeNavButton.focus();
+            } else {
+              // Fallback to first nav button if active one isn't found
+              const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
+              firstNavButton?.focus();
+            }
+            break;
+        }
+      };
+      
       return (
         <div className="relative mb-10 w-full">
           <h2 className="text-white font-bold mb-8 px-8 text-2xl" data-testid="section-studios">
@@ -352,16 +398,27 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
           
           {/* Studio Carousel */}
           <div className="w-full" data-testid="studio-scroll-container">
-            <div className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2">
+            <div 
+              className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2"
+              onKeyDown={handleStudioKeyDown}
+              tabIndex={-1}
+            >
               <div className="flex gap-6 pb-8 w-max">
-                {studiosData?.sort((a, b) => a.name.localeCompare(b.name)).map((studio) => (
-                  <StudioCard
+                {sortedStudios.map((studio, index) => (
+                  <div
                     key={studio.id}
-                    studio={studio}
-                    onClick={handleStudioSelect}
-                    className="flex-shrink-0"
-                    data-testid={`studio-card-${studio.id}`}
-                  />
+                    ref={(el) => studioRefs.current[index] = el}
+                    tabIndex={index === focusedStudioIndex ? 0 : -1}
+                    onFocus={() => setFocusedStudioIndex(index)}
+                    className="flex-shrink-0 outline-none"
+                  >
+                    <StudioCard
+                      studio={studio}
+                      onClick={handleStudioSelect}
+                      className="flex-shrink-0"
+                      data-testid={`studio-card-${studio.id}`}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
