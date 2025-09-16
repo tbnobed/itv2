@@ -3,6 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import CategoryRow from './CategoryRow';
 import StreamModal from './StreamModal';
 import StudioCard from './StudioCard';
+import TopNavigation from './TopNavigation';
+import { useAuth } from '@/hooks/use-auth';
+import { useLocation } from 'wouter';
 import type { Stream, Studio } from '@shared/schema';
 
 interface StreamData {
@@ -22,7 +25,6 @@ interface GroupedStreams {
 
 interface StreamingInterfaceProps {
   className?: string;
-  activeSection?: string;
 }
 
 // Helper function to convert Stream to StreamData format for CategoryRow
@@ -34,7 +36,10 @@ const convertStreamToStreamData = (stream: Stream): StreamData => ({
   url: stream.url,
 });
 
-export default function StreamingInterface({ className, activeSection = 'featured' }: StreamingInterfaceProps) {
+export default function StreamingInterface({ className }: StreamingInterfaceProps) {
+  const [activeSection, setActiveSection] = useState('featured');
+  const { user, logoutMutation } = useAuth();
+  const [, navigate] = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStream, setSelectedStream] = useState<{
     id: string;
@@ -123,6 +128,11 @@ export default function StreamingInterface({ className, activeSection = 'feature
   const handleLogoClick = () => {
     setCurrentPage(1);
     console.log('Logo clicked - returning to home page');
+  };
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    navigate('/auth');
   };
 
   const closeModal = () => {
@@ -263,19 +273,30 @@ export default function StreamingInterface({ className, activeSection = 'feature
   };
 
   return (
-    <div className={`min-h-full w-full bg-background ${className}`}>
-      <main className="p-6 min-h-screen overflow-y-auto">
-        {/* Render based on active section */}
-        {activeSection === 'studios' ? (
-          renderStudiosSection()
-        ) : (
-          <CategoryRow
-            title={currentSection.title}
-            streams={currentSection.streams}
-            featured={currentSection.featured}
-            onStreamSelect={handleStreamSelect}
-          />
-        )}
+    <div className={`min-h-screen w-full bg-black ${className}`}>
+      {/* Android TV Top Navigation */}
+      <TopNavigation
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        onLogout={handleLogout}
+        username={user?.username}
+      />
+
+      {/* Main Content with Android TV styling */}
+      <main className="min-h-screen overflow-y-auto bg-gradient-to-b from-black via-gray-900 to-black">
+        <div className="py-8">
+          {/* Render based on active section */}
+          {activeSection === 'studios' ? (
+            renderStudiosSection()
+          ) : (
+            <CategoryRow
+              title={currentSection.title}
+              streams={currentSection.streams}
+              featured={currentSection.featured}
+              onStreamSelect={handleStreamSelect}
+            />
+          )}
+        </div>
       </main>
 
       {/* Stream Modal */}

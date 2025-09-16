@@ -21,9 +21,9 @@ import StreamFormPage from "@/pages/admin/stream-form";
 import StudiosListPage from "@/pages/admin/studios-list";
 import StudioFormPage from "@/pages/admin/studio-form";
 
-// Protected wrapper for streaming interface
-const ProtectedStreamingInterface = ({ activeSection }: { activeSection: string }) => {
-  return <ProtectedRoute path="" component={() => <StreamingInterface activeSection={activeSection} />} />;
+// Protected wrapper for streaming interface (Android TV style)
+const ProtectedStreamingInterface = () => {
+  return <ProtectedRoute path="" component={() => <StreamingInterface />} />;
 };
 
 // Protected route wrapper for admin components
@@ -31,7 +31,7 @@ const AdminRoute = ({ component: Component }: { component: React.ComponentType }
   return <ProtectedRoute path="" component={() => <Component />} />;
 };
 
-function Router({ activeSection }: { activeSection: string }) {
+function Router() {
   return (
     <Switch>
       {/* Auth Route */}
@@ -60,8 +60,8 @@ function Router({ activeSection }: { activeSection: string }) {
         {() => <AdminRoute component={StudioFormPage} />}
       </Route>
       
-      {/* Protected Main Routes - Require authentication for all users */}
-      <Route path="/">{() => <ProtectedStreamingInterface activeSection={activeSection} />}</Route>
+      {/* Protected Main Routes - Android TV Style */}
+      <Route path="/">{() => <ProtectedStreamingInterface />}</Route>
       <Route component={NotFound} />
     </Switch>
   );
@@ -102,11 +102,11 @@ function AppHeader() {
 }
 
 function App() {
-  const [activeSection, setActiveSection] = React.useState('featured');
   const [location] = useLocation();
   
-  // Check if current route is auth page
+  // Check if current route is auth page or admin page
   const isAuthRoute = location.startsWith('/auth');
+  const isAdminRoute = location.startsWith('/admin');
   
   // TV Device Detection and Scaling
   React.useEffect(() => {
@@ -165,26 +165,32 @@ function App() {
           {isAuthRoute ? (
             // Auth page renders without sidebar/header layout constraints
             <div className="h-screen w-full overflow-auto">
-              <Router activeSection={activeSection} />
+              <Router />
               <Toaster />
             </div>
-          ) : (
-            // Main app with sidebar and header
+          ) : isAdminRoute ? (
+            // Admin routes use traditional sidebar layout
             <SidebarProvider style={style as React.CSSProperties}>
               <div className="flex min-h-screen w-full">
                 <AppSidebar 
-                  activeSection={activeSection} 
-                  onSectionChange={setActiveSection}
+                  activeSection="admin" 
+                  onSectionChange={() => {}}
                 />
                 <div className="flex flex-col flex-1 min-w-0">
                   <AppHeader />
                   <main className="flex-1 min-w-0">
-                    <Router activeSection={activeSection} />
+                    <Router />
                   </main>
                 </div>
               </div>
               <Toaster />
             </SidebarProvider>
+          ) : (
+            // Main streaming interface uses Android TV full-screen layout
+            <div className="h-screen w-full overflow-auto">
+              <Router />
+              <Toaster />
+            </div>
           )}
         </TooltipProvider>
       </AuthProvider>

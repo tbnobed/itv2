@@ -74,17 +74,19 @@ export default function StreamTile({
   };
 
 
-  // Use consistent 16:9 aspect ratio to match captured snapshots (320x180)
+  // Android TV card sizing - more consistent with TV interface standards
   const tileSize = size === 'featured' 
-    ? 'w-60 h-[135px]'  // 240x135 = 1.78:1 (16:9 ratio)
-    : 'w-44 h-[99px]';  // 176x99 = 1.78:1 (16:9 ratio)
+    ? 'w-72 h-40'  // Featured cards are larger
+    : 'w-56 h-32'; // Regular cards
 
   return (
     <div
       className={cn(
-        "relative cursor-pointer transition-all duration-300 rounded-md overflow-hidden group focus-visible:ring-4 focus-visible:ring-primary focus-visible:outline-none shadow-lg hover:shadow-2xl hover:shadow-primary/20",
+        "relative cursor-pointer transition-all duration-300 rounded-xl overflow-hidden group",
+        "focus-visible:ring-4 focus-visible:ring-white focus-visible:outline-none",
+        "bg-gray-800 shadow-lg hover:shadow-2xl",
         tileSize,
-        isHovered && "scale-105 z-10 shadow-2xl shadow-primary/30",
+        isHovered && "scale-105 z-10 ring-4 ring-white/80 shadow-2xl",
         isLoading && "opacity-50",
         className
       )}
