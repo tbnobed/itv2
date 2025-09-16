@@ -417,7 +417,7 @@ const StreamTile = React.forwardRef(({
           </div>
           
           {/* Stream ID */}
-          <div className="bg-gray-800/80 px-[0.3em] py-[0.1em] rounded text-white/80 font-mono stream-tile-badge">
+          <div className="px-[0.3em] py-[0.1em] text-white/80 font-mono stream-tile-badge">
             {streamId}
           </div>
         </div>
