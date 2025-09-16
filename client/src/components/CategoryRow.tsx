@@ -39,13 +39,21 @@ export default function CategoryRow({
       const newIndex = focusedIndex - 1;
       setFocusedIndex(newIndex);
       tileRefs.current[newIndex]?.focus();
-      tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+      tileRefs.current[newIndex]?.scrollIntoView({ 
+        inline: 'center', 
+        block: 'nearest',
+        behavior: 'smooth'
+      });
     } else if (e.key === 'ArrowRight' && focusedIndex < streams.length - 1) {
       e.preventDefault();
       const newIndex = focusedIndex + 1;
       setFocusedIndex(newIndex);
       tileRefs.current[newIndex]?.focus();
-      tileRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+      tileRefs.current[newIndex]?.scrollIntoView({ 
+        inline: 'center', 
+        block: 'nearest',
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -62,14 +70,15 @@ export default function CategoryRow({
         {title}
       </h2>
 
-      {/* Android TV Horizontal Scroll Layout */}
+      {/* Android TV Horizontal Carousel Layout */}
       <div className="w-full" data-testid="scroll-container">
         <div 
-          className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2"
+          className="overflow-x-auto overflow-y-visible scrollbar-hide py-2"
+          style={{ scrollBehavior: 'smooth' }}
           onKeyDown={handleKeyDown}
         >
           <div className={cn(
-            "flex pb-8 w-max",
+            "flex pb-8 w-max px-8",
             variant === 'compact' ? 'gap-4' : 'gap-6'
           )}>
             {streams.map((stream, index) => {

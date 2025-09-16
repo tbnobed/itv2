@@ -274,6 +274,20 @@
     scroll-padding-left: 48px;
     scroll-padding-right: 48px;
   }
+  
+  /* Ensure proper carousel behavior within safe areas */
+  .tv-safe .overflow-x-auto {
+    /* Allow horizontal overflow to extend slightly beyond safe area for smooth scrolling */
+    margin-left: -24px;
+    margin-right: -24px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  
+  /* Smooth scrolling for TV navigation */
+  .tv-safe .overflow-x-auto {
+    scroll-behavior: smooth;
+  }
 }
 
 /**
