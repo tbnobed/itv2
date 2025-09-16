@@ -38,6 +38,16 @@ export default function StreamGrid({
     tileRefs.current = streamRows.map(row => new Array(row.length).fill(null));
   }, [streamRows.length]);
 
+  // Auto-focus first tile when component mounts or becomes active
+  useEffect(() => {
+    if (streamRows.length > 0 && tileRefs.current[0]?.[0]) {
+      const timer = setTimeout(() => {
+        tileRefs.current[0][0]?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [streamRows.length]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowLeft':
@@ -87,8 +97,8 @@ export default function StreamGrid({
         {title}
       </h2>
 
-      {/* 8-Column Grid - No Scrolling */}
-      <div className="w-full px-8" onKeyDown={handleKeyDown}>
+      {/* 4-Column Grid - No Scrolling */}
+      <div className="w-full px-8" onKeyDown={handleKeyDown} tabIndex={-1}>
         <div className="flex flex-col gap-8">
           {streamRows.map((row, rowIndex) => (
             <div key={rowIndex} className="grid grid-cols-4 gap-6 w-full">
