@@ -179,6 +179,23 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
 
   const currentSection = getCurrentSectionData();
 
+  // Rotating studio background images
+  const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const studioImages = [
+    '@assets/SocalStudio_1758041495268.png',
+    '@assets/Irving studios_1758041495269.png', 
+    '@assets/Nashvillestudios_1758041495269.png',
+    '@assets/PlexStudios_1758041495269.jpg'
+  ];
+
+  // Rotate background images every 8 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBgIndex((prev) => (prev + 1) % studioImages.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Function to render the Featured section with multiple rows
   const renderFeaturedSection = () => {
     if (!streamData) return null;
@@ -190,25 +207,48 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     const uhdStreams = streamData.uhd?.map(convertStreamToStreamData) || [];
 
     return (
-      <div className="space-y-12">
-        {/* Regular Featured Section */}
-        <CategoryRow
-          title="Featured"
-          streams={sortStreamsByTitle(featuredStreams)}
-          featured={true}
-          onStreamSelect={handleStreamSelect}
-        />
-        
-        {/* UHD Streams Section */}
-        {uhdStreams.length > 0 && (
+      <div className="relative min-h-screen">
+        {/* Rotating Studio Background Images */}
+        <div className="absolute inset-0 overflow-hidden">
+          {studioImages.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentBgIndex ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{
+                backgroundImage: `url(${image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              }}
+            />
+          ))}
+          {/* Dark overlay to ensure text readability */}
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
+
+        {/* Content positioned lower on the page */}
+        <div className="relative z-10 pt-80 pb-20 space-y-12">
+          {/* Regular Featured Section */}
           <CategoryRow
-            title="UHD Streams"
-            streams={sortStreamsByTitle(uhdStreams)}
-            featured={false}
-            variant="compact"
+            title="Featured"
+            streams={sortStreamsByTitle(featuredStreams)}
+            featured={true}
             onStreamSelect={handleStreamSelect}
           />
-        )}
+          
+          {/* UHD Streams Section */}
+          {uhdStreams.length > 0 && (
+            <CategoryRow
+              title="UHD Streams"
+              streams={sortStreamsByTitle(uhdStreams)}
+              featured={false}
+              variant="compact"
+              onStreamSelect={handleStreamSelect}
+            />
+          )}
+        </div>
       </div>
     );
   };
