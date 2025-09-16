@@ -380,7 +380,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
           case 'ArrowUp':
             e.preventDefault();
             // Exit to top navigation
-            const activeNavButton = document.querySelector('[data-nav-index][data-testid*="nav-"][class*="bg-white"]') as HTMLElement;
+            const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
             if (activeNavButton) {
               activeNavButton.focus();
             } else {
