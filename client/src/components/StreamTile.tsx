@@ -262,7 +262,7 @@ const StreamTile = React.forwardRef(({
     return (
       <div
         className={cn(
-          "relative cursor-pointer group outline-none",
+          "relative cursor-pointer group outline-none stream-tile",
           "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
           "transition-all duration-300 ease-out",
           "focus-visible:scale-110 focus-visible:z-30",
