@@ -7,67 +7,65 @@ interface ViewportScalerProps {
 export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
   const [scale, setScale] = useState(1);
 
-  // Apply scale and update DOM
-  const applyScaleToDOM = (targetScale: number) => {
-    // Set CSS variables for element sizing
+  useEffect(() => {
+    // Clear any old localStorage values
+    localStorage.removeItem('obtv-ui-scale');
+    localStorage.removeItem('obtv-manual-override');
+    
+    const viewportWidth = window.innerWidth;
+    const screenWidth = window.screen?.width || 0;
+    
+    // Auto-detect scale based on viewport size - more aggressive scaling
+    let autoScale = 1;
+    
+    if (viewportWidth >= 2400 || screenWidth >= 3840) {
+      autoScale = 0.3; // 75"+ 4K TVs
+    } else if (viewportWidth >= 1920 || screenWidth >= 2560) {
+      autoScale = 0.45; // Large displays
+    } else if (viewportWidth >= 1600) {
+      autoScale = 0.6; // Medium displays
+    } else if (viewportWidth >= 1280) {
+      autoScale = 0.75; // Smaller displays
+    }
+    
+    // Set CSS variables immediately
     const root = document.documentElement;
-    root.style.setProperty('--tv-scale', targetScale.toString());
-    root.style.setProperty('--base-font-size', `${16 * targetScale}px`);
-    root.style.setProperty('--tile-width', `${320 * targetScale}px`);
-    root.style.setProperty('--tile-height', `${180 * targetScale}px`);
-    root.style.setProperty('--spacing-unit', `${16 * targetScale}px`);
+    root.style.setProperty('--tv-scale', autoScale.toString());
+    root.style.setProperty('--base-font-size', `${16 * autoScale}px`);
+    root.style.setProperty('--tile-width', `${320 * autoScale}px`);
+    root.style.setProperty('--tile-height', `${180 * autoScale}px`);
+    root.style.setProperty('--spacing-unit', `${16 * autoScale}px`);
     
     // Apply size class to body
     document.body.className = document.body.className.replace(/tv-scale-\d+/g, '');
-    document.body.classList.add(`tv-scale-${Math.round(targetScale * 100)}`);
-  };
-
-  useEffect(() => {
-    const detectAndApplyScale = () => {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const screenWidth = window.screen?.width || 0;
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      
-      // Check for saved manual scale override first
-      const savedScale = localStorage.getItem('obtv-ui-scale');
-      const manualOverride = localStorage.getItem('obtv-manual-override');
-      
-      // Remove any old manual overrides - always use auto-detection now
-      localStorage.removeItem('obtv-ui-scale');
-      localStorage.removeItem('obtv-manual-override');
-
-      // Auto-detect scale based on TV/large display characteristics
-      let autoScale = 1;
-      
-      // Very large displays (75"+ 4K TVs)
-      if (viewportWidth >= 2400 || screenWidth >= 3840) {
-        autoScale = 0.3; // Very aggressive scaling for massive displays
-      } else if (viewportWidth >= 1920 || screenWidth >= 2560) {
-        autoScale = 0.45; // Large displays - good balance
-      } else if (viewportWidth >= 1600) {
-        autoScale = 0.6; // Medium large displays
-      } else if (viewportWidth >= 1280) {
-        autoScale = 0.75; // Smaller large displays
-      }
-      
-      console.log(`TV Auto-Scale Detection:`);
-      console.log(`  Viewport: ${viewportWidth}x${viewportHeight}`);
-      console.log(`  Screen: ${screenWidth}x${window.screen?.height || 0}`);
-      console.log(`  DPR: ${devicePixelRatio}`);
-      console.log(`  Applied Scale: ${autoScale}`);
-      
-      // Apply auto-detected scale
-      setScale(autoScale);
-      applyScaleToDOM(autoScale);
-    };
-
-    // Detect immediately
-    detectAndApplyScale();
+    document.body.classList.add(`tv-scale-${Math.round(autoScale * 100)}`);
     
-    // Re-detect on window resize
-    window.addEventListener('resize', detectAndApplyScale);
-    return () => window.removeEventListener('resize', detectAndApplyScale);
+    // Update component state
+    setScale(autoScale);
+    
+    // Force a visual confirmation by adding a temporary indicator
+    const indicator = document.createElement('div');
+    indicator.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,255,0,0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 999999;
+      font-family: monospace;
+      font-size: 14px;
+    `;
+    indicator.textContent = `TV Scale: ${autoScale} (${viewportWidth}px)`;
+    document.body.appendChild(indicator);
+    
+    // Remove indicator after 3 seconds
+    setTimeout(() => {
+      if (indicator.parentNode) {
+        indicator.parentNode.removeChild(indicator);
+      }
+    }, 3000);
   }, []);
 
   return (
