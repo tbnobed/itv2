@@ -356,11 +356,14 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
       const sortedStudios = studiosData?.sort((a, b) => a.name.localeCompare(b.name)) || [];
       
       const handleStudioKeyDown = (e: React.KeyboardEvent) => {
+        console.log('Studio keydown:', e.key, 'Current index:', focusedStudioIndex, 'Total studios:', sortedStudios.length);
         switch (e.key) {
           case 'ArrowLeft':
             e.preventDefault();
+            console.log('ArrowLeft pressed, current index:', focusedStudioIndex);
             if (focusedStudioIndex > 0) {
               const newIndex = focusedStudioIndex - 1;
+              console.log('Moving to index:', newIndex);
               setFocusedStudioIndex(newIndex);
               studioRefs.current[newIndex]?.focus();
               studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
@@ -368,8 +371,10 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
             break;
           case 'ArrowRight':
             e.preventDefault();
+            console.log('ArrowRight pressed, current index:', focusedStudioIndex);
             if (focusedStudioIndex < sortedStudios.length - 1) {
               const newIndex = focusedStudioIndex + 1;
+              console.log('Moving to index:', newIndex);
               setFocusedStudioIndex(newIndex);
               studioRefs.current[newIndex]?.focus();
               studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
