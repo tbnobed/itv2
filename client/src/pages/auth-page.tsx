@@ -124,29 +124,49 @@ export default function PasscodeAuthPage() {
         handleClear();
       } else if (key === 'ArrowDown') {
         event.preventDefault();
-        // Check if we're currently on the input field
         const inputOTP = document.querySelector('[data-testid="input-passcode"]') as HTMLElement;
         const activeElement = document.activeElement;
         
-        // If we're not focused on anything specific, or we're on the input field, go to first digit button
+        // If we're on the input field, go to first digit button
         if (!activeElement || activeElement === inputOTP || inputOTP?.contains(activeElement)) {
           const firstDigitButton = document.querySelector('[data-testid="button-digit-1"]') as HTMLElement;
           firstDigitButton?.focus();
-        } else {
-          // Otherwise focus on the input field first
+        }
+        // If we're on a digit button, go to clear button
+        else if (activeElement?.getAttribute('data-testid')?.startsWith('button-digit-')) {
+          const clearButton = document.querySelector('[data-testid="button-backspace"]') as HTMLElement;
+          clearButton?.focus();
+        }
+        // Otherwise focus on the input field first
+        else {
           inputOTP?.focus();
         }
       } else if (key === 'ArrowUp') {
         event.preventDefault();
-        // Go back to input field if we're on digit buttons
+        const activeElement = document.activeElement;
         const inputOTP = document.querySelector('[data-testid="input-passcode"]') as HTMLElement;
-        inputOTP?.focus();
+        
+        // If we're on clear/submit buttons, go back to digit buttons
+        if (activeElement?.getAttribute('data-testid') === 'button-backspace' || 
+            activeElement?.getAttribute('data-testid') === 'button-submit') {
+          const firstDigitButton = document.querySelector('[data-testid="button-digit-1"]') as HTMLElement;
+          firstDigitButton?.focus();
+        }
+        // If we're on digit buttons, go back to input field
+        else if (activeElement?.getAttribute('data-testid')?.startsWith('button-digit-')) {
+          inputOTP?.focus();
+        }
+        // Otherwise go to input field
+        else {
+          inputOTP?.focus();
+        }
       } else if (key === 'ArrowLeft' || key === 'ArrowRight') {
         event.preventDefault();
+        const activeElement = document.activeElement as HTMLElement;
+        
         // Navigate between digit buttons
-        const currentButton = document.activeElement as HTMLElement;
-        if (currentButton?.getAttribute('data-testid')?.startsWith('button-digit-')) {
-          const currentDigit = currentButton.getAttribute('data-testid')?.replace('button-digit-', '');
+        if (activeElement?.getAttribute('data-testid')?.startsWith('button-digit-')) {
+          const currentDigit = activeElement.getAttribute('data-testid')?.replace('button-digit-', '');
           const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
           const currentIndex = digits.indexOf(currentDigit || '');
           
@@ -159,6 +179,19 @@ export default function PasscodeAuthPage() {
           
           const nextButton = document.querySelector(`[data-testid="button-digit-${digits[nextIndex]}"]`) as HTMLElement;
           nextButton?.focus();
+        }
+        // Navigate between clear and submit buttons
+        else if (activeElement?.getAttribute('data-testid') === 'button-backspace') {
+          if (key === 'ArrowRight') {
+            const submitButton = document.querySelector('[data-testid="button-submit"]') as HTMLElement;
+            submitButton?.focus();
+          }
+        }
+        else if (activeElement?.getAttribute('data-testid') === 'button-submit') {
+          if (key === 'ArrowLeft') {
+            const clearButton = document.querySelector('[data-testid="button-backspace"]') as HTMLElement;
+            clearButton?.focus();
+          }
         }
       }
     };
