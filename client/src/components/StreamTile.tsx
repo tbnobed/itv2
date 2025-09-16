@@ -11,6 +11,7 @@ interface StreamTileProps {
   streamUrl?: string;
   size?: 'featured' | 'regular';
   variant?: 'poster' | 'compact';
+  textPosition?: 'overlay' | 'below';
   subtitle?: string;
   metaLeft?: string;
   metaRight?: string;
@@ -27,6 +28,7 @@ const StreamTile = React.forwardRef(({
   streamUrl,
   size = 'regular',
   variant = 'poster',
+  textPosition = 'overlay',
   subtitle,
   metaLeft,
   metaRight,
@@ -254,7 +256,90 @@ const StreamTile = React.forwardRef(({
     );
   }
 
-  // Poster Layout with info below image
+  // Poster Layout - overlay or below text based on textPosition prop
+  if (textPosition === 'overlay') {
+    // Original overlay layout for Featured section
+    return (
+      <div
+        className={cn(
+          "relative cursor-pointer group outline-none",
+          "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
+          "transition-all duration-300 ease-out",
+          "focus-visible:scale-110 focus-visible:z-30",
+          "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+          size === 'featured' ? 'w-[200px]' : 'w-[150px]',
+          isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+          className
+        )}
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={handleKeyPress}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        data-testid={`stream-tile-${streamId}`}
+      >
+        {/* Loading Skeleton */}
+        {isLoading || !isImageLoaded ? (
+          <div className="w-full h-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 bg-[length:200%_100%]" />
+        ) : null}
+        
+        {/* Live Preview Image */}
+        <img
+          src={currentImage}
+          alt={title}
+          className={cn(
+            "w-full h-full object-cover transition-opacity duration-200",
+            isImageLoaded ? "opacity-100" : "opacity-0"
+          )}
+          onLoad={() => {
+            setIsImageLoaded(true);
+          }}
+          onError={(e) => {
+            // Fallback to thumbnail when server snapshot is not available
+            if (currentImage !== thumbnail) {
+              console.log(`StreamTile[${streamId}]: Server snapshot failed to load, falling back to thumbnail`);
+              setCurrentImage(thumbnail);
+              setIsImageLoaded(false); // Reset to show skeleton while fallback loads
+            } else {
+              console.log(`StreamTile[${streamId}]: Thumbnail also failed to load`);
+              setIsImageLoaded(true); // Stop skeleton even if image failed
+            }
+          }}
+        />
+        
+        {/* Bottom Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+        
+        {/* Content - Bottom Left */}
+        <div className="absolute inset-0 p-3 flex flex-col justify-end">
+          <h3 
+            className={cn(
+              "text-white font-medium leading-tight line-clamp-2 mb-1",
+              size === 'featured' ? 'text-base' : 'text-sm'
+            )}
+            data-testid={`text-title-${streamId}`}
+          >
+            {title}
+          </h3>
+          
+          {/* Live Indicator */}
+          <div className="flex items-center">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
+            <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
+          </div>
+        </div>
+        
+        {/* Stream ID Badge - Bottom Right */}
+        <div className="absolute bottom-2 right-2">
+          <div className="bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs text-white/80 font-mono">
+            {streamId}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Below text layout for Grid sections
   return (
     <div
       ref={setRef}

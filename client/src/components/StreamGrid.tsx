@@ -112,6 +112,7 @@ export default function StreamGrid({
                     streamUrl={stream.url}
                     size="regular"
                     variant="poster"
+                    textPosition="below"
                     tabIndex={isActive ? 0 : -1}
                     onSelect={() => onStreamSelect?.(stream.streamId, stream.url)}
                     className="w-[110px] flex-shrink-0"
