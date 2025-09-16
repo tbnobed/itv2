@@ -356,14 +356,11 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
       const sortedStudios = studiosData?.sort((a, b) => a.name.localeCompare(b.name)) || [];
       
       const handleStudioKeyDown = (e: React.KeyboardEvent) => {
-        console.log('Studio keydown:', e.key, 'Current index:', focusedStudioIndex, 'Total studios:', sortedStudios.length);
         switch (e.key) {
           case 'ArrowLeft':
             e.preventDefault();
-            console.log('ArrowLeft pressed, current index:', focusedStudioIndex);
             if (focusedStudioIndex > 0) {
               const newIndex = focusedStudioIndex - 1;
-              console.log('Moving to index:', newIndex);
               setFocusedStudioIndex(newIndex);
               studioRefs.current[newIndex]?.focus();
               studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
@@ -371,10 +368,8 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
             break;
           case 'ArrowRight':
             e.preventDefault();
-            console.log('ArrowRight pressed, current index:', focusedStudioIndex);
             if (focusedStudioIndex < sortedStudios.length - 1) {
               const newIndex = focusedStudioIndex + 1;
-              console.log('Moving to index:', newIndex);
               setFocusedStudioIndex(newIndex);
               studioRefs.current[newIndex]?.focus();
               studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
@@ -396,8 +391,8 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
       };
       
       return (
-        <div className="relative mb-10 w-full">
-          <h2 className="text-white font-bold mb-8 px-8 text-2xl" data-testid="section-studios">
+        <div className="relative mb-10 w-full" data-testid="section-studios">
+          <h2 className="text-white font-bold mb-8 px-8 text-2xl">
             Studios
           </h2>
           
