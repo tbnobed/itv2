@@ -69,6 +69,16 @@ export default function StreamGrid({
           const newCol = Math.min(focusedCol, streamRows[focusedRow - 1].length - 1);
           setFocusedCol(newCol);
           tileRefs.current[focusedRow - 1]?.[newCol]?.focus();
+        } else {
+          // Exit grid to top navigation when on first row
+          const activeNavButton = document.querySelector('[data-nav-index][data-testid*="nav-"][class*="bg-white"]') as HTMLElement;
+          if (activeNavButton) {
+            activeNavButton.focus();
+          } else {
+            // Fallback to first nav button if active one isn't found
+            const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
+            firstNavButton?.focus();
+          }
         }
         break;
       case 'ArrowDown':
