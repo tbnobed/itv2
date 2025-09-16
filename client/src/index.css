@@ -438,4 +438,22 @@
     width: 0.3em;
     height: 0.3em;
   }
+
+  /* Prevent default arrow key scrolling behavior when focus is on interactive elements */
+  .stream-tile:focus {
+    scroll-behavior: auto;
+  }
+
+  /* Enhanced focus visibility for keyboard navigation */
+  .stream-tile:focus,
+  .stream-tile:focus-within {
+    outline: none;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.7);
+    border-radius: 8px;
+  }
+
+  /* Prevent page scrolling when using arrow keys for navigation */
+  body.keyboard-navigation {
+    overflow: hidden;
+  }
 }

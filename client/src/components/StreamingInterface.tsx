@@ -411,7 +411,7 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
                     tabIndex={index === focusedStudioIndex ? 0 : -1}
                     onFocus={() => setFocusedStudioIndex(index)}
                     onKeyDown={handleStudioKeyDown}
-                    className="flex-shrink-0 outline-none stream-tile"
+                    className="flex-shrink-0 outline-none stream-tile focus:ring-4 focus:ring-primary focus:ring-opacity-70 rounded-lg"
                   >
                     <StudioCard
                       studio={studio}
