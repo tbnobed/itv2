@@ -1,4 +1,10 @@
 import { useState, useEffect } from 'react';
+
+// Import studio background images
+import socalStudioImg from '@assets/SocalStudio_1758041495268.png';
+import irvingStudiosImg from '@assets/Irving studios_1758041495269.png';
+import nashvilleStudiosImg from '@assets/Nashvillestudios_1758041495269.png';
+import plexStudiosImg from '@assets/PlexStudios_1758041495269.jpg';
 import { useQuery } from '@tanstack/react-query';
 import CategoryRow from './CategoryRow';
 import StreamModal from './StreamModal';
@@ -182,10 +188,10 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
   // Rotating studio background images
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const studioImages = [
-    '@assets/SocalStudio_1758041495268.png',
-    '@assets/Irving studios_1758041495269.png', 
-    '@assets/Nashvillestudios_1758041495269.png',
-    '@assets/PlexStudios_1758041495269.jpg'
+    socalStudioImg,
+    irvingStudiosImg,
+    nashvilleStudiosImg,
+    plexStudiosImg
   ];
 
   // Rotate background images every 8 seconds
