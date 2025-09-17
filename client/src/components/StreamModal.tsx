@@ -372,8 +372,13 @@ export default function StreamModal({
     } else {
       // Return focus to previously focused element when modal closes
       if (previouslyFocusedElement.current) {
-        previouslyFocusedElement.current.focus();
-        previouslyFocusedElement.current = null;
+        // Use setTimeout to ensure the modal is fully closed before restoring focus
+        setTimeout(() => {
+          if (previouslyFocusedElement.current) {
+            previouslyFocusedElement.current.focus();
+            previouslyFocusedElement.current = null;
+          }
+        }, 100);
       }
     }
   }, [isOpen]);
