@@ -115,7 +115,7 @@ export default function ApkManagement() {
         });
       } catch (error) {
         setIsUploading(false);
-        throw new Error('Failed to get CSRF token: ' + error.message);
+        throw new Error('Failed to get CSRF token: ' + (error instanceof Error ? error.message : String(error)));
       }
     },
     onSuccess: () => {
@@ -306,7 +306,7 @@ export default function ApkManagement() {
                     asChild
                     data-testid="button-download-apk"
                   >
-                    <a href="/itv-obtv-firestick.apk" download target="_blank">
+                    <a href="/api/download/firestick-apk" download target="_blank">
                       <Download className="w-4 h-4 mr-2" />
                       Download
                     </a>
