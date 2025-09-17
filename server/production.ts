@@ -182,7 +182,8 @@ async function registerRoutes(app: Express): Promise<Server> {
         featured: allStreams.filter(s => s.category === 'featured'),
         overTheAir: allStreams.filter(s => s.category === 'overTheAir'),
         liveFeeds: allStreams.filter(s => s.category === 'liveFeeds'),
-        studios: allStreams.filter(s => s.category === 'studios')
+        studios: allStreams.filter(s => s.category === 'studios'),
+        uhd: allStreams.filter(s => s.category === 'uhd')
       };
       
       res.json(groupedStreams);
