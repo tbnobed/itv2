@@ -68,13 +68,27 @@ export async function apiRequest(
     cachedCsrfToken = null;
   }
 
-  await throwIfResNotOk(res);
-  
   // Handle 304 Not Modified responses (they typically have no body)
   if (res.status === 304) {
-    // Return empty object for 304 responses to indicate "use cached data"
-    return {};
+    // For 304, we need to use cached data, but apiRequest doesn't have access to queryKey
+    // So we'll force a fresh request to avoid breaking auth
+    const freshRes = await fetch(url, {
+      method,
+      headers: {
+        ...headers,
+        'Cache-Control': 'no-cache',
+      },
+      body: options?.body,
+      credentials: "include",
+    });
+    await throwIfResNotOk(freshRes);
+    if (method !== 'DELETE') {
+      return await freshRes.json();
+    }
+    return freshRes;
   }
+
+  await throwIfResNotOk(res);
   
   // Parse JSON response for non-DELETE methods
   if (method !== 'DELETE') {
@@ -100,7 +114,14 @@ export const getQueryFn: <T>(options: {
 
     // Handle 304 Not Modified - use cached data
     if (res.status === 304) {
-      return {};
+      const cached = queryClient.getQueryData(queryKey as any);
+      if (cached !== undefined) return cached as any;
+      // If no cache, force a fresh request
+      const freshRes = await fetch(`${queryKey.join("/")}?_=${Date.now()}`, {
+        credentials: "include",
+      });
+      await throwIfResNotOk(freshRes);
+      return await freshRes.json();
     }
 
     await throwIfResNotOk(res);
