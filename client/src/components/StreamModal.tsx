@@ -65,6 +65,57 @@ export default function StreamModal({
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const srsPlayerRef = useRef<any>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+  const previouslyFocusedSelector = useRef<string | null>(null);
+
+  // Robust focus restoration with retry logic
+  const restoreFocus = () => {
+    console.log('StreamModal: Attempting to restore focus...');
+    
+    const attemptRestore = (attempt = 1, maxAttempts = 5) => {
+      // Try stored DOM element first (if still attached)
+      if (previouslyFocusedElement.current && document.contains(previouslyFocusedElement.current)) {
+        console.log('StreamModal: Restoring focus to stored element');
+        previouslyFocusedElement.current.focus();
+        previouslyFocusedElement.current = null;
+        previouslyFocusedSelector.current = null;
+        return;
+      }
+      
+      // Try selector-based restore
+      if (previouslyFocusedSelector.current) {
+        const element = document.querySelector(previouslyFocusedSelector.current) as HTMLElement;
+        if (element) {
+          console.log(`StreamModal: Restoring focus via selector: ${previouslyFocusedSelector.current}`);
+          element.focus();
+          previouslyFocusedElement.current = null;
+          previouslyFocusedSelector.current = null;
+          return;
+        }
+      }
+      
+      // Fallback to any focusable stream tile
+      const fallbackTile = document.querySelector('[data-testid^="stream-tile-"][tabindex="0"]') as HTMLElement;
+      if (fallbackTile) {
+        console.log('StreamModal: Fallback to first focusable stream tile');
+        fallbackTile.focus();
+        previouslyFocusedElement.current = null;
+        previouslyFocusedSelector.current = null;
+        return;
+      }
+      
+      // Retry if we haven't reached max attempts
+      if (attempt < maxAttempts) {
+        console.log(`StreamModal: Focus restore attempt ${attempt} failed, retrying...`);
+        setTimeout(() => attemptRestore(attempt + 1, maxAttempts), 50);
+      } else {
+        console.warn('StreamModal: Focus restoration failed after all attempts');
+        previouslyFocusedElement.current = null;
+        previouslyFocusedSelector.current = null;
+      }
+    };
+    
+    attemptRestore();
+  };
 
   // SDK Loading verification
   useEffect(() => {
@@ -362,8 +413,24 @@ export default function StreamModal({
   // Focus management - Capture focus when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Store the currently focused element
-      previouslyFocusedElement.current = document.activeElement as HTMLElement;
+      // Store the currently focused element and its selector
+      const activeElement = document.activeElement as HTMLElement;
+      previouslyFocusedElement.current = activeElement;
+      
+      // Capture a stable selector for the focused element
+      if (activeElement) {
+        const testId = activeElement.getAttribute('data-testid');
+        if (testId) {
+          previouslyFocusedSelector.current = `[data-testid="${testId}"]`;
+          console.log(`StreamModal: Captured focus selector: ${previouslyFocusedSelector.current}`);
+        } else {
+          // Fallback to other attributes
+          const id = activeElement.id;
+          if (id) {
+            previouslyFocusedSelector.current = `#${id}`;
+          }
+        }
+      }
       
       // Focus the modal container to capture keyboard events
       if (modalRef.current) {
@@ -371,15 +438,10 @@ export default function StreamModal({
       }
     } else {
       // Return focus to previously focused element when modal closes
-      if (previouslyFocusedElement.current) {
-        // Use setTimeout to ensure the modal is fully closed before restoring focus
-        setTimeout(() => {
-          if (previouslyFocusedElement.current) {
-            previouslyFocusedElement.current.focus();
-            previouslyFocusedElement.current = null;
-          }
-        }, 100);
-      }
+      // Wait longer to account for fullscreen changes and DOM updates
+      setTimeout(() => {
+        restoreFocus();
+      }, 250);
     }
   }, [isOpen]);
 
