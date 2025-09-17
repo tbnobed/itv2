@@ -1,7 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
-  if (!res.ok) {
+  // 304 Not Modified is a valid success response for caching
+  if (!res.ok && res.status !== 304) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -69,6 +70,12 @@ export async function apiRequest(
 
   await throwIfResNotOk(res);
   
+  // Handle 304 Not Modified responses (they typically have no body)
+  if (res.status === 304) {
+    // Return empty object for 304 responses to indicate "use cached data"
+    return {};
+  }
+  
   // Parse JSON response for non-DELETE methods
   if (method !== 'DELETE') {
     return await res.json();
@@ -89,6 +96,11 @@ export const getQueryFn: <T>(options: {
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
+    }
+
+    // Handle 304 Not Modified - use cached data
+    if (res.status === 304) {
+      return {};
     }
 
     await throwIfResNotOk(res);
