@@ -86,6 +86,25 @@ export default function CategoryRow({
           firstNavButton?.focus();
         }
         break;
+      case 'ArrowDown':
+        e.preventDefault();
+        // Find the next section below this one and focus its first tile
+        const currentSection = document.querySelector(`[data-testid="section-${sectionId}"]`);
+        if (currentSection) {
+          // Look for the next section by getting all sections and finding the next one
+          const allSections = Array.from(document.querySelectorAll('[data-testid^="section-"]'));
+          const currentIndex = allSections.indexOf(currentSection);
+          
+          if (currentIndex !== -1 && currentIndex < allSections.length - 1) {
+            // Focus the first tile in the next section
+            const nextSection = allSections[currentIndex + 1];
+            const firstTile = nextSection.querySelector('.stream-tile') as HTMLElement;
+            if (firstTile) {
+              firstTile.focus();
+            }
+          }
+        }
+        break;
     }
   };
 
