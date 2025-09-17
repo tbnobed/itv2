@@ -26,6 +26,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Cache-Control', 'no-store');
     }
   }));
+
+  // Serve static generated images
+  const generatedImagesPath = join(process.cwd(), 'client', 'public', 'generated_images');
+  app.use('/generated_images', express.static(generatedImagesPath, {
+    maxAge: '1h', // Cache for 1 hour since these are relatively static
+    etag: true,
+    lastModified: true
+  }));
   
   // Health check endpoint
   app.get('/api/health', (req, res) => {
