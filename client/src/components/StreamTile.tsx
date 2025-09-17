@@ -121,7 +121,7 @@ const StreamTile = React.forwardRef(({
       "relative cursor-pointer group rounded-xl",
       "hover:ring-4 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-neutral-900 hover:z-10",
       "focus-visible:ring-4 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900 focus-visible:z-10",
-      size === 'featured' ? 'w-[280px]' : 'w-[210px]',
+      size === 'featured' ? 'w-[252px]' : 'w-[189px]',
       className
     ),
     container: cn(
@@ -137,7 +137,7 @@ const StreamTile = React.forwardRef(({
       "transition-all duration-300 ease-out",
       "focus-visible:scale-110 focus-visible:z-30",
       "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
-      size === 'featured' ? 'w-[200px]' : 'w-[150px]',
+      size === 'featured' ? 'w-[180px]' : 'w-[135px]',
       isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
       className
     )
@@ -210,7 +210,7 @@ const StreamTile = React.forwardRef(({
                 <h3 
                   className={cn(
                     "font-medium line-clamp-1 leading-none text-ellipsis overflow-hidden",
-                    size === 'featured' ? 'text-[11px]' : 'text-[10px]'
+                    size === 'featured' ? 'text-[10px]' : 'text-[9px]'
                   )}
                   data-testid={`text-title-${streamId}`}
                   title={title}
@@ -221,7 +221,7 @@ const StreamTile = React.forwardRef(({
                 {/* Subtitle */}
                 {subtitle && (
                   <p 
-                    className="text-[9px] text-white/70 line-clamp-1 leading-none overflow-hidden"
+                    className="text-[8px] text-white/70 line-clamp-1 leading-none overflow-hidden"
                     data-testid={`text-subtitle-${streamId}`}
                     title={subtitle}
                   >
@@ -235,17 +235,17 @@ const StreamTile = React.forwardRef(({
                     {/* Live Badge */}
                     <div className="flex items-center">
                       <div className="w-1 h-1 bg-red-500 rounded-full animate-pulse mr-0.5" />
-                      <span className="text-red-500 text-[8px] font-medium uppercase tracking-wide">LIVE</span>
+                      <span className="text-red-500 text-[7px] font-medium uppercase tracking-wide">LIVE</span>
                     </div>
                     
                     {/* Stream ID */}
-                    <div className="bg-black/40 backdrop-blur-sm px-1 py-0.5 rounded text-[8px] text-white/80 font-mono">
+                    <div className="bg-black/40 backdrop-blur-sm px-1 py-0.5 rounded text-[7px] text-white/80 font-mono">
                       {streamId}
                     </div>
                   </div>
                   
                   {/* Right side metadata */}
-                  <div className="flex items-center gap-1 text-[8px] text-white/60 flex-shrink-0">
+                  <div className="flex items-center gap-1 text-[7px] text-white/60 flex-shrink-0">
                     {metaLeft && <span>{metaLeft}</span>}
                     {metaRight && <span>{metaRight}</span>}
                   </div>
@@ -271,7 +271,7 @@ const StreamTile = React.forwardRef(({
           "transition-all duration-300 ease-out",
           "focus-visible:scale-110 focus-visible:z-30",
           "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
-          size === 'featured' ? 'w-[255px]' : 'w-[187px]',
+          size === 'featured' ? 'w-[230px]' : 'w-[168px]',
           isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
           className
         )}
@@ -320,7 +320,7 @@ const StreamTile = React.forwardRef(({
           <h3 
             className={cn(
               "text-white font-medium leading-tight line-clamp-2 mb-1",
-              size === 'featured' ? 'text-base' : 'text-sm'
+              size === 'featured' ? 'text-sm' : 'text-xs'
             )}
             data-testid={`text-title-${streamId}`}
           >
@@ -330,13 +330,13 @@ const StreamTile = React.forwardRef(({
           {/* Live Indicator */}
           <div className="flex items-center">
             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2" />
-            <span className="text-red-500 text-xs font-medium uppercase tracking-wide">LIVE</span>
+            <span className="text-red-500 text-[11px] font-medium uppercase tracking-wide">LIVE</span>
           </div>
         </div>
         
         {/* Stream ID Badge - Bottom Right */}
         <div className="absolute bottom-2 right-2">
-          <div className="bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs text-white/80 font-mono">
+          <div className="bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-[11px] text-white/80 font-mono">
             {streamId}
           </div>
         </div>
