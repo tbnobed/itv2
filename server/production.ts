@@ -634,15 +634,27 @@ async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve APK file directly 
-  app.use('/itv-obtv-firestick.apk', async (req, res, next) => {
+  // Serve APK file directly with mobile downloader compatibility
+  app.get('/itv-obtv-firestick.apk', async (req, res, next) => {
     try {
       const { join } = await import("path");
-      const { existsSync } = await import("fs");
+      const { existsSync, statSync } = await import("fs");
       
       const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
       if (existsSync(apkPath)) {
+        const stats = statSync(apkPath);
+        
+        // Set headers for better mobile downloader compatibility
+        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+        res.setHeader('Content-Disposition', 'attachment; filename="itv-obtv-firestick.apk"');
+        res.setHeader('Content-Length', stats.size.toString());
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Accept-Ranges', 'bytes');
+        
+        // Log the download attempt for debugging
+        console.log(`APK download requested by User-Agent: ${req.get('User-Agent')}`);
+        
         res.download(apkPath, 'itv-obtv-firestick.apk');
       } else {
         res.status(404).json({ error: 'APK file not found' });
