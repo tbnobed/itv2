@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useToast } from '@/hooks/use-toast';
+import LogoAnimation from '@/components/LogoAnimation';
 
 interface LockoutState {
   isLocked: boolean;
@@ -21,6 +22,7 @@ export default function PasscodeAuthPage() {
   const { toast } = useToast();
   
   const [passcode, setPasscode] = useState('');
+  const [showLogoAnimation, setShowLogoAnimation] = useState(false);
   const [lockoutState, setLockoutState] = useState<LockoutState>({
     isLocked: false,
     retryAfter: 0,
@@ -78,7 +80,9 @@ export default function PasscodeAuthPage() {
       
       // Attempt login
       await passcodeLoginMutation.mutateAsync({ code: passcode });
-      navigate('/');
+      
+      // Show logo animation before navigating
+      setShowLogoAnimation(true);
     } catch (error: any) {
       // Handle rate limiting
       if (error.status === 429 && error.retryAfter) {
@@ -101,6 +105,10 @@ export default function PasscodeAuthPage() {
       }
       setPasscode('');
     }
+  };
+
+  const handleAnimationComplete = () => {
+    navigate('/');
   };
 
   // Handle keyboard input for TV remotes
@@ -389,6 +397,12 @@ export default function PasscodeAuthPage() {
 
         </div>
       </div>
+
+      {/* Logo Animation Overlay */}
+      <LogoAnimation 
+        isVisible={showLogoAnimation}
+        onComplete={handleAnimationComplete}
+      />
     </div>
   );
 }
