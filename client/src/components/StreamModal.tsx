@@ -436,8 +436,13 @@ export default function StreamModal({
       if (modalRef.current) {
         modalRef.current.focus();
       }
-    } else {
-      // Return focus to previously focused element when modal closes
+    }
+  }, [isOpen]);
+
+  // Separate effect for focus restoration to ensure it runs
+  useEffect(() => {
+    if (!isOpen && (previouslyFocusedElement.current || previouslyFocusedSelector.current)) {
+      console.log('StreamModal: Modal closed, restoring focus...');
       // Wait longer to account for fullscreen changes and DOM updates
       setTimeout(() => {
         restoreFocus();
@@ -458,6 +463,24 @@ export default function StreamModal({
 
       return () => clearTimeout(timer);
     }
+  }, [isOpen]);
+
+  // Maintain focus on modal when entering/exiting fullscreen
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (isOpen && modalRef.current) {
+        // Re-focus modal after fullscreen change to ensure keyboard events work
+        setTimeout(() => {
+          if (modalRef.current) {
+            modalRef.current.focus();
+            console.log('StreamModal: Re-focused modal after fullscreen change');
+          }
+        }, 100);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isOpen]);
 
   // Keyboard controls - Enhanced for Firestick/Fire TV compatibility with focus trap
