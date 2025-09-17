@@ -651,10 +651,7 @@ async function registerRoutes(app: Express): Promise<Server> {
     throw err;
   });
 
-  // Only serve static files in production (no vite imports)
-  serveStatic(app);
-
-  // Serve APK file directly - MUST be after static middleware to override catch-all route
+  // Serve APK file directly - MUST be BEFORE static middleware to avoid catch-all route
   app.get('/itv-obtv-firestick.apk', async (req, res, next) => {
     try {
       const { join } = await import("path");
@@ -691,6 +688,9 @@ async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).send('Failed to serve APK file');
     }
   });
+
+  // Only serve static files in production (no vite imports)
+  serveStatic(app);
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
