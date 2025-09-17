@@ -427,14 +427,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // APK management endpoints (admin only)
   app.get('/api/admin/apk/info', requireAdmin, async (req, res) => {
     try {
-      // Strip conditional request headers to prevent 304 responses
-      delete req.headers['if-none-match'];
-      delete req.headers['if-modified-since'];
-      delete req.headers['if-range'];
-      
+      // NUCLEAR option: Force unique response every time
       const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
-      let payload;
+      let payload: any;
       if (!existsSync(apkPath)) {
         payload = {
           exists: false,
@@ -452,23 +448,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
       
-      // Add timestamp to ensure content is always unique
+      // Force unique content every single request
       payload.timestamp = Date.now();
       payload.requestId = Math.random().toString(36).slice(2);
+      payload.random = Math.random(); // Extra randomness
       
-      // Ultra-aggressive cache busting for nginx/openresty proxies
-      const body = JSON.stringify(payload);
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      res.setHeader('Surrogate-Control', 'no-store');
-      res.setHeader('Vary', '*');
-      res.setHeader('X-Accel-Expires', '0');
-      res.setHeader('ETag', `W/"${Date.now()}-${Math.random().toString(36).slice(2)}"`);
+      // MAXIMUM cache busting - bypass ALL proxy caching
+      res.status(200);
+      res.set({
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '-1',
+        'X-Accel-Expires': '0',
+        'Surrogate-Control': 'no-store',
+        'Clear-Site-Data': '"cache"',
+        'Vary': 'Accept-Encoding, User-Agent, Authorization',
+        'X-No-Cache': '1'
+      });
+      res.removeHeader('ETag');
       res.removeHeader('Last-Modified');
-      res.end(body);
+      res.json(payload);
     } catch (error) {
       console.error('Error getting APK info:', error);
       res.status(500).json({ error: 'Failed to get APK file information' });
