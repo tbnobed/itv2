@@ -453,21 +453,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       payload.requestId = Math.random().toString(36).slice(2);
       payload.random = Math.random(); // Extra randomness
       
-      // MAXIMUM cache busting - bypass ALL proxy caching
+      // Simple cache busting without aggressive headers
       res.status(200);
       res.set({
         'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, private, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '-1',
-        'X-Accel-Expires': '0',
-        'Surrogate-Control': 'no-store',
-        'Clear-Site-Data': '"cache"',
-        'Vary': 'Accept-Encoding, User-Agent, Authorization',
-        'X-No-Cache': '1'
+        'Cache-Control': 'no-store'
       });
-      res.removeHeader('ETag');
-      res.removeHeader('Last-Modified');
       res.json(payload);
     } catch (error) {
       console.error('Error getting APK info:', error);
