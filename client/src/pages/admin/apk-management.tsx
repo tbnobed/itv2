@@ -70,53 +70,53 @@ export default function ApkManagement() {
       const formData = new FormData();
       formData.append('apk', file);
 
-      // Create a XMLHttpRequest to track upload progress
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
+      // Get CSRF token first
+      try {
+        const csrfToken = await getCSRFToken();
         
-        xhr.upload.addEventListener('progress', (event) => {
-          if (event.lengthComputable) {
-            const progress = Math.round((event.loaded / event.total) * 100);
-            setUploadProgress(progress);
-          }
-        });
-
-        xhr.addEventListener('load', () => {
-          setIsUploading(false);
-          if (xhr.status === 200) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              resolve(response);
-            } catch (e) {
-              reject(new Error('Invalid response format'));
+        // Create a XMLHttpRequest to track upload progress
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          
+          xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable) {
+              const progress = Math.round((event.loaded / event.total) * 100);
+              setUploadProgress(progress);
             }
-          } else {
-            try {
-              const errorResponse = JSON.parse(xhr.responseText);
-              reject(new Error(errorResponse.error || 'Upload failed'));
-            } catch (e) {
-              reject(new Error(`Upload failed with status ${xhr.status}`));
+          });
+
+          xhr.addEventListener('load', () => {
+            setIsUploading(false);
+            if (xhr.status === 200) {
+              try {
+                const response = JSON.parse(xhr.responseText);
+                resolve(response);
+              } catch (e) {
+                reject(new Error('Invalid response format'));
+              }
+            } else {
+              try {
+                const errorResponse = JSON.parse(xhr.responseText);
+                reject(new Error(errorResponse.error || 'Upload failed'));
+              } catch (e) {
+                reject(new Error(`Upload failed with status ${xhr.status}`));
+              }
             }
-          }
-        });
+          });
 
-        xhr.addEventListener('error', () => {
-          setIsUploading(false);
-          reject(new Error('Network error during upload'));
-        });
+          xhr.addEventListener('error', () => {
+            setIsUploading(false);
+            reject(new Error('Network error during upload'));
+          });
 
-        xhr.open('POST', '/api/admin/apk/upload');
-        
-        // Get and add CSRF token
-        getCSRFToken().then(csrfToken => {
+          xhr.open('POST', '/api/admin/apk/upload');
           xhr.setRequestHeader('x-csrf-token', csrfToken);
           xhr.send(formData);
-        }).catch(error => {
-          console.error('Failed to get CSRF token:', error);
-          // Send without CSRF token and let server handle the error
-          xhr.send(formData);
         });
-      });
+      } catch (error) {
+        setIsUploading(false);
+        throw new Error('Failed to get CSRF token: ' + error.message);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/apk/info'] });
