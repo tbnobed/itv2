@@ -88,19 +88,30 @@ export default function CategoryRow({
         break;
       case 'ArrowDown':
         e.preventDefault();
-        // Find the next section below this one and focus its first tile
+        console.debug(`ArrowDown from section ${sectionId}`);
+        // Find the next section below this one and focus its first focusable element
         const currentSection = document.querySelector(`[data-testid="section-${sectionId}"]`);
         if (currentSection) {
-          // Look for the next section by getting all sections and finding the next one
-          const allSections = Array.from(document.querySelectorAll('[data-testid^="section-"]'));
-          const currentIndex = allSections.indexOf(currentSection);
+          const allSections = Array.from(document.querySelectorAll('[data-testid^="section-"]')) as HTMLElement[];
+          const currentIndex = allSections.indexOf(currentSection as HTMLElement);
+          console.debug(`Current section index: ${currentIndex}, total sections: ${allSections.length}`);
           
           if (currentIndex !== -1 && currentIndex < allSections.length - 1) {
-            // Focus the first tile in the next section
             const nextSection = allSections[currentIndex + 1];
-            const firstTile = nextSection.querySelector('.stream-tile') as HTMLElement;
-            if (firstTile) {
-              firstTile.focus();
+            console.debug(`Next section found: ${nextSection.getAttribute('data-testid')}`);
+            
+            // Try multiple selectors to find the first focusable element
+            const firstFocusable = nextSection.querySelector('[data-testid="scroll-container"] [tabindex]') as HTMLElement
+              || nextSection.querySelector('button, a') as HTMLElement
+              || nextSection.querySelector('[role="button"]') as HTMLElement
+              || nextSection.querySelector('.stream-tile') as HTMLElement;
+            
+            if (firstFocusable) {
+              console.debug(`Focusing element:`, firstFocusable);
+              firstFocusable.focus();
+              firstFocusable.scrollIntoView({ block: 'nearest', inline: 'center' });
+            } else {
+              console.debug(`No focusable element found in next section`);
             }
           }
         }
@@ -124,7 +135,7 @@ export default function CategoryRow({
       <div className="w-full" data-testid="scroll-container">
         <div 
           className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2"
-          onKeyDown={handleKeyDown}
+          onKeyDownCapture={handleKeyDown}
           tabIndex={-1}
         >
           <div className={cn(
