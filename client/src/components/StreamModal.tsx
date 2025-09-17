@@ -584,6 +584,9 @@ export default function StreamModal({
 
   // Helper function to properly close modal with history management
   const handleModalClose = () => {
+    // Always trigger focus restoration before closing
+    console.log('StreamModal: Closing modal and will restore focus...');
+    
     if (historyStatePushedRef.current) {
       // Close modal first, then handle history
       historyStatePushedRef.current = false;
@@ -595,6 +598,11 @@ export default function StreamModal({
     } else {
       onClose();
     }
+    
+    // Force focus restoration after a delay
+    setTimeout(() => {
+      restoreFocus();
+    }, 300);
   };
 
   // Reset history state tracking when modal closes
