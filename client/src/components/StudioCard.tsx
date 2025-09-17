@@ -76,7 +76,7 @@ export default function StudioCard({ studio, onClick, className }: StudioCardPro
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url(${studio.thumbnail})`,
+          backgroundImage: `url("${studio.thumbnail}")`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
