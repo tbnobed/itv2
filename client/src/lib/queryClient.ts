@@ -56,16 +56,12 @@ export async function apiRequest(
     }
   }
 
-  console.log(`🔥 [DEBUG] Making ${method} request to: ${url}`);
-
   const res = await fetch(url, {
     method,
     headers,
     body: options?.body,
     credentials: "include",
   });
-
-  console.log(`🔥 [DEBUG] Response: ${res.status} ${res.statusText}`);
 
   // Clear cached CSRF token on 403 errors (token might be invalid)
   if (res.status === 403) {
