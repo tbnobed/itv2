@@ -553,6 +553,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Last-Modified', stats.mtime.toUTCString());
+      res.setHeader('ETag', `"${stats.mtime.getTime()}-${stats.size}"`);
       
       // Stream the file to the response
       res.sendFile(apkPath);
