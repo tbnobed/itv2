@@ -1,0 +1,80 @@
+|   Input: http://cdn4.obedtv.live:2023/live/Plex41.flv
+app-1       |   Output: /app/server/public/snapshots/P41.jpg
+app-1       | SnapshotService: Starting worker for P42
+app-1       |   Input: http://cdn4.obedtv.live:2023/live/Plex42.flv
+app-1       |   Output: /app/server/public/snapshots/P42.jpg
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/health
+app-1       | Method: GET
+app-1       | Session ID: KD_GqxqFW9WW9fVMJiJoCFYqexWbnge_
+app-1       | Session data keys: [ 'cookie' ]
+app-1       | Passport user data: undefined
+app-1       | isAuthenticated(): false
+app-1       | Cookie header received: NONE
+app-1       | ==========================
+app-1       | 7:53:24 PM [express] GET /api/health 200 in 2ms :: {"status":"ok","timestamp":"2025-09-17T19:53:24.1…
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/snapshots/register
+app-1       | Method: POST
+app-1       | Session ID: 9DFY43L5Nz3rst9jur7J8-6lxN34Irqp
+app-1       | Session data keys: [ 'cookie', 'passport', 'csrfToken' ]
+app-1       | Passport user data: { user: '376ed0c8-fa38-4ed3-8353-62267d343ce0' }
+app-1       | isAuthenticated(): true
+app-1       | Cookie header received: connect.sid=s%3A9DFY43L5Nz3rst9jur7J8-6lxN34Irqp.3EpkDLnIdNh6irqyLymMhb9%2B7Kpg0zUQO6E0h5GoCy8
+app-1       | ==========================
+app-1       | SnapshotService: Extended TTL for P41
+app-1       | SnapshotService: Extended TTL for P42
+app-1       | 7:53:24 PM [express] POST /api/snapshots/register 200 in 40ms :: {"registered":2,"streamIds":["P41",…
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/user
+app-1       | Method: GET
+app-1       | Session ID: 9DFY43L5Nz3rst9jur7J8-6lxN34Irqp
+app-1       | Session data keys: [ 'cookie', 'passport', 'csrfToken' ]
+app-1       | Passport user data: { user: '376ed0c8-fa38-4ed3-8353-62267d343ce0' }
+app-1       | isAuthenticated(): true
+app-1       | Cookie header received: connect.sid=s%3A9DFY43L5Nz3rst9jur7J8-6lxN34Irqp.3EpkDLnIdNh6irqyLymMhb9%2B7Kpg0zUQO6E0h5GoCy8
+app-1       | ==========================
+app-1       | 7:53:27 PM [express] GET /api/user 200 in 11ms :: {"id":"376ed0c8-fa38-4ed3-8353-62267d343ce0","user…
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/admin/apk/info
+app-1       | Method: GET
+app-1       | Session ID: 9DFY43L5Nz3rst9jur7J8-6lxN34Irqp
+app-1       | Session data keys: [ 'cookie', 'passport', 'csrfToken' ]
+app-1       | Passport user data: { user: '376ed0c8-fa38-4ed3-8353-62267d343ce0' }
+app-1       | isAuthenticated(): true
+app-1       | Cookie header received: connect.sid=s%3A9DFY43L5Nz3rst9jur7J8-6lxN34Irqp.3EpkDLnIdNh6irqyLymMhb9%2B7Kpg0zUQO6E0h5GoCy8
+app-1       | ==========================
+app-1       | 7:53:27 PM [express] GET /api/admin/apk/info 304 in 11ms
+app-1       | SnapshotService[P42]: Process exited with code null
+app-1       | SnapshotService[P42]: Restarting in 1000ms (attempt 2)
+app-1       | SnapshotService[P41]: Process exited with code null
+app-1       | SnapshotService[P41]: Restarting in 1000ms (attempt 2)
+app-1       | SnapshotService: Starting worker for P42
+app-1       |   Input: http://cdn4.obedtv.live:2023/live/Plex42.flv
+app-1       |   Output: /app/server/public/snapshots/P42.jpg
+app-1       | SnapshotService: Starting worker for P41
+app-1       |   Input: http://cdn4.obedtv.live:2023/live/Plex41.flv

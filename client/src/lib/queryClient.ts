@@ -70,13 +70,14 @@ export async function apiRequest(
 
   // Handle 304 Not Modified responses (they typically have no body)
   if (res.status === 304) {
-    // For 304, we need to use cached data, but apiRequest doesn't have access to queryKey
-    // So we'll force a fresh request to avoid breaking auth
-    const freshRes = await fetch(url, {
+    // Force a cache-busting request that should never return 304
+    const cacheBustUrl = url.includes('?') ? `${url}&_=${Date.now()}` : `${url}?_=${Date.now()}`;
+    const freshRes = await fetch(cacheBustUrl, {
       method,
       headers: {
         ...headers,
         'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       body: options?.body,
       credentials: "include",
