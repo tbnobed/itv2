@@ -221,15 +221,24 @@ export default function ApkManagement() {
   }
 
   if (error) {
+    console.error('APK Query Error:', error);
     return (
       <div className="p-6">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-destructive">Access Denied</h3>
+              <h3 className="text-lg font-semibold text-destructive">Error Loading APK Info</h3>
               <p className="text-muted-foreground mt-2">
-                You don't have permission to access APK management.
+                {error.message || 'Failed to load APK information'}
               </p>
+              <Button 
+                variant="outline" 
+                className="mt-4" 
+                onClick={() => refetch()}
+                data-testid="button-retry"
+              >
+                Retry
+              </Button>
             </div>
           </CardContent>
         </Card>
