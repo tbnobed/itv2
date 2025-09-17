@@ -21,6 +21,7 @@ import StreamsListPage from "@/pages/admin/streams-list";
 import StreamFormPage from "@/pages/admin/stream-form";
 import StudiosListPage from "@/pages/admin/studios-list";
 import StudioFormPage from "@/pages/admin/studio-form";
+import ApkManagement from "@/pages/admin/apk-management";
 
 // Protected wrapper for streaming interface (Android TV style)
 const ProtectedStreamingInterface = () => {
@@ -59,6 +60,9 @@ function Router() {
       </Route>
       <Route path="/admin/studios/edit/:id">
         {() => <AdminRoute component={StudioFormPage} />}
+      </Route>
+      <Route path="/admin/apk">
+        {() => <AdminRoute component={ApkManagement} />}
       </Route>
       
       {/* Protected Main Routes - Android TV Style */}
