@@ -1,0 +1,92 @@
+| === API REQUEST DEBUG ===
+app-1       | URL: /api/health
+app-1       | Method: GET
+app-1       | Session ID: qMYS_fOgDMWZRU5dro3UYkbXl9OmhAPJ
+app-1       | Session data keys: [ 'cookie' ]
+app-1       | Passport user data: undefined
+app-1       | isAuthenticated(): false
+app-1       | Cookie header received: NONE
+app-1       | ==========================
+app-1       | 8:05:19 PM [express] GET /api/health 200 in 5ms :: {"status":"ok","timestamp":"2025-09-17T20:05:19.5…
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/admin/apk/info
+app-1       | Method: GET
+app-1       | Session ID: TEhg4nY1ot0q5yE9TKc8w6U3lJuvrTTy
+app-1       | Session data keys: [ 'cookie', 'passport', 'csrfToken' ]
+app-1       | Passport user data: { user: '376ed0c8-fa38-4ed3-8353-62267d343ce0' }
+app-1       | isAuthenticated(): true
+app-1       | Cookie header received: connect.sid=s%3ATEhg4nY1ot0q5yE9TKc8w6U3lJuvrTTy.3Gvm6R2iX9t3G9TU8W0N4uxQNbLnxZ0TD%2BtB%2Fhcqfq8
+app-1       | ==========================
+app-1       | 8:05:22 PM [express] GET /api/admin/apk/info 200 in 12ms
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/snapshots/register
+app-1       | Method: POST
+app-1       | Session ID: f_Y8mqV6lcX8v2VK8oLnwkL9oFo39_Xx
+app-1       | Session data keys: [ 'cookie', 'passport', 'csrfToken' ]
+app-1       | Passport user data: { user: '376ed0c8-fa38-4ed3-8353-62267d343ce0' }
+app-1       | isAuthenticated(): true
+app-1       | Cookie header received: connect.sid=s%3Af_Y8mqV6lcX8v2VK8oLnwkL9oFo39_Xx.Lh4J5cLIZx4E9Hp8tSIglOK6QWPC3YdcHSxFuSfEQeI
+app-1       | ==========================
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | SnapshotService: Extended TTL for P41
+app-1       | SnapshotService: Extended TTL for P42
+app-1       | 8:05:29 PM [express] POST /api/snapshots/register 200 in 18ms :: {"registered":2,"streamIds":["P41",…
+app-1       | Deserializing user with ID: 376ed0c8-fa38-4ed3-8353-62267d343ce0
+app-1       | Found user during deserialization: {
+app-1       |   id: '376ed0c8-fa38-4ed3-8353-62267d343ce0',
+app-1       |   username: 'obtv-admin',
+app-1       |   role: 'admin'
+app-1       | }
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/snapshots/register
+app-1       | Method: POST
+app-1       | Session ID: OzPR72724y4RNDM8B2g8TmyXULpEFQ9D
+app-1       | Session data keys: [ 'cookie', 'passport', 'csrfToken' ]
+app-1       | Passport user data: { user: '376ed0c8-fa38-4ed3-8353-62267d343ce0' }
+app-1       | isAuthenticated(): true
+app-1       | Cookie header received: connect.sid=s%3AOzPR72724y4RNDM8B2g8TmyXULpEFQ9D.MVQXtyehm8OkqDfW%2FiXqVbVdkHIU4mLYc%2FUL8sz34VE; sidebar_state=true
+app-1       | ==========================
+app-1       | SnapshotService: Extended TTL for P41
+app-1       | SnapshotService: Extended TTL for P42
+app-1       | 8:05:39 PM [express] POST /api/snapshots/register 200 in 20ms :: {"registered":2,"streamIds":["P41",…
