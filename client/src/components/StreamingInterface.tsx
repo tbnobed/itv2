@@ -411,10 +411,6 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
       
       return (
         <div className="relative mb-10 w-full" data-testid="section-studios">
-          <h2 className="text-white font-bold mb-8 px-8 text-2xl">
-            Studios
-          </h2>
-          
           {/* Studio Carousel */}
           <div className="w-full" data-testid="studio-scroll-container">
             <div 

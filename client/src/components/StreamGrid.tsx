@@ -101,11 +101,6 @@ export default function StreamGrid({
 
   return (
     <div className={cn("w-full", className)} data-testid={`section-${sectionId}`}>
-      {/* Section Title */}
-      <h2 className="text-white font-bold text-2xl mb-6 px-8 text-center">
-        {title}
-      </h2>
-
       {/* 4-Column Grid - No Scrolling */}
       <div className="w-full px-8" onKeyDown={handleKeyDown} tabIndex={-1}>
         <div className="flex flex-col gap-8">
