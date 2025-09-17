@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 
 // Import studio background images
-import socalStudioImg from '@assets/SocalStudio_1757836018289.png';
-import irvingStudiosImg from '@assets/Irving_studios_1757836018288.png';
-import nashvilleStudiosImg from '@assets/Nashvillestudios_1757836018289.png';
-import plexStudiosImg from '@assets/PlexStudios_1757836018289.jpg';
+import socalStudioImg from '/generated_images/SocalStudio_1757836018289.png';
+import irvingStudiosImg from '/generated_images/Irving_studios_1757836018288.png';
+import nashvilleStudiosImg from '/generated_images/Nashvillestudios_1757836018289.png';
+import plexStudiosImg from '/generated_images/PlexStudios_1757836018289.jpg';
 import { useQuery } from '@tanstack/react-query';
 import CategoryRow from './CategoryRow';
 import StreamGrid from './StreamGrid';
