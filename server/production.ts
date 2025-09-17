@@ -634,74 +634,6 @@ async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve APK file directly with mobile downloader compatibility (no auth required)
-  app.get('/download/firestick.apk', async (req, res, next) => {
-    try {
-      const { join } = await import("path");
-      const { existsSync, statSync, createReadStream } = await import("fs");
-      
-      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
-      
-      console.log(`APK download attempt from: ${req.get('User-Agent') || 'Unknown'} IP: ${req.ip}`);
-      
-      if (existsSync(apkPath)) {
-        const stats = statSync(apkPath);
-        
-        // Set headers for maximum mobile downloader compatibility
-        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-        res.setHeader('Content-Disposition', 'attachment; filename="firestick.apk"');
-        res.setHeader('Content-Length', stats.size.toString());
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        res.setHeader('Accept-Ranges', 'bytes');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET');
-        
-        console.log(`Serving APK file: ${stats.size} bytes`);
-        
-        // Use sendFile for better streaming support
-        res.sendFile(apkPath);
-      } else {
-        console.log('APK file not found at:', apkPath);
-        res.status(404).send('APK file not found');
-      }
-    } catch (error) {
-      console.error('Error serving APK:', error);
-      res.status(500).send('Failed to serve APK file');
-    }
-  });
-
-  // Keep the original authenticated route for backwards compatibility
-  app.get('/itv-obtv-firestick.apk', async (req, res, next) => {
-    try {
-      const { join } = await import("path");
-      const { existsSync, statSync } = await import("fs");
-      
-      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
-      
-      if (existsSync(apkPath)) {
-        const stats = statSync(apkPath);
-        
-        // Set headers for better mobile downloader compatibility
-        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-        res.setHeader('Content-Disposition', 'attachment; filename="itv-obtv-firestick.apk"');
-        res.setHeader('Content-Length', stats.size.toString());
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Accept-Ranges', 'bytes');
-        
-        // Log the download attempt for debugging
-        console.log(`APK download requested by User-Agent: ${req.get('User-Agent')}`);
-        
-        res.download(apkPath, 'itv-obtv-firestick.apk');
-      } else {
-        res.status(404).json({ error: 'APK file not found' });
-      }
-    } catch (error) {
-      console.error('Error serving APK:', error);
-      res.status(500).json({ error: 'Failed to serve APK file' });
-    }
-  });
 
   const httpServer = createServer(app);
 
@@ -721,6 +653,44 @@ async function registerRoutes(app: Express): Promise<Server> {
 
   // Only serve static files in production (no vite imports)
   serveStatic(app);
+
+  // Serve APK file directly - MUST be after static middleware to override catch-all route
+  app.get('/itv-obtv-firestick.apk', async (req, res, next) => {
+    try {
+      const { join } = await import("path");
+      const { existsSync, statSync } = await import("fs");
+      
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      console.log(`APK download requested by User-Agent: ${req.get('User-Agent') || 'Unknown'} IP: ${req.ip}`);
+      
+      if (existsSync(apkPath)) {
+        const stats = statSync(apkPath);
+        
+        // Set headers for maximum mobile downloader compatibility
+        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+        res.setHeader('Content-Disposition', 'attachment; filename="itv-obtv-firestick.apk"');
+        res.setHeader('Content-Length', stats.size.toString());
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+        
+        console.log(`Serving APK file: ${stats.size} bytes`);
+        
+        // Use sendFile for better streaming support
+        res.sendFile(apkPath);
+      } else {
+        console.log('APK file not found at:', apkPath);
+        res.status(404).send('APK file not found');
+      }
+    } catch (error) {
+      console.error('Error serving APK:', error);
+      res.status(500).send('Failed to serve APK file');
+    }
+  });
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
