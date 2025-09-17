@@ -64,6 +64,7 @@ export default function StreamModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const srsPlayerRef = useRef<any>(null);
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   // SDK Loading verification
   useEffect(() => {
@@ -358,6 +359,25 @@ export default function StreamModal({
     }
   }, [isOpen]);
 
+  // Focus management - Capture focus when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Store the currently focused element
+      previouslyFocusedElement.current = document.activeElement as HTMLElement;
+      
+      // Focus the modal container to capture keyboard events
+      if (modalRef.current) {
+        modalRef.current.focus();
+      }
+    } else {
+      // Return focus to previously focused element when modal closes
+      if (previouslyFocusedElement.current) {
+        previouslyFocusedElement.current.focus();
+        previouslyFocusedElement.current = null;
+      }
+    }
+  }, [isOpen]);
+
   // Auto-enter fullscreen when modal opens
   useEffect(() => {
     if (isOpen && modalRef.current && !document.fullscreenElement) {
@@ -373,10 +393,13 @@ export default function StreamModal({
     }
   }, [isOpen]);
 
-  // Keyboard controls - Enhanced for Firestick/Fire TV compatibility
+  // Keyboard controls - Enhanced for Firestick/Fire TV compatibility with focus trap
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isOpen) return;
+      
+      // Prevent event propagation to stop background navigation
+      e.stopPropagation();
       
       // Handle multiple Fire TV back button variations
       const isBackButton = 
@@ -395,15 +418,24 @@ export default function StreamModal({
         return;
       }
 
+      // Prevent arrow keys from affecting background navigation
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+        // Arrow keys are now captured by the modal and don't affect background
+        return;
+      }
+
       lastBackKeyPressRef.current = false;
 
       switch (e.key) {
         case 'f':
         case 'F':
+          e.preventDefault();
           toggleFullscreen();
           break;
         case 'm':
         case 'M':
+          e.preventDefault();
           toggleMute();
           break;
         case ' ':
@@ -412,9 +444,14 @@ export default function StreamModal({
           break;
         case 'r':
         case 'R':
+          e.preventDefault();
           if (connectionStatus === 'failed') {
             retryConnection();
           }
+          break;
+        case 'Tab':
+          // Keep focus trapped within modal
+          e.preventDefault();
           break;
       }
     };
@@ -516,9 +553,10 @@ export default function StreamModal({
   return (
     <div 
       ref={modalRef}
-      className="fixed inset-0 bg-black z-50 flex items-center justify-center"
+      className="fixed inset-0 bg-black z-50 flex items-center justify-center outline-none"
       onClick={(e) => e.target === e.currentTarget && handleModalClose()}
       onMouseMove={handleMouseMove}
+      tabIndex={-1}
       data-testid="stream-modal"
     >
       {/* Video Container */}
