@@ -93,6 +93,16 @@ export async function apiRequest(
   
   // Parse JSON response for non-DELETE methods
   if (method !== 'DELETE') {
+    // Debug: Log the raw response for APK info endpoint
+    if (url.includes('/api/admin/apk/info')) {
+      const responseText = await res.clone().text();
+      console.log('🔍 APK Info Response Debug:', {
+        status: res.status,
+        headers: Object.fromEntries(res.headers.entries()),
+        contentType: res.headers.get('content-type'),
+        responseText: responseText.substring(0, 200) + '...'
+      });
+    }
     return await res.json();
   }
   
