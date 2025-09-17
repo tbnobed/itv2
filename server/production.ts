@@ -529,6 +529,130 @@ async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // APK management endpoints (admin only)
+  app.get('/api/admin/apk/info', requireAdmin, async (req, res) => {
+    try {
+      const { join } = await import("path");
+      const { existsSync, statSync } = await import("fs");
+      
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      if (existsSync(apkPath)) {
+        const stats = statSync(apkPath);
+        res.json({
+          exists: true,
+          filename: 'itv-obtv-firestick.apk',
+          size: stats.size,
+          lastModified: stats.mtime.toISOString(),
+          downloadUrl: '/itv-obtv-firestick.apk'
+        });
+      } else {
+        res.json({
+          exists: false,
+          filename: null,
+          size: 0,
+          lastModified: null,
+          downloadUrl: null
+        });
+      }
+    } catch (error) {
+      console.error('Error checking APK info:', error);
+      res.status(500).json({ error: 'Failed to get APK information' });
+    }
+  });
+
+  app.post('/api/admin/apk/upload', requireAdmin, csrfProtection, async (req, res) => {
+    try {
+      const multer = (await import('multer')).default;
+      const { join } = await import("path");
+      const { existsSync, mkdirSync } = await import("fs");
+      
+      const publicDir = join(process.cwd(), 'server', 'public');
+      if (!existsSync(publicDir)) {
+        mkdirSync(publicDir, { recursive: true });
+      }
+      
+      const storage = multer.diskStorage({
+        destination: (req, file, cb) => {
+          cb(null, publicDir);
+        },
+        filename: (req, file, cb) => {
+          cb(null, 'itv-obtv-firestick.apk');
+        }
+      });
+      
+      const upload = multer({
+        storage,
+        limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
+        fileFilter: (req, file, cb) => {
+          if (file.originalname.endsWith('.apk') || file.mimetype === 'application/vnd.android.package-archive') {
+            cb(null, true);
+          } else {
+            cb(new Error('Only APK files are allowed'));
+          }
+        }
+      }).single('apk');
+      
+      upload(req, res, (err) => {
+        if (err) {
+          console.error('APK upload error:', err);
+          return res.status(400).json({ error: err.message });
+        }
+        
+        if (!req.file) {
+          return res.status(400).json({ error: 'No APK file provided' });
+        }
+        
+        res.json({
+          success: true,
+          filename: req.file.filename,
+          size: req.file.size
+        });
+      });
+    } catch (error) {
+      console.error('Error uploading APK:', error);
+      res.status(500).json({ error: 'Failed to upload APK' });
+    }
+  });
+
+  app.delete('/api/admin/apk', requireAdmin, csrfProtection, async (req, res) => {
+    try {
+      const { join } = await import("path");
+      const { existsSync, unlinkSync } = await import("fs");
+      
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      if (existsSync(apkPath)) {
+        unlinkSync(apkPath);
+        res.json({ success: true, message: 'APK file deleted successfully' });
+      } else {
+        res.status(404).json({ error: 'APK file not found' });
+      }
+    } catch (error) {
+      console.error('Error deleting APK:', error);
+      res.status(500).json({ error: 'Failed to delete APK' });
+    }
+  });
+
+  // Serve APK file directly 
+  app.use('/itv-obtv-firestick.apk', async (req, res, next) => {
+    try {
+      const { join } = await import("path");
+      const { existsSync } = await import("fs");
+      
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      if (existsSync(apkPath)) {
+        res.download(apkPath, 'itv-obtv-firestick.apk');
+      } else {
+        res.status(404).json({ error: 'APK file not found' });
+      }
+    } catch (error) {
+      console.error('Error serving APK:', error);
+      res.status(500).json({ error: 'Failed to serve APK file' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
