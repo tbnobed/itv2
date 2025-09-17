@@ -1,8 +1,8 @@
 import CategoryRow from '../CategoryRow';
-import studioImg from '/generated_images/Studio_A_control_room_42819489.png';
-import dallasImg from '/generated_images/Dallas_Control_newsroom_45c1dfb2.png';
-import towerImg from '/generated_images/Over-the-air_broadcast_tower_04c20672.png';
-import featuredImg from '/generated_images/Featured_live_production_15b7d8b1.png';
+import studioImg from '@assets/generated_images/Studio_A_control_room_42819489.png';
+import dallasImg from '@assets/generated_images/Dallas_Control_newsroom_45c1dfb2.png';
+import towerImg from '@assets/generated_images/Over-the-air_broadcast_tower_04c20672.png';
+import featuredImg from '@assets/generated_images/Featured_live_production_15b7d8b1.png';
 
 // todo: remove mock functionality - replace with real stream data
 const mockStreams = [
@@ -72,14 +72,12 @@ export default function CategoryRowExample() {
         streams={featuredStreams}
         featured={true}
         onStreamSelect={handleStreamSelect}
-        sectionId="featured"
       />
       
       <CategoryRow
         title="Studios"
         streams={mockStreams}
         onStreamSelect={handleStreamSelect}
-        sectionId="studios"
       />
     </div>
   );

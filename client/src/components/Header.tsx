@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import logoUrl from '/generated_images/OBTV_streaming_service_logo_597d82d5.png';
+import logoUrl from '@assets/generated_images/OBTV_streaming_service_logo_597d82d5.png';
 
 interface HeaderProps {
   currentPage?: number;

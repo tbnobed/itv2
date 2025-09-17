@@ -1,5 +1,5 @@
 import StreamTile from '../StreamTile';
-import logoUrl from '/generated_images/Studio_A_control_room_42819489.png';
+import logoUrl from '@assets/generated_images/Studio_A_control_room_42819489.png';
 
 export default function StreamTileExample() {
   return (
