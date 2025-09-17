@@ -379,6 +379,10 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.sendStatus(401);
     }
+    // Prevent caching for auth endpoints to avoid 304 responses
+    res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.json({ 
       id: req.user.id, 
       username: req.user.username, 

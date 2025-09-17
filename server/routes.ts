@@ -427,6 +427,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // APK management endpoints (admin only)
   app.get('/api/admin/apk/info', requireAdmin, async (req, res) => {
     try {
+      // Prevent caching for admin endpoints to avoid 304 responses
+      res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
       if (!existsSync(apkPath)) {
