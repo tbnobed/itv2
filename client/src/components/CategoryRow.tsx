@@ -121,11 +121,11 @@ export default function CategoryRow({
   };
 
   return (
-    <div className={cn("relative mb-10 w-full", className)} data-testid={`section-${sectionId}`}>
+    <div className={cn("relative mb-3 w-full", className)} data-testid={`section-${sectionId}`}>
       {/* Section Title */}
       <h2 
         className={cn(
-          "text-white font-semibold mb-6 px-8",
+          "text-white font-semibold mb-3 px-8",
           featured ? "text-2xl" : "text-xl"
         )}
       >
@@ -140,7 +140,7 @@ export default function CategoryRow({
           tabIndex={-1}
         >
           <div className={cn(
-            "flex pb-8 w-max",
+            "flex pb-3 w-max",
             variant === 'compact' ? 'gap-4' : 'gap-6'
           )}>
             {streams.map((stream, index) => {
