@@ -146,8 +146,9 @@ const StreamTile = React.forwardRef(({
   if (variant === 'compact') {
     return (
       <div
+        ref={ref}
         className={cardClasses.wrapper}
-        tabIndex={0}
+        tabIndex={tabIndex}
         onClick={handleClick}
         onKeyDown={handleKeyPress}
         onFocus={handleFocus}
