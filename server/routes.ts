@@ -427,32 +427,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // APK management endpoints (admin only)
   app.get('/api/admin/apk/info', requireAdmin, async (req, res) => {
     try {
-      // Prevent caching and force 200 responses (never 304)
-      res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      res.setHeader('ETag', `"${Date.now()}"`);
-      res.setHeader('Last-Modified', new Date().toUTCString());
+      // Strip conditional request headers to prevent 304 responses
+      delete req.headers['if-none-match'];
+      delete req.headers['if-modified-since'];
       
       const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
+      let payload;
       if (!existsSync(apkPath)) {
-        return res.json({
+        payload = {
           exists: false,
           message: 'No APK file currently uploaded'
-        });
+        };
+      } else {
+        const stats = statSync(apkPath);
+        payload = {
+          exists: true,
+          filename: 'itv-obtv-firestick.apk',
+          size: stats.size,
+          sizeFormatted: formatFileSize(stats.size),
+          lastModified: stats.mtime.toISOString(),
+          lastModifiedFormatted: stats.mtime.toLocaleString()
+        };
       }
       
-      const stats = statSync(apkPath);
-      
-      res.json({
-        exists: true,
-        filename: 'itv-obtv-firestick.apk',
-        size: stats.size,
-        sizeFormatted: formatFileSize(stats.size),
-        lastModified: stats.mtime.toISOString(),
-        lastModifiedFormatted: stats.mtime.toLocaleString()
-      });
+      // Bypass Express's json() method to prevent 304 responses
+      const body = JSON.stringify(payload);
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('ETag', `W/"${Date.now()}-${Math.random().toString(36).slice(2)}"`);
+      res.removeHeader('Last-Modified');
+      res.end(body);
     } catch (error) {
       console.error('Error getting APK info:', error);
       res.status(500).json({ error: 'Failed to get APK file information' });
