@@ -101,10 +101,11 @@ export default function CategoryRow({
             console.debug(`Next section found: ${nextSection.getAttribute('data-testid')}`);
             
             // Try multiple selectors to find the first focusable element
-            const firstFocusable = nextSection.querySelector('[data-testid="scroll-container"] [tabindex]') as HTMLElement
+            const firstFocusable = nextSection.querySelector('[data-testid="scroll-container"] [tabindex="0"]') as HTMLElement
+              || nextSection.querySelector('[data-testid^="stream-tile-"]') as HTMLElement
+              || nextSection.querySelector('.stream-tile') as HTMLElement
               || nextSection.querySelector('button, a') as HTMLElement
-              || nextSection.querySelector('[role="button"]') as HTMLElement
-              || nextSection.querySelector('.stream-tile') as HTMLElement;
+              || nextSection.querySelector('[role="button"]') as HTMLElement;
             
             if (firstFocusable) {
               console.debug(`Focusing element:`, firstFocusable);
