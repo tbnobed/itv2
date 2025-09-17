@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Video, Radio, Tv, Settings, Plus, Edit3 } from 'lucide-react';
+import { Home, Video, Radio, Tv, Settings, Plus, Edit3, Smartphone } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -58,6 +58,12 @@ const adminItems = [
     icon: Settings,
     id: "admin-studios", 
     path: "/admin/studios"
+  },
+  {
+    title: "APK Management",
+    icon: Smartphone,
+    id: "admin-apk",
+    path: "/admin/apk"
   },
   {
     title: "Add Stream",

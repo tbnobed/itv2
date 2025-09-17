@@ -7,7 +7,9 @@ import { z } from "zod";
 import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
 import { SnapshotService } from "./SnapshotService";
 import { join } from "path";
-import { existsSync, statSync } from "fs";
+import { existsSync, statSync, renameSync, unlinkSync } from "fs";
+import multer from "multer";
+import { promisify } from "util";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes first
@@ -15,6 +17,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Initialize SnapshotService
   const snapshotService = SnapshotService.getInstance();
+  
+  // Configure multer for APK file uploads
+  const storage_config = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadsDir = join(process.cwd(), 'server', 'public');
+      cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+      // Use temporary filename first, then rename after validation
+      cb(null, `temp-${Date.now()}.apk`);
+    }
+  });
+  
+  const upload = multer({
+    storage: storage_config,
+    fileFilter: (req, file, cb) => {
+      // Only accept .apk files
+      if (file.mimetype === 'application/vnd.android.package-archive' || 
+          file.originalname.toLowerCase().endsWith('.apk')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only APK files are allowed'));
+      }
+    },
+    limits: {
+      fileSize: 100 * 1024 * 1024, // 100MB limit
+      files: 1
+    }
+  });
   
   // Serve static snapshot files
   const snapshotsPath = join(process.cwd(), 'server', 'public', 'snapshots');
@@ -38,6 +69,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // Utility function to format file sizes
+  function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
   // Seed database on startup
   seedDatabase();
   // Stream endpoints
@@ -381,6 +421,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating user status:', error);
       res.status(500).json({ error: 'Failed to update user status' });
+    }
+  });
+
+  // APK management endpoints (admin only)
+  app.get('/api/admin/apk/info', requireAdmin, async (req, res) => {
+    try {
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      if (!existsSync(apkPath)) {
+        return res.json({
+          exists: false,
+          message: 'No APK file currently uploaded'
+        });
+      }
+      
+      const stats = statSync(apkPath);
+      
+      res.json({
+        exists: true,
+        filename: 'itv-obtv-firestick.apk',
+        size: stats.size,
+        sizeFormatted: formatFileSize(stats.size),
+        lastModified: stats.mtime.toISOString(),
+        lastModifiedFormatted: stats.mtime.toLocaleString()
+      });
+    } catch (error) {
+      console.error('Error getting APK info:', error);
+      res.status(500).json({ error: 'Failed to get APK file information' });
+    }
+  });
+
+  app.post('/api/admin/apk/upload', requireAdmin, csrfProtection, upload.single('apk'), async (req, res) => {
+    let tempFilePath: string | undefined;
+    
+    try {
+      const file = req.file;
+      
+      if (!file) {
+        return res.status(400).json({ error: 'No APK file uploaded' });
+      }
+      
+      tempFilePath = file.path;
+      const targetPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      // Validate file size
+      if (file.size === 0) {
+        return res.status(400).json({ error: 'Uploaded file is empty' });
+      }
+      
+      if (file.size > 100 * 1024 * 1024) { // 100MB
+        return res.status(400).json({ error: 'File size exceeds 100MB limit' });
+      }
+      
+      // Validate file extension
+      if (!file.originalname.toLowerCase().endsWith('.apk')) {
+        return res.status(400).json({ error: 'File must have .apk extension' });
+      }
+      
+      // Remove existing APK file if it exists
+      if (existsSync(targetPath)) {
+        try {
+          unlinkSync(targetPath);
+        } catch (unlinkError) {
+          console.warn('Could not remove existing APK file:', unlinkError);
+          // Continue with upload - the rename should overwrite
+        }
+      }
+      
+      // Move temp file to final destination
+      renameSync(tempFilePath, targetPath);
+      tempFilePath = undefined; // Clear reference since file is now moved
+      
+      // Get file stats for response
+      const stats = statSync(targetPath);
+      
+      console.log(`APK file uploaded successfully: ${file.originalname} (${formatFileSize(file.size)})`);
+      
+      res.status(201).json({
+        success: true,
+        message: 'APK file uploaded successfully',
+        filename: 'itv-obtv-firestick.apk',
+        originalName: file.originalname,
+        size: stats.size,
+        sizeFormatted: formatFileSize(stats.size),
+        uploadedAt: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      // Clean up temp file if upload failed
+      if (tempFilePath && existsSync(tempFilePath)) {
+        try {
+          unlinkSync(tempFilePath);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup temp file:', cleanupError);
+        }
+      }
+      
+      if (error instanceof multer.MulterError) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File size exceeds 100MB limit' });
+        } else if (error.code === 'LIMIT_FILE_COUNT') {
+          return res.status(400).json({ error: 'Only one file allowed' });
+        } else {
+          return res.status(400).json({ error: `Upload error: ${error.message}` });
+        }
+      }
+      
+      console.error('Error uploading APK file:', error);
+      res.status(500).json({ error: 'Failed to upload APK file' });
     }
   });
 
