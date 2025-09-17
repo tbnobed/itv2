@@ -7,7 +7,7 @@ import { z } from "zod";
 import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
 import { SnapshotService } from "./SnapshotService";
 import { join } from "path";
-import { existsSync } from "fs";
+import { existsSync, statSync } from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes first
@@ -381,6 +381,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating user status:', error);
       res.status(500).json({ error: 'Failed to update user status' });
+    }
+  });
+
+  // Dynamic APK file serving endpoint
+  app.get('/api/download/firestick-apk', (req, res) => {
+    try {
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      // Check if APK file exists
+      if (!existsSync(apkPath)) {
+        return res.status(404).json({ error: 'APK file not found' });
+      }
+      
+      // Get file stats for proper headers
+      const stats = statSync(apkPath);
+      
+      // Set appropriate headers for APK download
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      res.setHeader('Content-Disposition', 'attachment; filename="OBTV-FireStick.apk"');
+      res.setHeader('Content-Length', stats.size);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Stream the file to the response
+      res.sendFile(apkPath);
+    } catch (error) {
+      console.error('Error serving APK file:', error);
+      res.status(500).json({ error: 'Failed to serve APK file' });
     }
   });
 

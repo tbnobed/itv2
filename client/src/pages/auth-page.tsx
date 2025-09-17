@@ -386,7 +386,7 @@ export default function PasscodeAuthPage() {
                   className="w-full hover-elevate active-elevate-2"
                   data-testid="button-download-apk"
                 >
-                  <a href="/itv-obtv-firestick.apk" download="OBTV-FireStick.apk">
+                  <a href="/api/download/firestick-apk" download="OBTV-FireStick.apk">
                     <Download className="w-4 h-4 mr-2" />
                     Download APK
                   </a>
