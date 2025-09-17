@@ -29,12 +29,12 @@ export default function PasscodeAuthPage() {
     countdown: 0
   });
 
-  // Redirect if already logged in - use useEffect to avoid early return
+  // Redirect if already logged in - but don't interrupt the animation
   useEffect(() => {
-    if (user) {
+    if (user && !showLogoAnimation && !passcodeLoginMutation.isSuccess) {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, navigate, showLogoAnimation, passcodeLoginMutation.isSuccess]);
 
   // Countdown timer for lockout
   useEffect(() => {

@@ -14,10 +14,10 @@ export default function LogoAnimation({ isVisible, onComplete }: LogoAnimationPr
     if (!isVisible) return;
 
     const phases = [
-      { phase: 'enter', duration: 300 },
-      { phase: 'pulse', duration: 800 },
-      { phase: 'success', duration: 600 },
-      { phase: 'exit', duration: 400 }
+      { phase: 'enter', duration: 500 },
+      { phase: 'pulse', duration: 1000 },
+      { phase: 'success', duration: 800 },
+      { phase: 'exit', duration: 500 }
     ];
 
     let timeoutId: NodeJS.Timeout;
