@@ -430,6 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Strip conditional request headers to prevent 304 responses
       delete req.headers['if-none-match'];
       delete req.headers['if-modified-since'];
+      delete req.headers['if-range'];
       
       const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
@@ -451,13 +452,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
       
-      // Bypass Express's json() method to prevent 304 responses
+      // Add timestamp to ensure content is always unique
+      payload.timestamp = Date.now();
+      payload.requestId = Math.random().toString(36).slice(2);
+      
+      // Ultra-aggressive cache busting for nginx/openresty proxies
       const body = JSON.stringify(payload);
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+      res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+      res.setHeader('Vary', '*');
+      res.setHeader('X-Accel-Expires', '0');
       res.setHeader('ETag', `W/"${Date.now()}-${Math.random().toString(36).slice(2)}"`);
       res.removeHeader('Last-Modified');
       res.end(body);
