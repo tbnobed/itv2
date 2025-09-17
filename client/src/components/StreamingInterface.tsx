@@ -359,59 +359,68 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     );
   }
 
-  // Render studios section with two-level navigation
+  // Render studios section with studio feeds below selected studio
   const renderStudiosSection = () => {
-    if (!selectedStudio) {
-      // Show studio carousel
-      const sortedStudios = studiosData?.sort((a, b) => a.name.localeCompare(b.name)) || [];
-      
-      const handleStudioKeyDown = (e: React.KeyboardEvent) => {
-        switch (e.key) {
-          case 'ArrowLeft':
-            e.preventDefault();
-            if (focusedStudioIndex > 0) {
-              const newIndex = focusedStudioIndex - 1;
-              setFocusedStudioIndex(newIndex);
-              studioRefs.current[newIndex]?.focus();
-              studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    const sortedStudios = studiosData?.sort((a, b) => a.name.localeCompare(b.name)) || [];
+    
+    const handleStudioKeyDown = (e: React.KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (focusedStudioIndex > 0) {
+            const newIndex = focusedStudioIndex - 1;
+            setFocusedStudioIndex(newIndex);
+            studioRefs.current[newIndex]?.focus();
+            studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+          }
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (focusedStudioIndex < sortedStudios.length - 1) {
+            const newIndex = focusedStudioIndex + 1;
+            setFocusedStudioIndex(newIndex);
+            studioRefs.current[newIndex]?.focus();
+            studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+          }
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          // If a studio is selected and feeds are loaded, focus on first feed
+          if (selectedStudio && studioFeeds && studioFeeds.length > 0) {
+            const firstFeedElement = document.querySelector('[data-testid="section-studio-feeds"] [tabindex="0"]') as HTMLElement;
+            if (firstFeedElement) {
+              firstFeedElement.focus();
             }
-            break;
-          case 'ArrowRight':
-            e.preventDefault();
-            if (focusedStudioIndex < sortedStudios.length - 1) {
-              const newIndex = focusedStudioIndex + 1;
-              setFocusedStudioIndex(newIndex);
-              studioRefs.current[newIndex]?.focus();
-              studioRefs.current[newIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
-            }
-            break;
-          case 'ArrowUp':
-            e.preventDefault();
-            // Exit to top navigation
-            const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
-            if (activeNavButton) {
-              activeNavButton.focus();
-            } else {
-              // Fallback to first nav button if active one isn't found
-              const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
-              firstNavButton?.focus();
-            }
-            break;
-          case 'Enter':
-          case ' ':
-            e.preventDefault();
-            // Select the currently focused studio
-            if (focusedStudioIndex >= 0 && focusedStudioIndex < sortedStudios.length) {
-              const studio = sortedStudios[focusedStudioIndex];
-              handleStudioSelect(studio.id);
-            }
-            break;
-        }
-      };
-      
-      return (
-        <div className="relative mb-10 w-full" data-testid="section-studios">
-          {/* Studio Carousel */}
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          // Exit to top navigation
+          const activeNavButton = document.querySelector('[data-active="true"]') as HTMLElement;
+          if (activeNavButton) {
+            activeNavButton.focus();
+          } else {
+            // Fallback to first nav button if active one isn't found
+            const firstNavButton = document.querySelector('[data-nav-index="0"]') as HTMLElement;
+            firstNavButton?.focus();
+          }
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          // Select the currently focused studio
+          if (focusedStudioIndex >= 0 && focusedStudioIndex < sortedStudios.length) {
+            const studio = sortedStudios[focusedStudioIndex];
+            handleStudioSelect(studio.id);
+          }
+          break;
+      }
+    };
+    
+    return (
+      <div className="space-y-8">
+        {/* Studio Carousel - Always visible */}
+        <div className="relative w-full" data-testid="section-studios">
           <div className="w-full" data-testid="studio-scroll-container">
             <div 
               className="overflow-x-auto overflow-y-visible scrollbar-hide px-8 py-2"
@@ -424,7 +433,9 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
                     tabIndex={index === focusedStudioIndex ? 0 : -1}
                     onFocus={() => setFocusedStudioIndex(index)}
                     onKeyDown={handleStudioKeyDown}
-                    className="flex-shrink-0 outline-none stream-tile focus:ring-4 focus:ring-primary focus:ring-opacity-70 rounded-lg"
+                    className={`flex-shrink-0 outline-none stream-tile focus:ring-4 focus:ring-primary focus:ring-opacity-70 rounded-lg ${
+                      studio.id === selectedStudio ? 'ring-2 ring-blue-500' : ''
+                    }`}
                   >
                     <StudioCard
                       studio={studio}
@@ -438,43 +449,32 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
             </div>
           </div>
         </div>
-      );
-    } else {
-      // Show studio feeds with loading state
-      const selectedStudioData = studiosData?.find(s => s.id === selectedStudio);
-      
-      if (studioFeedsLoading) {
-        return (
-          <div>
-            <div className="flex items-center gap-4 mb-6 px-6">
-              <button
-                onClick={handleBackToStudios}
-                className="text-primary hover:text-primary/80 font-medium"
-                data-testid="button-back-to-studios"
-              >
-                ← Back to Studios
-              </button>
-            </div>
-            <div className="flex items-center justify-center h-32">
-              <div className="text-white text-lg">Loading studio feeds...</div>
-            </div>
+
+        {/* Studio Feeds - Show below when studio is selected */}
+        {selectedStudio && (
+          <div className="relative w-full">
+            {studioFeedsLoading ? (
+              <div className="flex items-center justify-center h-32 px-8">
+                <div className="text-white text-lg">Loading studio feeds...</div>
+              </div>
+            ) : studioFeeds && studioFeeds.length > 0 ? (
+              <CategoryRow
+                title={`${studiosData?.find(s => s.id === selectedStudio)?.name} - Camera Feeds`}
+                streams={(studioFeeds || []).map(convertStreamToStreamData).sort((a, b) => a.title.localeCompare(b.title))}
+                featured={false}
+                variant="compact"
+                onStreamSelect={handleStreamSelect}
+                sectionId="studio-feeds"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-32 px-8">
+                <div className="text-white/60 text-lg">No feeds available for this studio</div>
+              </div>
+            )}
           </div>
-        );
-      }
-      
-      return (
-        <div>
-          <CategoryRow
-            title={`${selectedStudioData?.name} - Camera Feeds`}
-            streams={(studioFeeds || []).map(convertStreamToStreamData).sort((a, b) => a.title.localeCompare(b.title))}
-            featured={false}
-            onStreamSelect={handleStreamSelect}
-            sectionId="studios"
-            onBackToStudios={handleBackToStudios}
-          />
-        </div>
-      );
-    }
+        )}
+      </div>
+    );
   };
 
   return (
