@@ -72,12 +72,14 @@ export default function CategoryRowExample() {
         streams={featuredStreams}
         featured={true}
         onStreamSelect={handleStreamSelect}
+        sectionId="featured"
       />
       
       <CategoryRow
         title="Studios"
         streams={mockStreams}
         onStreamSelect={handleStreamSelect}
+        sectionId="studios"
       />
     </div>
   );
