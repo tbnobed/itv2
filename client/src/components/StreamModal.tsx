@@ -65,60 +65,35 @@ export default function StreamModal({
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const srsPlayerRef = useRef<any>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
-  const previouslyFocusedSelector = useRef<string | null>(null);
 
-  // Robust focus restoration with retry logic
+  // Simplified focus restoration with requestAnimationFrame retry
   const restoreFocus = () => {
     console.log('StreamModal: Attempting to restore focus...');
     
-    const attemptRestore = (attempt = 1, maxAttempts = 5) => {
+    const attemptRestore = () => {
       // Try stored DOM element first (if still attached)
       if (previouslyFocusedElement.current && document.contains(previouslyFocusedElement.current)) {
         console.log('StreamModal: Restoring focus to stored element');
         previouslyFocusedElement.current.focus();
         previouslyFocusedElement.current = null;
-        previouslyFocusedSelector.current = null;
         return;
       }
       
-      // Try selector-based restore
-      if (previouslyFocusedSelector.current) {
-        const element = document.querySelector(previouslyFocusedSelector.current) as HTMLElement;
-        if (element) {
-          console.log(`StreamModal: Restoring focus via selector: ${previouslyFocusedSelector.current}`);
-          element.focus();
-          previouslyFocusedElement.current = null;
-          previouslyFocusedSelector.current = null;
-          return;
-        }
-      }
-      
-      // Fallback: try to find the stream tile for the current stream
-      let fallbackTile = document.querySelector(`[data-testid="stream-tile-${currentStream?.id}"][tabindex="0"]`) as HTMLElement;
-      if (!fallbackTile) {
-        // If current stream tile not found, try any focusable stream tile
-        fallbackTile = document.querySelector('[data-testid^="stream-tile-"][tabindex="0"]') as HTMLElement;
-      }
+      // Fallback: try to find any focusable stream tile
+      const fallbackTile = document.querySelector('[data-testid^="stream-tile-"][tabindex="0"]') as HTMLElement;
       if (fallbackTile) {
         console.log('StreamModal: Fallback to stream tile');
         fallbackTile.focus();
         previouslyFocusedElement.current = null;
-        previouslyFocusedSelector.current = null;
         return;
       }
       
-      // Retry if we haven't reached max attempts
-      if (attempt < maxAttempts) {
-        console.log(`StreamModal: Focus restore attempt ${attempt} failed, retrying...`);
-        setTimeout(() => attemptRestore(attempt + 1, maxAttempts), 50);
-      } else {
-        console.warn('StreamModal: Focus restoration failed after all attempts');
-        previouslyFocusedElement.current = null;
-        previouslyFocusedSelector.current = null;
-      }
+      console.warn('StreamModal: Focus restoration failed');
+      previouslyFocusedElement.current = null;
     };
     
-    attemptRestore();
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(attemptRestore);
   };
 
   // SDK Loading verification
@@ -400,10 +375,8 @@ export default function StreamModal({
     }
   };
 
-  // Track if we pushed a history state and prevent popstate loops
+  // Track if we pushed a history state (simplified)
   const historyStatePushedRef = useRef(false);
-  const suppressPopstateRef = useRef(false);
-  const lastBackKeyPressRef = useRef(false);
 
   // History state management for Fire TV back button
   useEffect(() => {
@@ -414,43 +387,45 @@ export default function StreamModal({
     }
   }, [isOpen]);
 
-  // Focus management - Capture focus when modal opens
+  // Focus management and inert background - Capture focus when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Store the currently focused element and its selector
+      // Store the currently focused element
       const activeElement = document.activeElement as HTMLElement;
       previouslyFocusedElement.current = activeElement;
+      console.log('StreamModal: Captured focus element');
       
-      // Capture a stable selector for the focused element
-      if (activeElement) {
-        const testId = activeElement.getAttribute('data-testid');
-        if (testId) {
-          previouslyFocusedSelector.current = `[data-testid="${testId}"]`;
-          console.log(`StreamModal: Captured focus selector: ${previouslyFocusedSelector.current}`);
-        } else {
-          // Fallback to other attributes
-          const id = activeElement.id;
-          if (id) {
-            previouslyFocusedSelector.current = `#${id}`;
-          }
-        }
+      // Make background inert to prevent focus/keyboard events
+      const appElement = document.querySelector('#root') || document.body;
+      if (appElement && appElement !== modalRef.current?.parentElement) {
+        appElement.setAttribute('aria-hidden', 'true');
+        appElement.setAttribute('inert', '');
+        console.log('StreamModal: Made background inert');
       }
       
-      // Focus the modal container to capture keyboard events
+      // Focus the modal container
       if (modalRef.current) {
         modalRef.current.focus();
+      }
+    } else {
+      // Remove inert from background when modal closes
+      const appElement = document.querySelector('#root') || document.body;
+      if (appElement) {
+        appElement.removeAttribute('aria-hidden');
+        appElement.removeAttribute('inert');
+        console.log('StreamModal: Removed inert from background');
       }
     }
   }, [isOpen]);
 
-  // Separate effect for focus restoration to ensure it runs
+  // Focus restoration when modal closes
   useEffect(() => {
-    if (!isOpen && (previouslyFocusedElement.current || previouslyFocusedSelector.current)) {
+    if (!isOpen && previouslyFocusedElement.current) {
       console.log('StreamModal: Modal closed, restoring focus...');
-      // Wait longer to account for fullscreen changes and DOM updates
+      // Use shorter delay with requestAnimationFrame for better reliability
       setTimeout(() => {
         restoreFocus();
-      }, 500); // Increased delay to ensure fullscreen transition completes
+      }, 100);
     }
   }, [isOpen]);
 
@@ -487,107 +462,86 @@ export default function StreamModal({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isOpen]);
 
-  // Keyboard controls - Enhanced for Firestick/Fire TV compatibility with focus trap
+  // Simplified keyboard handling - scoped to modal, no global interference
+  const handleModalKeyDown = (e: React.KeyboardEvent) => {
+    // Handle multiple Fire TV back button variations
+    const isBackButton = 
+      e.key === 'Escape' ||
+      e.key === 'Backspace' ||
+      e.key === 'Back' ||
+      e.key === 'BrowserBack' ||
+      e.keyCode === 8 ||  // Backspace keyCode
+      e.keyCode === 166 || // BrowserBack keyCode
+      e.code === 'BrowserBack';
+
+    if (isBackButton) {
+      e.preventDefault();
+      handleModalClose();
+      return;
+    }
+
+    // Only preventDefault for keys we actually handle
+    switch (e.key) {
+      case 'f':
+      case 'F':
+        e.preventDefault();
+        toggleFullscreen();
+        break;
+      case 'm':
+      case 'M':
+      case ' ':
+        e.preventDefault();
+        toggleMute();
+        break;
+      case 'r':
+      case 'R':
+        e.preventDefault();
+        if (connectionStatus === 'failed') {
+          retryConnection();
+        }
+        break;
+      // Let arrow keys and other keys pass through normally - no preventDefault
+    }
+  };
+
+  // Handle browser back button and popstate events (simplified)
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-      
-      // Prevent event propagation to stop background navigation
-      e.stopPropagation();
-      
-      // Handle multiple Fire TV back button variations
-      const isBackButton = 
-        e.key === 'Escape' ||
-        e.key === 'Backspace' ||
-        e.key === 'Back' ||
-        e.key === 'BrowserBack' ||
-        e.keyCode === 8 ||  // Backspace keyCode
-        e.keyCode === 166 || // BrowserBack keyCode
-        e.code === 'BrowserBack';
-
-      if (isBackButton) {
-        e.preventDefault();
-        lastBackKeyPressRef.current = true;
-        handleModalClose();
-        return;
-      }
-
-      // Prevent arrow keys from affecting background navigation
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        e.preventDefault();
-        // Arrow keys are now captured by the modal and don't affect background
-        return;
-      }
-
-      lastBackKeyPressRef.current = false;
-
-      switch (e.key) {
-        case 'f':
-        case 'F':
-          e.preventDefault();
-          toggleFullscreen();
-          break;
-        case 'm':
-        case 'M':
-          e.preventDefault();
-          toggleMute();
-          break;
-        case ' ':
-          e.preventDefault();
-          toggleMute();
-          break;
-        case 'r':
-        case 'R':
-          e.preventDefault();
-          if (connectionStatus === 'failed') {
-            retryConnection();
-          }
-          break;
-        case 'Tab':
-          // Keep focus trapped within modal
-          e.preventDefault();
-          break;
-      }
-    };
-
-    // Handle browser back button and popstate events
     const handlePopState = (e: PopStateEvent) => {
-      if (suppressPopstateRef.current) {
-        suppressPopstateRef.current = false;
-        return;
-      }
-      
-      if (isOpen) {
+      if (isOpen && e.state?.modal === 'stream') {
+        // Don't call history.back() from popstate to avoid loops
+        // Just close the modal
         historyStatePushedRef.current = false;
         onClose();
       }
     };
 
-    // Handle fullscreen changes - update state and close modal if back was pressed
+    // Handle fullscreen changes (simplified back button handling)
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!document.fullscreenElement;
       setIsFullscreen(isCurrentlyFullscreen);
-      
-      // Close modal only if we're exiting fullscreen due to a back key press
-      // This provides one-step exit behavior on Fire TV while preserving other exits
-      if (!isCurrentlyFullscreen && isOpen && isFullscreen && lastBackKeyPressRef.current) {
-        handleModalClose();
-      }
     };
 
-    document.addEventListener('keydown', handleKeyPress);
     window.addEventListener('popstate', handlePopState);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     
     return () => {
-      document.removeEventListener('keydown', handleKeyPress);
       window.removeEventListener('popstate', handlePopState);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
-  }, [isOpen, connectionStatus, isFullscreen]);
+  }, [isOpen]);
 
-  // Helper function to properly close modal with history management
+  // Simplified modal close with better back button handling
   const handleModalClose = () => {
+    // If fullscreen exists, exit fullscreen first, then return (don't close modal yet)
+    if (document.fullscreenElement) {
+      console.log('StreamModal: Exiting fullscreen first...');
+      document.exitFullscreen().catch(err => {
+        console.error('Failed to exit fullscreen:', err);
+      });
+      setIsFullscreen(false);
+      return; // Exit here, modal stays open
+    }
+    
     // Always trigger focus restoration before closing
     console.log('StreamModal: Closing modal and will restore focus...');
     
@@ -596,8 +550,7 @@ export default function StreamModal({
       historyStatePushedRef.current = false;
       onClose();
       
-      // Suppress the next popstate event to avoid loops
-      suppressPopstateRef.current = true;
+      // Call history.back() to clean up our pushed state
       window.history.back();
     } else {
       onClose();
@@ -610,7 +563,6 @@ export default function StreamModal({
   useEffect(() => {
     if (!isOpen) {
       historyStatePushedRef.current = false;
-      lastBackKeyPressRef.current = false;
     }
   }, [isOpen]);
 
@@ -655,7 +607,11 @@ export default function StreamModal({
       className="fixed inset-0 bg-black z-50 flex items-center justify-center outline-none"
       onClick={(e) => e.target === e.currentTarget && handleModalClose()}
       onMouseMove={handleMouseMove}
+      onKeyDownCapture={handleModalKeyDown}
       tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Streaming ${streamTitle}`}
       data-testid="stream-modal"
     >
       {/* Video Container */}
