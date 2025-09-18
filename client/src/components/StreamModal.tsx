@@ -532,14 +532,13 @@ export default function StreamModal({
 
   // Simplified modal close with better back button handling
   const handleModalClose = () => {
-    // If fullscreen exists, exit fullscreen first, then return (don't close modal yet)
+    // Exit fullscreen if needed, but don't prevent modal from closing
     if (document.fullscreenElement) {
-      console.log('StreamModal: Exiting fullscreen first...');
+      console.log('StreamModal: Exiting fullscreen while closing modal...');
       document.exitFullscreen().catch(err => {
         console.error('Failed to exit fullscreen:', err);
       });
       setIsFullscreen(false);
-      return; // Exit here, modal stays open
     }
     
     // Always trigger focus restoration before closing
