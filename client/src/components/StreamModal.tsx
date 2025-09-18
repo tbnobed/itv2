@@ -464,6 +464,8 @@ export default function StreamModal({
 
   // Simplified keyboard handling - scoped to modal, no global interference
   const handleModalKeyDown = (e: React.KeyboardEvent) => {
+    console.log('StreamModal: Key pressed:', e.key, e.keyCode, e.code);
+    
     // Handle multiple Fire TV back button variations
     const isBackButton = 
       e.key === 'Escape' ||
@@ -475,7 +477,9 @@ export default function StreamModal({
       e.code === 'BrowserBack';
 
     if (isBackButton) {
+      console.log('StreamModal: Back/Escape detected, closing modal');
       e.preventDefault();
+      e.stopPropagation();
       handleModalClose();
       return;
     }
@@ -521,12 +525,35 @@ export default function StreamModal({
       setIsFullscreen(isCurrentlyFullscreen);
     };
 
+    // BACKUP: Global key handler to ensure modal can always be closed
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      
+      const isBackButton = 
+        e.key === 'Escape' ||
+        e.key === 'Backspace' ||
+        e.key === 'Back' ||
+        e.key === 'BrowserBack' ||
+        e.keyCode === 8 ||
+        e.keyCode === 166 ||
+        e.code === 'BrowserBack';
+
+      if (isBackButton) {
+        console.log('StreamModal: Global backup key handler triggered, closing modal');
+        e.preventDefault();
+        e.stopPropagation();
+        handleModalClose();
+      }
+    };
+
     window.addEventListener('popstate', handlePopState);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('keydown', handleGlobalKeyDown, true); // Use capture phase
     
     return () => {
       window.removeEventListener('popstate', handlePopState);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('keydown', handleGlobalKeyDown, true);
     };
   }, [isOpen]);
 
