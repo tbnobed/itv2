@@ -514,6 +514,33 @@ export default function StreamModal({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isOpen, isClosing]);
 
+  // Fire TV back button prevention - native event handler to prevent system exit
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleNativeKeyDown = (e: KeyboardEvent) => {
+      const isBackButton = 
+        e.key === 'Escape' ||
+        e.key === 'Backspace' ||
+        e.key === 'Back' ||
+        e.key === 'BrowserBack' ||
+        e.keyCode === 8 ||
+        e.keyCode === 166 ||
+        e.code === 'BrowserBack';
+
+      if (isBackButton) {
+        // Aggressively prevent Fire TV system handling
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        console.log('StreamModal: Prevented Fire TV system exit via native handler');
+      }
+    };
+
+    document.addEventListener('keydown', handleNativeKeyDown, { capture: true });
+    return () => document.removeEventListener('keydown', handleNativeKeyDown, { capture: true });
+  }, [isOpen]);
+
   // Simplified keyboard handling - scoped to modal, no global interference
   const handleModalKeyDown = (e: React.KeyboardEvent) => {
     console.log('StreamModal: Key pressed:', e.key, e.keyCode, e.code);
