@@ -659,18 +659,9 @@ export default function StreamModal({
       document.body.focus();
     }
     
-    // Close modal immediately - defer history handling to avoid DOM churn racing
-    if (historyStatePushedRef.current) {
-      historyStatePushedRef.current = false;
-      onClose();
-      
-      // Defer history.back() to prevent racing with focus restoration
-      setTimeout(() => {
-        window.history.back();
-      }, 50);
-    } else {
-      onClose();
-    }
+    // Close modal immediately - no need for window.history.back() as it causes Fire TV to exit app
+    historyStatePushedRef.current = false;
+    onClose();
     
     // Focus restoration will be handled by the useEffect, not here
   };
