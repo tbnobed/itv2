@@ -452,10 +452,10 @@
     border-radius: 8px;
   }
 
-  /* Prevent active state scaling on stream tiles to avoid double scaling when Enter is pressed */
+  /* Prevent active state scaling on stream tiles to avoid massive scaling when Enter is pressed */
   .stream-tile:active {
     transform: none !important;
-    scale: 1 !important;
+    scale: none !important;
   }
 
   /* Isolate tile scaling from TV auto-scaling to prevent massive scaling */
@@ -463,11 +463,13 @@
     transform-origin: center center;
   }
   
-  /* Remove all transform scaling on focus - only use visual indicators */
+  /* Navigation scaling that works with TV auto-scaling */
   .stream-tile:focus-visible {
-    /* NO transform scaling - it conflicts with ViewportScaler parent transforms */
+    transform: scale(1.1) !important;
+    transform-origin: center center !important;
     box-shadow: 0 0 0 4px rgba(51, 102, 255, 0.8), 0 0 30px 10px rgba(51, 102, 255, 0.3) !important;
     border-radius: 12px !important;
+    z-index: 30 !important;
   }
 
   /* Prevent page scrolling when using arrow keys for navigation */
