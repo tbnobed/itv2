@@ -90,6 +90,36 @@ export default function StreamingInterface({ className }: StreamingInterfaceProp
     }
   }, [activeSection, selectedStudio]);
 
+  // Fire TV back button prevention - capture phase to prevent system exit
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Only handle back button events when modal is open
+      if (!selectedStream) return;
+      
+      const isBackButton = 
+        e.key === 'Escape' ||
+        e.key === 'Backspace' ||
+        e.key === 'Back' ||
+        e.key === 'BrowserBack' ||
+        e.keyCode === 8 ||
+        e.keyCode === 166 ||
+        e.code === 'BrowserBack';
+
+      if (isBackButton) {
+        // Prevent Fire TV system from handling the event
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        console.log('StreamingInterface: Prevented Fire TV back button system handling');
+        // Let the modal handle it normally
+      }
+    };
+
+    // Use capture phase to intercept before modal handler
+    document.addEventListener('keydown', handleGlobalKeyDown, { capture: true });
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown, { capture: true });
+  }, [selectedStream]);
+
   const totalPages = 3; // todo: calculate based on actual stream count
 
   const handleStreamSelect = (streamId: string, url: string) => {
