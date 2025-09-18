@@ -93,10 +93,14 @@ export default function StreamModal({
         }
       }
       
-      // Fallback to any focusable stream tile
-      const fallbackTile = document.querySelector('[data-testid^="stream-tile-"][tabindex="0"]') as HTMLElement;
+      // Fallback: try to find the stream tile for the current stream
+      let fallbackTile = document.querySelector(`[data-testid="stream-tile-${currentStream?.id}"][tabindex="0"]`) as HTMLElement;
+      if (!fallbackTile) {
+        // If current stream tile not found, try any focusable stream tile
+        fallbackTile = document.querySelector('[data-testid^="stream-tile-"][tabindex="0"]') as HTMLElement;
+      }
       if (fallbackTile) {
-        console.log('StreamModal: Fallback to first focusable stream tile');
+        console.log('StreamModal: Fallback to stream tile');
         fallbackTile.focus();
         previouslyFocusedElement.current = null;
         previouslyFocusedSelector.current = null;
@@ -446,7 +450,7 @@ export default function StreamModal({
       // Wait longer to account for fullscreen changes and DOM updates
       setTimeout(() => {
         restoreFocus();
-      }, 250);
+      }, 500); // Increased delay to ensure fullscreen transition completes
     }
   }, [isOpen]);
 
@@ -599,10 +603,7 @@ export default function StreamModal({
       onClose();
     }
     
-    // Force focus restoration after a delay
-    setTimeout(() => {
-      restoreFocus();
-    }, 300);
+    // Focus restoration will be handled by the useEffect, not here
   };
 
   // Reset history state tracking when modal closes
