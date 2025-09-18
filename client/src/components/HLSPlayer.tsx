@@ -44,9 +44,11 @@ export default function HLSPlayer({
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'failed'>('idle');
   const [isHlsSupported, setIsHlsSupported] = useState(false);
   const [useNativeHls, setUseNativeHls] = useState(false);
+  const [needsUserInteraction, setNeedsUserInteraction] = useState(false);
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
   const maxRetries = 5;
+  const globalAutoplayUnlockedRef = useRef(false);
 
   // Check HLS support
   useEffect(() => {
@@ -416,21 +418,119 @@ export default function HLSPlayer({
     }
   }, [streamUrl, isHlsSupported, connectToHLSStream, streamId]);
 
-  // Handle mute changes
+  // Handle mute changes - but keep muted for autoplay
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && isPlaying) {
+      // Only unmute after video starts playing
       videoRef.current.muted = isMuted;
     }
-  }, [isMuted]);
+  }, [isMuted, isPlaying]);
 
-  // Auto-play when connected
+  // Ultra-aggressive autoplay when connected
   useEffect(() => {
-    if (connectionStatus === 'connected' && videoRef.current && !isPlaying) {
-      videoRef.current.play().catch((error) => {
-        console.log(`HLSPlayer[${streamId}]: Auto-play prevented by browser:`, error);
+    if (connectionStatus === 'connected' && videoRef.current) {
+      const video = videoRef.current;
+      
+      console.log(`HLSPlayer[${streamId}]: Starting ultra autoplay sequence`);
+      
+      // Ensure optimal autoplay settings
+      video.muted = true;
+      video.volume = 0;
+      video.preload = 'auto';
+      
+      const tryAutoplay = async () => {
+        try {
+          console.log(`HLSPlayer[${streamId}]: Attempting autoplay...`);
+          await video.play();
+          console.log(`HLSPlayer[${streamId}]: AUTOPLAY SUCCESS!`);
+          return true;
+        } catch (error) {
+          console.log(`HLSPlayer[${streamId}]: Autoplay failed:`, error);
+          return false;
+        }
+      };
+      
+      // Method 1: Immediate play
+      tryAutoplay();
+      
+      // Method 2: After 10ms
+      setTimeout(tryAutoplay, 10);
+      
+      // Method 3: After 50ms  
+      setTimeout(tryAutoplay, 50);
+      
+      // Method 4: After 100ms
+      setTimeout(tryAutoplay, 100);
+      
+      // Method 5: After 200ms
+      setTimeout(tryAutoplay, 200);
+      
+      // Method 6: After requestAnimationFrame
+      requestAnimationFrame(() => {
+        tryAutoplay();
       });
+      
+      // Method 7: Last resort after 1 second
+      setTimeout(() => {
+        if (!isPlaying) {
+          console.log(`HLSPlayer[${streamId}]: Last resort autoplay attempt`);
+          tryAutoplay().then((success) => {
+            if (!success) {
+              console.log(`HLSPlayer[${streamId}]: All autoplay methods exhausted`);
+              setNeedsUserInteraction(true);
+            }
+          });
+        }
+      }, 1000);
     }
   }, [connectionStatus, streamId, isPlaying]);
+
+  // Global autoplay unlock on any page interaction
+  useEffect(() => {
+    if (globalAutoplayUnlockedRef.current) return;
+
+    const unlockAutoplay = () => {
+      if (globalAutoplayUnlockedRef.current) return;
+      
+      console.log(`HLSPlayer[${streamId}]: User interaction detected - unlocking autoplay`);
+      globalAutoplayUnlockedRef.current = true;
+      
+      // Immediately try to play if video is connected
+      if (connectionStatus === 'connected' && videoRef.current && !isPlaying) {
+        const video = videoRef.current;
+        video.muted = true;
+        video.volume = 0;
+        
+        video.play().then(() => {
+          console.log(`HLSPlayer[${streamId}]: INTERACTION-TRIGGERED AUTOPLAY SUCCESS!`);
+          setNeedsUserInteraction(false);
+          
+          // After successful start, unmute if needed
+          setTimeout(() => {
+            if (!isMuted) {
+              video.muted = false;
+              video.volume = 1;
+            }
+          }, 500);
+        }).catch((error) => {
+          console.log(`HLSPlayer[${streamId}]: Interaction-triggered play failed:`, error);
+        });
+      }
+    };
+
+    const interactionEvents = ['click', 'touchstart', 'keydown', 'mousedown', 'touchend'];
+    
+    // Add listeners for any user interaction
+    interactionEvents.forEach(eventType => {
+      document.addEventListener(eventType, unlockAutoplay, { once: false, capture: true, passive: true });
+    });
+
+    return () => {
+      interactionEvents.forEach(eventType => {
+        document.removeEventListener(eventType, unlockAutoplay, { capture: true });
+      });
+    };
+  }, [streamId, connectionStatus, isPlaying, isMuted]);
 
   // Keyboard navigation support for Fire TV
   useEffect(() => {
@@ -470,6 +570,7 @@ export default function HLSPlayer({
     if (isPlaying) {
       video.pause();
     } else {
+      setNeedsUserInteraction(false);
       video.play().catch((error) => {
         console.error(`HLSPlayer[${streamId}]: Play error:`, error);
       });
@@ -516,8 +617,8 @@ export default function HLSPlayer({
         className="w-full h-full object-contain"
         playsInline
         controls={false}
-        muted={isMuted}
-        autoPlay={false}
+        muted={true}
+        autoPlay={true}
         data-testid={`hls-video-${streamId}`}
         tabIndex={0}
         style={{ outline: 'none' }}
@@ -534,8 +635,11 @@ export default function HLSPlayer({
         </div>
       )}
 
-      {/* Control overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 opacity-0 hover:opacity-100 transition-opacity duration-300">
+      {/* Control overlay - always visible when needs user interaction or on hover */}
+      <div className={cn(
+        "absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 transition-opacity duration-300",
+        needsUserInteraction || !isPlaying ? "opacity-100" : "opacity-0 hover:opacity-100"
+      )}>
         <div className="absolute top-4 left-4">
           <Badge variant="secondary" className="bg-black/70 text-white">
             <div className="flex items-center space-x-2">
@@ -544,6 +648,22 @@ export default function HLSPlayer({
             </div>
           </Badge>
         </div>
+
+        {/* Center play button when needs user interaction */}
+        {needsUserInteraction && !isPlaying && connectionStatus === 'connected' && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={handleTogglePlay}
+              className="bg-white/90 text-black hover:bg-white font-semibold px-8 py-4"
+              data-testid={`button-hls-play-center-${streamId}`}
+            >
+              <Play className="w-6 h-6 mr-2" />
+              Click to Play
+            </Button>
+          </div>
+        )}
 
         <div className="absolute bottom-4 left-4 right-4">
           <div className="flex items-center justify-between text-white">
