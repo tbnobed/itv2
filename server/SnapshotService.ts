@@ -15,9 +15,10 @@ export class SnapshotService {
   private workers: Map<string, StreamWorker> = new Map();
   private snapshotDir: string;
   private srsHttpHlsBase: string;
-  private readonly MAX_RESTART_COUNT = 5;
+  private readonly MAX_RESTART_COUNT = parseInt(process.env.HLS_MAX_RETRIES || '3');
   private readonly WORKER_TTL = 120000; // 2 minutes
-  private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
+  private readonly HEALTH_CHECK_INTERVAL = parseInt(process.env.SNAPSHOT_INTERVAL || '30') * 1000; // 30 seconds default, configurable
+  private readonly HLS_CONNECTION_TIMEOUT = parseInt(process.env.HLS_CONNECTION_TIMEOUT || '10'); // 10 seconds default
   private healthCheckTimer?: NodeJS.Timeout;
 
   private constructor() {
@@ -150,7 +151,7 @@ export class SnapshotService {
   /**
    * Get fallback URL when WHEP parsing fails
    */
-  private getFallbackUrl(streamId: string): string {
+  private getFallbackUrl(streamId: string): string | null {
     if (this.srsHttpHlsBase) {
       return `${this.srsHttpHlsBase}/live/${streamId}.m3u8`;
     }
@@ -205,7 +206,7 @@ export class SnapshotService {
       '-reconnect', '1',
       '-reconnect_streamed', '1', 
       '-reconnect_on_network_error', '1',
-      '-timeout', '10000000',  // 10 second timeout
+      '-timeout', `${this.HLS_CONNECTION_TIMEOUT * 1000000}`,  // Configurable timeout (in microseconds)
       '-i', inputUrl,
       '-vf', 'fps=1/30,scale=320:-1',  // 1 frame every 30 seconds, scale to 320px width
       '-q:v', '5',  // JPEG quality

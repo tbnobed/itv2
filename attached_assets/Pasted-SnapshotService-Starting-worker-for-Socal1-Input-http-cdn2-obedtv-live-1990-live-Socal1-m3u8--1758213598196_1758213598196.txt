@@ -1,0 +1,50 @@
+SnapshotService: Starting worker for Socal1
+  Input: http://cdn2.obedtv.live:1990/live/Socal1.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/Socal1.jpg
+SnapshotService: Starting worker for Socal3
+  Input: http://cdn2.obedtv.live:1990/live/Socal3.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/Socal3.jpg
+SnapshotService: Starting worker for S4
+  Input: http://cdn2.obedtv.live:1990/live/Socal4.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/S4.jpg
+SnapshotService: Starting worker for Socal2
+  Input: http://cdn2.obedtv.live:1990/live/Socal2.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/Socal2.jpg
+SnapshotService: Starting worker for S6
+  Input: http://cdn2.obedtv.live:1990/live/Socal6.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/S6.jpg
+SnapshotService: Starting worker for S5
+  Input: http://cdn2.obedtv.live:1990/live/Socal5.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/S5.jpg
+SnapshotService[S5]: Process exited with code null
+SnapshotService[S5]: Restarting in 1000ms (attempt 2)
+SnapshotService[Socal3]: Process exited with code null
+SnapshotService[Socal3]: Restarting in 1000ms (attempt 2)
+SnapshotService[Socal1]: Process exited with code null
+SnapshotService[Socal1]: Restarting in 1000ms (attempt 2)
+SnapshotService[S4]: Process exited with code null
+SnapshotService[S4]: Restarting in 1000ms (attempt 2)
+SnapshotService[S6]: Process exited with code null
+SnapshotService[S6]: Restarting in 1000ms (attempt 2)
+SnapshotService[Socal2]: Process exited with code null
+SnapshotService[Socal2]: Restarting in 1000ms (attempt 2)
+SnapshotService: Starting worker for S5
+  Input: http://cdn2.obedtv.live:1990/live/Socal5.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/S5.jpg
+SnapshotService: Starting worker for Socal3
+  Input: http://cdn2.obedtv.live:1990/live/Socal3.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/Socal3.jpg
+SnapshotService: Starting worker for Socal1
+  Input: http://cdn2.obedtv.live:1990/live/Socal1.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/Socal1.jpg
+SnapshotService: Starting worker for S4
+  Input: http://cdn2.obedtv.live:1990/live/Socal4.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/S4.jpg
+SnapshotService: Starting worker for S6
+  Input: http://cdn2.obedtv.live:1990/live/Socal6.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/S6.jpg
+SnapshotService: Starting worker for Socal2
+  Input: http://cdn2.obedtv.live:1990/live/Socal2.m3u8
+  Output: /home/runner/workspace/server/public/snapshots/Socal2.jpg
+Deserializing user with ID: c2a55777-cac5-4d77-a7f5-5799c2cb5ef6
+Found user during deserialization: {

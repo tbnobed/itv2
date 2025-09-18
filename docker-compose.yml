@@ -70,6 +70,13 @@ services:
       SRS_HTTP_FLV_BASE: ${SRS_HTTP_FLV_BASE:-}
       # Optional: Force HTTPS if your SRS uses SSL
       # SRS_FORCE_HTTPS: ${SRS_FORCE_HTTPS:-false}
+      # HLS Stream Configuration for Production
+      # FFmpeg timeout for HLS stream connections (seconds)
+      HLS_CONNECTION_TIMEOUT: ${HLS_CONNECTION_TIMEOUT:-10}
+      # Maximum retry attempts for failed HLS snapshots
+      HLS_MAX_RETRIES: ${HLS_MAX_RETRIES:-3}
+      # Snapshot generation interval (seconds)
+      SNAPSHOT_INTERVAL: ${SNAPSHOT_INTERVAL:-30}
     ports:
       - "5000:5000"
     depends_on:
