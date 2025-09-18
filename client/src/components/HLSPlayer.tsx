@@ -416,7 +416,7 @@ export default function HLSPlayer({
       console.log(`HLSPlayer[${streamId}]: Cannot connect - streamUrl="${streamUrl}", isHlsSupported=${isHlsSupported}`);
       cleanup();
     }
-  }, [streamUrl, isHlsSupported, connectToHLSStream, streamId]);
+  }, [streamUrl, isHlsSupported, streamId]);
 
   // Handle mute changes - but keep muted for autoplay
   useEffect(() => {
