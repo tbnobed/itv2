@@ -105,8 +105,9 @@ const StreamTile = React.forwardRef(({
     console.log(`StreamTile[${streamId}]: BLUR EVENT received`);
   };
 
-  // Dynamic tile sizing for proportional text
-  const { ref: tileRef, tileStyle } = useTileResize();
+  // Dynamic tile sizing for proportional text disabled
+  const tileRef = useRef<HTMLDivElement>(null);
+  const tileStyle = {};
   
   // Merge refs to support both forwarded ref and measurement ref
   const setRef = (node: HTMLDivElement | null) => {
@@ -358,7 +359,7 @@ const StreamTile = React.forwardRef(({
       style={tileStyle}
       className={cn(
         "relative cursor-pointer group outline-none stream-tile",
-        "focus-visible:scale-110 focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]"
+        "focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]"
       )}
       tabIndex={tabIndex ?? 0}
       onClick={handleClick}
