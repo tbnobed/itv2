@@ -387,6 +387,9 @@ export default function StreamModal({
     }
   }, [isOpen]);
 
+  // Track which element we made inert for proper cleanup
+  const backgroundElRef = useRef<HTMLElement | null>(null);
+
   // Focus management and inert background - Capture focus when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -397,9 +400,11 @@ export default function StreamModal({
       
       // Make background inert to prevent focus/keyboard events
       const appElement = document.querySelector('#root') || document.body;
-      if (appElement && appElement !== modalRef.current?.parentElement) {
+      // Use contains() check to avoid inerting ancestors containing the modal
+      if (appElement && modalRef.current && !appElement.contains(modalRef.current)) {
         appElement.setAttribute('aria-hidden', 'true');
         appElement.setAttribute('inert', '');
+        backgroundElRef.current = appElement;
         console.log('StreamModal: Made background inert');
       }
       
@@ -407,15 +412,17 @@ export default function StreamModal({
       if (modalRef.current) {
         modalRef.current.focus();
       }
-    } else {
-      // Remove inert from background when modal closes
-      const appElement = document.querySelector('#root') || document.body;
-      if (appElement) {
-        appElement.removeAttribute('aria-hidden');
-        appElement.removeAttribute('inert');
-        console.log('StreamModal: Removed inert from background');
-      }
     }
+
+    // CRITICAL: Always cleanup inert state in a cleanup function
+    return () => {
+      if (backgroundElRef.current) {
+        backgroundElRef.current.removeAttribute('aria-hidden');
+        backgroundElRef.current.removeAttribute('inert');
+        console.log('StreamModal: Removed inert from background (cleanup)');
+        backgroundElRef.current = null;
+      }
+    };
   }, [isOpen]);
 
   // Focus restoration when modal closes
