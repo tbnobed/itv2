@@ -104,15 +104,10 @@ const StreamTile = React.forwardRef(({
   };
 
   // Dynamic tile sizing for proportional text
-  const { ref: tileRef, tileStyle } = useTileResize();
+  // Removed dynamic scaling - no more growing tiles
   
-  // Merge refs to support both forwarded ref and measurement ref
+  // Simple ref forwarding without scaling
   const setRef = (node: HTMLDivElement | null) => {
-    // Attach to measurement ref
-    if (tileRef.current !== node) {
-      (tileRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-    }
-    // Forward to parent ref
     if (typeof ref === 'function') {
       ref(node);
     } else if (ref) {
@@ -354,7 +349,7 @@ const StreamTile = React.forwardRef(({
   return (
     <div
       ref={setRef}
-      style={tileStyle}
+      style={undefined}
       className={cn(
         "relative cursor-pointer group outline-none stream-tile",
         "focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]"
