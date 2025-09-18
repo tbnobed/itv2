@@ -57,6 +57,14 @@ export class SnapshotService {
       // Extend TTL
       existing.lastActivity = Date.now();
       console.log(`SnapshotService: Extended TTL for ${sanitizedStreamId}`);
+      
+      // Check if existing worker is actually active - if not, restart it
+      if (!existing.isActive || !existing.process) {
+        console.log(`SnapshotService: Existing worker for ${sanitizedStreamId} is inactive, restarting...`);
+        // Reset restart count for health issue
+        existing.restartCount = 0;
+        this.startWorker(existing, streamUrl);
+      }
       return;
     }
 
@@ -160,13 +168,21 @@ export class SnapshotService {
       return;
     }
 
+    console.log(`SnapshotService: Processing ${worker.streamId} with URL: ${streamUrl}`);
+
     // Derive HTTP-HLS URL from stream URL or use fallback
     let inputUrl: string | null;
     if (streamUrl && (streamUrl.includes('whep') || streamUrl.includes('rtc/v1'))) {
       // Convert WHEP/WebRTC URL to HTTP-HLS URL dynamically
+      console.log(`SnapshotService: Converting WebRTC URL for ${worker.streamId}`);
       inputUrl = this.convertWhepToHttpHls(streamUrl, worker.streamId);
+    } else if (streamUrl && (streamUrl.includes('.m3u8') || streamUrl.startsWith('hls://'))) {
+      // Use HLS URLs directly - they're already in the correct format for FFmpeg
+      console.log(`SnapshotService: Using direct HLS URL for ${worker.streamId}: ${streamUrl}`);
+      inputUrl = streamUrl.startsWith('hls://') ? streamUrl.replace('hls://', 'http://') : streamUrl;
     } else {
       // Use fallback for non-WHEP URLs
+      console.log(`SnapshotService: Using fallback for ${worker.streamId}, streamUrl was: ${streamUrl}`);
       inputUrl = this.getFallbackUrl(worker.streamId);
     }
 
@@ -185,10 +201,11 @@ export class SnapshotService {
     // ffmpeg command to capture snapshots every 30 seconds
     const args = [
       '-hide_banner',
-      '-loglevel', 'error',
+      '-loglevel', 'warning',  // More verbose to see connection errors
       '-reconnect', '1',
       '-reconnect_streamed', '1', 
       '-reconnect_on_network_error', '1',
+      '-timeout', '10000000',  // 10 second timeout
       '-i', inputUrl,
       '-vf', 'fps=1/30,scale=320:-1',  // 1 frame every 30 seconds, scale to 320px width
       '-q:v', '5',  // JPEG quality
@@ -221,6 +238,13 @@ export class SnapshotService {
       worker.process = null;
       worker.isActive = false;
       
+      // If process exits immediately (code null), it's likely a network issue
+      if (code === null && worker.restartCount >= 2) {
+        console.warn(`SnapshotService[${worker.streamId}]: Network connectivity issue detected, disabling snapshot generation`);
+        // Don't restart - the stream server is unreachable
+        return;
+      }
+      
       // Restart with backoff if within restart limit
       if (worker.restartCount < this.MAX_RESTART_COUNT) {
         const backoffMs = Math.min(1000 * Math.pow(2, worker.restartCount - 1), 30000);
@@ -232,7 +256,7 @@ export class SnapshotService {
           }
         }, backoffMs);
       } else {
-        console.error(`SnapshotService[${worker.streamId}]: Max restart attempts exceeded`);
+        console.error(`SnapshotService[${worker.streamId}]: Max restart attempts exceeded, disabling snapshots`);
       }
     });
 
