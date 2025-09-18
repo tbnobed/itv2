@@ -215,18 +215,28 @@ export default function StreamModal({
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // SRS WebRTC connection management
+  // SRS WebRTC connection management - only for WebRTC streams
   useEffect(() => {
+    // CRITICAL: Only handle WebRTC streams, completely skip HLS streams
+    if (finalStreamType !== 'webrtc') {
+      console.log(`StreamModal[${streamId}]: Stream type is ${finalStreamType}, skipping all WebRTC logic`);
+      return;
+    }
+
     if (isOpen && streamUrl && isSDKLoaded) {
+      console.log(`StreamModal[${streamId}]: Initiating WebRTC connection for WebRTC stream`);
       connectToWebRTCStream();
     } else {
+      console.log(`StreamModal[${streamId}]: Disconnecting WebRTC stream (modal closed or missing dependencies)`);
       disconnectStream();
     }
 
+    // Cleanup function - only for WebRTC streams
     return () => {
+      console.log(`StreamModal[${streamId}]: Cleanup - disconnecting WebRTC stream`);
       disconnectStream();
     };
-  }, [isOpen, streamUrl, isSDKLoaded]);
+  }, [isOpen, streamUrl, isSDKLoaded, finalStreamType, streamId]);
 
   // Clean up controls timeout on unmount
   useEffect(() => {
@@ -469,7 +479,7 @@ export default function StreamModal({
   };
 
   const retryConnection = () => {
-    if (streamUrl) {
+    if (streamUrl && finalStreamType === 'webrtc') {
       connectToWebRTCStream();
     }
   };

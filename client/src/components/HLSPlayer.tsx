@@ -3,13 +3,7 @@ import { Volume2, VolumeX, AlertCircle, Wifi, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-
-// HLS.js type declaration
-declare global {
-  interface Window {
-    Hls: any;
-  }
-}
+import Hls from 'hls.js';
 
 interface HLSPlayerProps {
   streamUrl: string;
@@ -57,16 +51,38 @@ export default function HLSPlayer({
   // Check HLS support
   useEffect(() => {
     const video = videoRef.current;
+    console.log(`HLSPlayer[${streamId}]: HLS support check - video element exists: ${!!video}`);
+    
     if (video) {
       // Safari has native HLS support
       const nativeHlsSupport = video.canPlayType('application/vnd.apple.mpegurl') !== '';
       setUseNativeHls(nativeHlsSupport);
       
       // Check if hls.js is loaded and supported
-      const hlsJsSupport = window.Hls && window.Hls.isSupported();
-      setIsHlsSupported(nativeHlsSupport || hlsJsSupport);
+      const hlsJsSupport = Hls && Hls.isSupported();
+      const finalSupport = nativeHlsSupport || hlsJsSupport;
+      setIsHlsSupported(finalSupport);
       
-      console.log(`HLSPlayer[${streamId}]: Native HLS support: ${nativeHlsSupport}, hls.js support: ${hlsJsSupport}`);
+      console.log(`HLSPlayer[${streamId}]: HLS support detection complete - native: ${nativeHlsSupport}, hls.js: ${hlsJsSupport}, Hls imported: ${!!Hls}, final: ${finalSupport}`);
+    } else {
+      console.log(`HLSPlayer[${streamId}]: Video element not ready, HLS support remains false`);
+      setIsHlsSupported(false);
+    }
+  }, [streamId]);
+  
+  // Re-check HLS support when video element is ready
+  const handleVideoReady = useCallback(() => {
+    console.log(`HLSPlayer[${streamId}]: Video element ready, re-checking HLS support`);
+    const video = videoRef.current;
+    if (video) {
+      const nativeHlsSupport = video.canPlayType('application/vnd.apple.mpegurl') !== '';
+      setUseNativeHls(nativeHlsSupport);
+      
+      const hlsJsSupport = Hls && Hls.isSupported();
+      const finalSupport = nativeHlsSupport || hlsJsSupport;
+      setIsHlsSupported(finalSupport);
+      
+      console.log(`HLSPlayer[${streamId}]: HLS support re-detection complete - native: ${nativeHlsSupport}, hls.js: ${hlsJsSupport}, Hls imported: ${!!Hls}, final: ${finalSupport}`);
     }
   }, [streamId]);
 
@@ -261,7 +277,7 @@ export default function HLSPlayer({
           video.removeEventListener('playing', handlePlaying);
         };
 
-      } else if (window.Hls?.isSupported()) {
+      } else if (Hls?.isSupported()) {
         // Use hls.js for browsers without native support
         console.log(`HLSPlayer[${streamId}]: Using hls.js`);
         
@@ -269,7 +285,7 @@ export default function HLSPlayer({
           hlsRef.current.destroy();
         }
 
-        const hls = new window.Hls({
+        const hls = new Hls({
           debug: false,
           enableWorker: true,
           lowLatencyMode: false,
@@ -291,7 +307,7 @@ export default function HLSPlayer({
         hlsRef.current = hls;
 
         // HLS.js event handlers
-        hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
           console.log(`HLSPlayer[${streamId}]: HLS manifest parsed successfully`);
           setIsLoading(false);
           setConnectionStatus('connected');
@@ -299,7 +315,7 @@ export default function HLSPlayer({
           retryCountRef.current = 0; // Reset retry count on success
         });
 
-        hls.on(window.Hls.Events.ERROR, (event: any, data: any) => {
+        hls.on(Hls.Events.ERROR, (event: any, data: any) => {
           console.error(`HLSPlayer[${streamId}]: HLS.js error:`, data);
           
           const hlsError = analyzeHLSError(data);
@@ -312,11 +328,11 @@ export default function HLSPlayer({
             onError?.(hlsError.message);
             
             switch (data.type) {
-              case window.Hls.ErrorTypes.NETWORK_ERROR:
+              case Hls.ErrorTypes.NETWORK_ERROR:
                 console.log(`HLSPlayer[${streamId}]: Network error, attempting recovery`);
                 retryConnection();
                 break;
-              case window.Hls.ErrorTypes.MEDIA_ERROR:
+              case Hls.ErrorTypes.MEDIA_ERROR:
                 console.log(`HLSPlayer[${streamId}]: Media error, attempting recovery`);
                 try {
                   hls.recoverMediaError();
@@ -377,7 +393,10 @@ export default function HLSPlayer({
 
   // Effect to handle stream connection
   useEffect(() => {
+    console.log(`HLSPlayer[${streamId}]: Connection effect triggered. streamUrl=${streamUrl}, isHlsSupported=${isHlsSupported}`);
+    
     if (streamUrl && isHlsSupported) {
+      console.log(`HLSPlayer[${streamId}]: Initializing HLS connection to ${streamUrl}`);
       let cleanupFunction: (() => void) | undefined;
       
       connectToHLSStream().then((cleanup) => {
@@ -385,15 +404,17 @@ export default function HLSPlayer({
       });
       
       return () => {
+        console.log(`HLSPlayer[${streamId}]: Effect cleanup - cleaning up connection`);
         if (cleanupFunction && typeof cleanupFunction === 'function') {
           cleanupFunction();
         }
         cleanup();
       };
     } else {
+      console.log(`HLSPlayer[${streamId}]: Cannot connect - streamUrl="${streamUrl}", isHlsSupported=${isHlsSupported}`);
       cleanup();
     }
-  }, [streamUrl, isHlsSupported, connectToHLSStream, cleanup]);
+  }, [streamUrl, isHlsSupported, connectToHLSStream, streamId]);
 
   // Handle mute changes
   useEffect(() => {
@@ -488,20 +509,6 @@ export default function HLSPlayer({
     }
   };
 
-  if (!isHlsSupported) {
-    return (
-      <div className={cn("flex items-center justify-center bg-gray-900 text-white rounded-lg", className)}>
-        <div className="text-center p-8">
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">HLS Not Supported</h3>
-          <p className="text-gray-300 text-sm">
-            Your browser doesn't support HLS streaming. Please use a compatible browser.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={cn("relative bg-black overflow-hidden rounded-lg", className)}>
       <video
@@ -514,6 +521,7 @@ export default function HLSPlayer({
         data-testid={`hls-video-${streamId}`}
         tabIndex={0}
         style={{ outline: 'none' }}
+        onLoadedMetadata={handleVideoReady}
       />
       
       {/* Loading overlay */}
@@ -586,6 +594,19 @@ export default function HLSPlayer({
                 </p>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* HLS Not Supported overlay */}
+      {!isHlsSupported && connectionStatus === 'idle' && (
+        <div className="absolute inset-0 bg-gray-900/95 flex items-center justify-center">
+          <div className="text-center p-8">
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-white">HLS Not Supported</h3>
+            <p className="text-gray-300 text-sm">
+              Your browser doesn't support HLS streaming. Please use a compatible browser.
+            </p>
           </div>
         </div>
       )}
