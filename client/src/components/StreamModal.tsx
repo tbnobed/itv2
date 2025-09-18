@@ -59,6 +59,7 @@ export default function StreamModal({
   const [detailedError, setDetailedError] = useState<DetailedError | null>(null);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [sdkLoadError, setSDKLoadError] = useState<string | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -66,33 +67,102 @@ export default function StreamModal({
   const srsPlayerRef = useRef<any>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
-  // Simplified focus restoration with requestAnimationFrame retry
+  // Robust multi-frame focus restoration with retry logic
   const restoreFocus = () => {
     console.log('StreamModal: Attempting to restore focus...');
     
+    const maxAttempts = 10;
+    const maxTime = 400; // 400ms timeout
+    const startTime = Date.now();
+    let attempts = 0;
+    
     const attemptRestore = () => {
-      // Try stored DOM element first (if still attached)
-      if (previouslyFocusedElement.current && document.contains(previouslyFocusedElement.current)) {
-        console.log('StreamModal: Restoring focus to stored element');
-        previouslyFocusedElement.current.focus();
+      attempts++;
+      const elapsed = Date.now() - startTime;
+      
+      // Check for timeout conditions
+      if (attempts > maxAttempts || elapsed > maxTime) {
+        console.warn('StreamModal: Focus restoration timed out after', attempts, 'attempts and', elapsed, 'ms');
         previouslyFocusedElement.current = null;
         return;
       }
       
-      // Fallback: try to find any focusable stream tile
-      const fallbackTile = document.querySelector('[data-testid^="stream-tile-"][tabindex="0"]') as HTMLElement;
-      if (fallbackTile) {
-        console.log('StreamModal: Fallback to stream tile');
-        fallbackTile.focus();
-        previouslyFocusedElement.current = null;
-        return;
+      // Validate restore target - ignore invalid elements
+      if (previouslyFocusedElement.current) {
+        const element = previouslyFocusedElement.current;
+        const isValidTarget = element &&
+          element !== document.body &&
+          element !== document.documentElement &&
+          document.contains(element) &&
+          typeof element.focus === 'function';
+          
+        if (isValidTarget) {
+          try {
+            console.log('StreamModal: Restoring focus to stored element (attempt', attempts, ')');
+            element.focus();
+            // Check if focus was actually set
+            if (document.activeElement === element) {
+              console.log('StreamModal: Focus restoration successful');
+              previouslyFocusedElement.current = null;
+              return;
+            }
+          } catch (error) {
+            console.warn('StreamModal: Error focusing stored element:', error);
+          }
+        } else {
+          console.log('StreamModal: Stored element invalid, using fallback');
+          previouslyFocusedElement.current = null;
+        }
       }
       
-      console.warn('StreamModal: Focus restoration failed');
-      previouslyFocusedElement.current = null;
+      // Broader fallback selectors - primary stream tiles
+      const streamTileSelectors = [
+        '.stream-tile[tabindex]',
+        '.stream-tile',
+        '[data-testid^="stream-tile-"]'
+      ];
+      
+      for (const selector of streamTileSelectors) {
+        const fallbackTile = document.querySelector(selector) as HTMLElement;
+        if (fallbackTile && typeof fallbackTile.focus === 'function') {
+          try {
+            console.log('StreamModal: Fallback to stream tile with selector:', selector, '(attempt', attempts, ')');
+            fallbackTile.focus();
+            // Check if focus was actually set
+            if (document.activeElement === fallbackTile) {
+              console.log('StreamModal: Stream tile focus successful');
+              previouslyFocusedElement.current = null;
+              return;
+            }
+          } catch (error) {
+            console.warn('StreamModal: Error focusing stream tile:', error);
+          }
+        }
+      }
+      
+      // Secondary fallback - TopNavigation active button
+      const navButton = document.querySelector('[data-testid^="nav-"][data-active="true"]') as HTMLElement;
+      if (navButton && typeof navButton.focus === 'function') {
+        try {
+          console.log('StreamModal: Secondary fallback to nav button (attempt', attempts, ')');
+          navButton.focus();
+          // Check if focus was actually set
+          if (document.activeElement === navButton) {
+            console.log('StreamModal: Nav button focus successful');
+            previouslyFocusedElement.current = null;
+            return;
+          }
+        } catch (error) {
+          console.warn('StreamModal: Error focusing nav button:', error);
+        }
+      }
+      
+      // If we get here, schedule another attempt
+      console.log('StreamModal: Focus attempt', attempts, 'failed, retrying...');
+      requestAnimationFrame(attemptRestore);
     };
     
-    // Use requestAnimationFrame to ensure DOM is ready
+    // Start the retry sequence
     requestAnimationFrame(attemptRestore);
   };
 
@@ -413,10 +483,17 @@ export default function StreamModal({
 
   // Focus restoration when modal closes
   useEffect(() => {
-    if (!isOpen && previouslyFocusedElement.current) {
+    if (!isOpen) {
       console.log('StreamModal: Modal closed, restoring focus...');
-      // Immediate focus restoration without delay
-      restoreFocus();
+      // Simple, immediate focus restoration to first available stream tile
+      const focusTarget = document.querySelector('.stream-tile, [data-testid^="stream-tile-"]') as HTMLElement;
+      if (focusTarget && typeof focusTarget.focus === 'function') {
+        console.log('StreamModal: Focusing first stream tile immediately');
+        focusTarget.focus();
+      } else {
+        console.log('StreamModal: No stream tiles found, focusing body');
+        document.body.focus();
+      }
     }
   }, [isOpen]);
 
@@ -435,13 +512,19 @@ export default function StreamModal({
     }
   }, [isOpen]);
 
-  // Maintain focus on modal when entering/exiting fullscreen
+  // Maintain focus on modal when entering/exiting fullscreen, but suppress during close
   useEffect(() => {
     const handleFullscreenChange = () => {
+      // Suppress re-focus during modal closure to prevent interference
+      if (isClosing) {
+        console.log('StreamModal: Suppressing fullscreen change re-focus during modal closure');
+        return;
+      }
+      
       if (isOpen && modalRef.current) {
         // Re-focus modal after fullscreen change to ensure keyboard events work
         setTimeout(() => {
-          if (modalRef.current) {
+          if (modalRef.current && !isClosing) {
             modalRef.current.focus();
             console.log('StreamModal: Re-focused modal after fullscreen change');
           }
@@ -451,7 +534,7 @@ export default function StreamModal({
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [isOpen]);
+  }, [isOpen, isClosing]);
 
   // Simplified keyboard handling - scoped to modal, no global interference
   const handleModalKeyDown = (e: React.KeyboardEvent) => {
@@ -548,8 +631,11 @@ export default function StreamModal({
     };
   }, [isOpen]);
 
-  // Simplified modal close with better back button handling
+  // Modal close with focus-safe history handling
   const handleModalClose = () => {
+    // Set closing flag to suppress fullscreen re-focus during close
+    setIsClosing(true);
+    
     // Exit fullscreen if needed, but don't prevent modal from closing
     if (document.fullscreenElement) {
       console.log('StreamModal: Exiting fullscreen while closing modal...');
@@ -562,13 +648,15 @@ export default function StreamModal({
     // Always trigger focus restoration before closing
     console.log('StreamModal: Closing modal and will restore focus...');
     
+    // Close modal immediately - defer history handling to avoid DOM churn racing
     if (historyStatePushedRef.current) {
-      // Close modal first, then handle history
       historyStatePushedRef.current = false;
       onClose();
       
-      // Call history.back() to clean up our pushed state
-      window.history.back();
+      // Defer history.back() to prevent racing with focus restoration
+      setTimeout(() => {
+        window.history.back();
+      }, 50);
     } else {
       onClose();
     }
@@ -576,10 +664,11 @@ export default function StreamModal({
     // Focus restoration will be handled by the useEffect, not here
   };
 
-  // Reset history state tracking when modal closes
+  // Reset history state tracking and closing flag when modal closes
   useEffect(() => {
     if (!isOpen) {
       historyStatePushedRef.current = false;
+      setIsClosing(false);
     }
   }, [isOpen]);
 
