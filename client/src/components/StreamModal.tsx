@@ -514,7 +514,30 @@ export default function StreamModal({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isOpen, isClosing]);
 
-  // Fire TV back button prevention - native event handler to prevent system exit
+  // Fire TV history management - push dummy state to consume back press
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Push dummy history state when modal opens
+    history.pushState({ modal: true }, '');
+    console.log('StreamModal: Pushed history state for back button handling');
+
+    // Handle browser back button via popstate
+    const handlePopState = (e: PopStateEvent) => {
+      if (isOpen && !isClosing) {
+        console.log('StreamModal: Back button consumed via history, closing modal');
+        handleModalClose();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isOpen, isClosing, handleModalClose]);
+
+  // Fire TV native key prevention - capture phase, preventDefault only
   useEffect(() => {
     if (!isOpen) return;
     
@@ -529,16 +552,14 @@ export default function StreamModal({
         e.code === 'BrowserBack';
 
       if (isBackButton) {
-        // Aggressively prevent Fire TV system handling
+        // Only preventDefault to block system exit, allow React to handle
         e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        console.log('StreamModal: Prevented Fire TV system exit via native handler');
+        console.log('StreamModal: Prevented Fire TV system exit via native capture');
       }
     };
 
-    document.addEventListener('keydown', handleNativeKeyDown, { capture: false });
-    return () => document.removeEventListener('keydown', handleNativeKeyDown, { capture: false });
+    document.addEventListener('keydown', handleNativeKeyDown, { capture: true });
+    return () => document.removeEventListener('keydown', handleNativeKeyDown, { capture: true });
   }, [isOpen]);
 
   // Simplified keyboard handling - scoped to modal, no global interference
