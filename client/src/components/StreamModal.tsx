@@ -648,6 +648,17 @@ export default function StreamModal({
     // Always trigger focus restoration before closing
     console.log('StreamModal: Closing modal and will restore focus...');
     
+    // IMMEDIATE focus restoration before any other logic
+    console.log('StreamModal: Restoring focus immediately...');
+    const focusTarget = document.querySelector('.stream-tile, [data-testid^="stream-tile-"]') as HTMLElement;
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      console.log('StreamModal: Focusing first stream tile immediately');
+      focusTarget.focus();
+    } else {
+      console.log('StreamModal: No stream tiles found, focusing body');
+      document.body.focus();
+    }
+    
     // Close modal immediately - defer history handling to avoid DOM churn racing
     if (historyStatePushedRef.current) {
       historyStatePushedRef.current = false;
