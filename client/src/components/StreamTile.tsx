@@ -127,7 +127,7 @@ const StreamTile = React.forwardRef(({
     ),
     container: cn(
       "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
-      "transition-all duration-300 ease-out will-change-transform",
+      "",
       "",
       isHovered && "z-20"
     )
@@ -135,7 +135,7 @@ const StreamTile = React.forwardRef(({
     container: cn(
       "relative cursor-pointer group outline-none",
       "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
-      "transition-all duration-300 ease-out",
+      "",
       "focus-visible:z-30",
       "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
       size === 'featured' ? 'w-[180px]' : 'w-[135px]',
@@ -269,7 +269,7 @@ const StreamTile = React.forwardRef(({
         className={cn(
           "relative cursor-pointer group outline-none stream-tile",
           "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
-          "transition-all duration-300 ease-out",
+          "",
           "focus-visible:z-30",
           "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
           size === 'featured' ? 'w-[230px]' : 'w-[168px]',
