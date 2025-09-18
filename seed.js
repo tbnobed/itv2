@@ -189,8 +189,8 @@ async function seedDatabase() {
 
       for (const stream of streamData) {
         const streamQuery = `
-          INSERT INTO streams (id, title, thumbnail, stream_id, url, category, studio_id)
-          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6);
+          INSERT INTO streams (id, title, thumbnail, stream_id, url, category, studio_id, stream_type)
+          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7);
         `;
         
         await pool.query(streamQuery, [
@@ -199,7 +199,8 @@ async function seedDatabase() {
           stream.streamId,
           stream.url,
           stream.category,
-          stream.studioId
+          stream.studioId,
+          'webrtc'
         ]);
         
         console.log(`✅ Created stream: ${stream.title}`);
