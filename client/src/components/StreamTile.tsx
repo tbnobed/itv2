@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import serverSnapshotService from '@/lib/ServerSnapshotService';
-import { useTileResize } from '@/hooks/useTileResize';
 
 interface StreamTileProps {
   id: string;
@@ -71,13 +70,13 @@ const StreamTile = React.forwardRef(({
     };
   }, [streamUrl, streamId, thumbnail]);
 
-  const handleClick = async (e: React.MouseEvent) => {
+  const handleClick = async (e?: React.MouseEvent) => {
     console.log(`Opening stream: ${streamId} - ${title}`);
     
-    // Prevent focus on mouse clicks to avoid unwanted scaling
-    // (keyboard navigation will still work via handleKeyPress)
-    e.preventDefault();
-    (e.target as HTMLElement).blur();
+    // If this was a mouse click, blur the element to prevent focus ring
+    if (e && e.type === 'click') {
+      (e.currentTarget as HTMLElement).blur();
+    }
     
     setIsLoading(true);
     
@@ -91,15 +90,9 @@ const StreamTile = React.forwardRef(({
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      // For keyboard events, allow normal execution without preventing focus
-      console.log(`Opening stream: ${streamId} - ${title}`);
-      setIsLoading(true);
-      
-      // Simulate loading
-      setTimeout(() => {
-        setIsLoading(false);
-        onSelect?.(streamId);
-      }, 500);
+      // Blur the element before clicking to remove focus scaling
+      (e.currentTarget as HTMLElement).blur();
+      handleClick();
     }
   };
 
@@ -111,8 +104,12 @@ const StreamTile = React.forwardRef(({
     console.log(`StreamTile[${streamId}]: BLUR EVENT received`);
   };
 
-  // Dynamic tile sizing for proportional text
-  const { ref: tileRef, tileStyle } = useTileResize();
+  // Dynamic tile sizing for proportional text disabled
+  const tileRef = useRef<HTMLDivElement>(null);
+  const tileStyle = {
+    '--tile-scale': '1',
+    '--tile-w': '150px'
+  } as React.CSSProperties;
   
   // Merge refs to support both forwarded ref and measurement ref
   const setRef = (node: HTMLDivElement | null) => {
@@ -140,19 +137,17 @@ const StreamTile = React.forwardRef(({
     ),
     container: cn(
       "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
-      "transition-all duration-300 ease-out will-change-transform",
-      "hover:scale-102",
-      isHovered && "scale-102 z-20"
+      "transition-all duration-300 ease-out will-change-transform hover-elevate"
     )
   } : {
     container: cn(
       "relative cursor-pointer group outline-none",
       "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
       "transition-all duration-300 ease-out",
-      "focus-visible:scale-110 focus-visible:z-30",
-      "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+      "focus-visible:z-30",
+      "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)] hover-elevate",
       size === 'featured' ? 'w-[180px]' : 'w-[135px]',
-      isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+      isHovered && "shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
       className
     )
   };
@@ -284,9 +279,9 @@ const StreamTile = React.forwardRef(({
           "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
           "transition-all duration-300 ease-out",
           "focus-visible:z-30",
-          "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+          "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)] hover-elevate",
           size === 'featured' ? 'w-[230px]' : 'w-[168px]',
-          isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+          isHovered && "shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
           className
         )}
         tabIndex={tabIndex ?? 0}
@@ -377,9 +372,9 @@ const StreamTile = React.forwardRef(({
     >
       {/* Single Card Wrapper */}
       <div className={cn(
-        "rounded-lg overflow-hidden bg-gray-900 shadow-sm transition-all duration-300 ease-out",
+        "rounded-lg overflow-hidden bg-gray-900 shadow-sm transition-all duration-300 ease-out hover-elevate",
         size === 'featured' ? 'w-[255px]' : 'w-[187px]',
-        isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+        isHovered && "shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
       )}>
         {/* Image Area */}
