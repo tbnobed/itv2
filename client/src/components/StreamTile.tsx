@@ -137,7 +137,7 @@ const StreamTile = React.forwardRef(({
     ),
     container: cn(
       "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
-      "transition-all duration-300 ease-out will-change-transform"
+      "transition-all duration-300 ease-out will-change-transform hover-elevate"
     )
   } : {
     container: cn(
@@ -145,7 +145,7 @@ const StreamTile = React.forwardRef(({
       "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
       "transition-all duration-300 ease-out",
       "focus-visible:z-30",
-      "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+      "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)] hover-elevate",
       size === 'featured' ? 'w-[180px]' : 'w-[135px]',
       isHovered && "shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
       className
@@ -279,7 +279,7 @@ const StreamTile = React.forwardRef(({
           "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
           "transition-all duration-300 ease-out",
           "focus-visible:z-30",
-          "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
+          "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)] hover-elevate",
           size === 'featured' ? 'w-[230px]' : 'w-[168px]',
           isHovered && "shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
           className
@@ -372,7 +372,7 @@ const StreamTile = React.forwardRef(({
     >
       {/* Single Card Wrapper */}
       <div className={cn(
-        "rounded-lg overflow-hidden bg-gray-900 shadow-sm transition-all duration-300 ease-out",
+        "rounded-lg overflow-hidden bg-gray-900 shadow-sm transition-all duration-300 ease-out hover-elevate",
         size === 'featured' ? 'w-[255px]' : 'w-[187px]',
         isHovered && "shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
