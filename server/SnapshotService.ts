@@ -14,7 +14,7 @@ export class SnapshotService {
   private static instance: SnapshotService;
   private workers: Map<string, StreamWorker> = new Map();
   private snapshotDir: string;
-  private srsHttpFlvBase: string;
+  private srsHttpHlsBase: string;
   private readonly MAX_RESTART_COUNT = 5;
   private readonly WORKER_TTL = 120000; // 2 minutes
   private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
@@ -24,7 +24,7 @@ export class SnapshotService {
     this.snapshotDir = join(process.cwd(), 'server', 'public', 'snapshots');
     
     // Default SRS server for fallback (optional)
-    this.srsHttpFlvBase = process.env.SRS_HTTP_FLV_BASE || '';
+    this.srsHttpHlsBase = process.env.SRS_HTTP_HLS_BASE || '';
     
     // Ensure snapshot directory exists
     if (!existsSync(this.snapshotDir)) {
@@ -117,21 +117,21 @@ export class SnapshotService {
   }
 
   /**
-   * Convert WHEP URL to HTTP-FLV URL by parsing server info dynamically
+   * Convert WHEP URL to HTTP-HLS URL by parsing server info dynamically
    */
-  private convertWhepToHttpFlv(whepUrl: string, streamId: string): string | null {
+  private convertWhepToHttpHls(whepUrl: string, streamId: string): string | null {
     try {
       const url = new URL(whepUrl);
       const streamMatch = whepUrl.match(/[?&]stream=([^&]+)/);
       const streamName = streamMatch ? streamMatch[1] : streamId;
       
-      // Use the same port as the WHEP URL for HTTP-FLV
+      // Use the same port as the WHEP URL for HTTP-HLS
       const port = url.port || (url.protocol === 'https:' ? '443' : '80');
       
-      // Use HTTP for HTTP-FLV streams (SRS typically serves HTTP-FLV on HTTP even if WHEP is HTTPS)
+      // Use HTTP for HTTP-HLS streams (SRS typically serves HTTP-HLS on HTTP even if WHEP is HTTPS)
       const protocol = process.env.SRS_FORCE_HTTPS === 'true' ? 'https' : 'http';
       
-      return `${protocol}://${url.hostname}:${port}/live/${streamName}.flv`;
+      return `${protocol}://${url.hostname}:${port}/live/${streamName}.m3u8`;
     } catch (error) {
       console.error(`SnapshotService: Error parsing WHEP URL ${whepUrl}:`, error);
       // No fallback - return null if parsing fails
@@ -143,8 +143,8 @@ export class SnapshotService {
    * Get fallback URL when WHEP parsing fails
    */
   private getFallbackUrl(streamId: string): string {
-    if (this.srsHttpFlvBase) {
-      return `${this.srsHttpFlvBase}/live/${streamId}.flv`;
+    if (this.srsHttpHlsBase) {
+      return `${this.srsHttpHlsBase}/live/${streamId}.m3u8`;
     }
     
     // No fallback - return null if no valid server configuration
@@ -160,11 +160,11 @@ export class SnapshotService {
       return;
     }
 
-    // Derive HTTP-FLV URL from stream URL or use fallback
+    // Derive HTTP-HLS URL from stream URL or use fallback
     let inputUrl: string | null;
     if (streamUrl && (streamUrl.includes('whep') || streamUrl.includes('rtc/v1'))) {
-      // Convert WHEP/WebRTC URL to HTTP-FLV URL dynamically
-      inputUrl = this.convertWhepToHttpFlv(streamUrl, worker.streamId);
+      // Convert WHEP/WebRTC URL to HTTP-HLS URL dynamically
+      inputUrl = this.convertWhepToHttpHls(streamUrl, worker.streamId);
     } else {
       // Use fallback for non-WHEP URLs
       inputUrl = this.getFallbackUrl(worker.streamId);
