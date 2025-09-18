@@ -463,12 +463,11 @@
     transform-origin: center center;
   }
   
-  /* Prevent focus scaling from being affected by parent transforms */
-  /* Calculate scale to achieve 110% relative to original size when parent has ~2.667x scale */
-  /* Formula: desired_scale / parent_scale = 1.1 / 2.667 ≈ 0.412 */
+  /* Remove all transform scaling on focus - only use visual indicators */
   .stream-tile:focus-visible {
-    transform: scale(0.412) !important;
-    transform-origin: center center !important;
+    /* NO transform scaling - it conflicts with ViewportScaler parent transforms */
+    box-shadow: 0 0 0 4px rgba(51, 102, 255, 0.8), 0 0 30px 10px rgba(51, 102, 255, 0.3) !important;
+    border-radius: 12px !important;
   }
 
   /* Prevent page scrolling when using arrow keys for navigation */
