@@ -106,7 +106,10 @@ const StreamTile = React.forwardRef(({
 
   // Dynamic tile sizing for proportional text disabled
   const tileRef = useRef<HTMLDivElement>(null);
-  const tileStyle = {};
+  const tileStyle = {
+    '--tile-scale': '1',
+    '--tile-w': '150px'
+  } as React.CSSProperties;
   
   // Merge refs to support both forwarded ref and measurement ref
   const setRef = (node: HTMLDivElement | null) => {
