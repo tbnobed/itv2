@@ -458,6 +458,17 @@
     scale: 1 !important;
   }
 
+  /* Isolate tile scaling from TV auto-scaling to prevent massive scaling */
+  .stream-tile {
+    transform-origin: center center;
+  }
+  
+  /* Prevent focus scaling from being affected by parent transforms */
+  .stream-tile:focus-visible {
+    transform: scale(1.1) !important;
+    transform-origin: center center !important;
+  }
+
   /* Prevent page scrolling when using arrow keys for navigation */
   body.keyboard-navigation {
     overflow: hidden;
