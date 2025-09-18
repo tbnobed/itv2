@@ -445,17 +445,7 @@ export default function StreamModal({
     }
   };
 
-  // Track if we pushed a history state (simplified)
-  const historyStatePushedRef = useRef(false);
-
-  // History state management for Fire TV back button
-  useEffect(() => {
-    if (isOpen && !historyStatePushedRef.current) {
-      // Push a history state when modal opens
-      window.history.pushState({ modal: 'stream' }, '');
-      historyStatePushedRef.current = true;
-    }
-  }, [isOpen]);
+  // Simplified - no history management needed for Fire TV
 
   // Track which element we made inert for proper cleanup
   const backgroundElRef = useRef<HTMLElement | null>(null);
@@ -582,61 +572,23 @@ export default function StreamModal({
     }
   };
 
-  // Handle browser back button and popstate events (simplified)
+  // Simple fullscreen handling only
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      if (isOpen && e.state?.modal === 'stream') {
-        // Don't call history.back() from popstate to avoid loops
-        // Just close the modal
-        historyStatePushedRef.current = false;
-        onClose();
-      }
-    };
-
-    // Handle fullscreen changes (simplified back button handling)
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!document.fullscreenElement;
       setIsFullscreen(isCurrentlyFullscreen);
     };
 
-    // BACKUP: Global key handler to ensure modal can always be closed
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-      
-      const isBackButton = 
-        e.key === 'Escape' ||
-        e.key === 'Backspace' ||
-        e.key === 'Back' ||
-        e.key === 'BrowserBack' ||
-        e.keyCode === 8 ||
-        e.keyCode === 166 ||
-        e.code === 'BrowserBack';
-
-      if (isBackButton) {
-        console.log('StreamModal: Global backup key handler triggered, closing modal');
-        e.preventDefault();
-        e.stopPropagation();
-        handleModalClose();
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('keydown', handleGlobalKeyDown, true); // Use capture phase
-    
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('keydown', handleGlobalKeyDown, true);
-    };
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isOpen]);
 
-  // Modal close with focus-safe history handling
+  // Simplified modal close for Fire TV compatibility
   const handleModalClose = () => {
     // Set closing flag to suppress fullscreen re-focus during close
     setIsClosing(true);
     
-    // Exit fullscreen if needed, but don't prevent modal from closing
+    // Exit fullscreen if needed
     if (document.fullscreenElement) {
       console.log('StreamModal: Exiting fullscreen while closing modal...');
       document.exitFullscreen().catch(err => {
@@ -659,17 +611,13 @@ export default function StreamModal({
       document.body.focus();
     }
     
-    // Close modal immediately - no need for window.history.back() as it causes Fire TV to exit app
-    historyStatePushedRef.current = false;
+    // Close modal immediately - no complex history management
     onClose();
-    
-    // Focus restoration will be handled by the useEffect, not here
   };
 
-  // Reset history state tracking and closing flag when modal closes
+  // Reset closing flag when modal closes
   useEffect(() => {
     if (!isOpen) {
-      historyStatePushedRef.current = false;
       setIsClosing(false);
     }
   }, [isOpen]);
