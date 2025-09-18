@@ -416,9 +416,9 @@
     inset: -1px;
   }
 
-  /* Proportional text system for stream tiles - DISABLED */
+  /* Proportional text system for stream tiles */
   .stream-tile {
-    font-size: 14px; /* Fixed size instead of scaling */
+    font-size: clamp(4px, calc(4px * var(--tile-scale, 1)), 6px);
   }
 
   .stream-tile-title {
@@ -455,10 +455,4 @@
     overflow: hidden;
   }
 
-  /* KILL SWITCH: Stop ALL scaling on stream tiles */
-  .stream-tile,
-  .stream-tile * {
-    transform: none !important;
-    will-change: auto !important;
-  }
 }

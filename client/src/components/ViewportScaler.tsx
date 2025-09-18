@@ -38,15 +38,26 @@ export const ViewportScaler: React.FC<ViewportScalerProps> = ({ children }) => {
     return () => window.removeEventListener('resize', calculateScale);
   }, []);
 
-  // DISABLED: No more scaling - just return children directly
   return (
     <div style={{
       width: '100vw',
       height: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: '#000',
       overflow: 'hidden'
     }}>
-      {children}
+      <div style={{
+        width: '960px',
+        height: '540px',
+        transform: `scale(${scale})`,
+        transformOrigin: 'center',
+        backgroundColor: '#000',
+        overflow: 'hidden'
+      }}>
+        {children}
+      </div>
     </div>
   );
 };
