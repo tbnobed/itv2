@@ -397,6 +397,21 @@ export default function StreamModal({
             console.log('Peer connection established successfully');
             setIsConnected(true);
             setConnectionStatus('connected');
+            
+            // Trigger autoplay for WebRTC video
+            setTimeout(() => {
+              if (videoRef.current) {
+                const video = videoRef.current;
+                video.muted = true;
+                video.volume = 0;
+                
+                video.play().then(() => {
+                  console.log('WebRTC: AUTOPLAY SUCCESS!');
+                }).catch((error) => {
+                  console.log('WebRTC: Autoplay blocked:', error);
+                });
+              }
+            }, 100);
           }
         };
 
