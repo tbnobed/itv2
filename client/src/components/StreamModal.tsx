@@ -537,8 +537,8 @@ export default function StreamModal({
       }
     };
 
-    document.addEventListener('keydown', handleNativeKeyDown, { capture: true });
-    return () => document.removeEventListener('keydown', handleNativeKeyDown, { capture: true });
+    document.addEventListener('keydown', handleNativeKeyDown, { capture: false });
+    return () => document.removeEventListener('keydown', handleNativeKeyDown, { capture: false });
   }, [isOpen]);
 
   // Simplified keyboard handling - scoped to modal, no global interference
