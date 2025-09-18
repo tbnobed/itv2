@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Volume2, VolumeX, Maximize, Minimize, AlertCircle, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -515,7 +515,7 @@ export default function StreamModal({
   }, [isOpen, isClosing]);
 
   // Simplified modal close for Fire TV compatibility
-  const handleModalClose = () => {
+  const handleModalClose = useCallback(() => {
     // Set closing flag to suppress fullscreen re-focus during close
     setIsClosing(true);
     
@@ -544,7 +544,7 @@ export default function StreamModal({
     
     // Close modal immediately - no complex history management
     onClose();
-  };
+  }, [onClose, setIsClosing, setIsFullscreen]);
 
   // Fire TV history management - push dummy state to consume back press
   useEffect(() => {
