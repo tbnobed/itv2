@@ -71,8 +71,14 @@ const StreamTile = React.forwardRef(({
     };
   }, [streamUrl, streamId, thumbnail]);
 
-  const handleClick = async () => {
+  const handleClick = async (e?: React.MouseEvent) => {
     console.log(`Opening stream: ${streamId} - ${title}`);
+    
+    // If this was a mouse click, blur the element to prevent focus ring
+    if (e && e.type === 'click') {
+      (e.currentTarget as HTMLElement).blur();
+    }
+    
     setIsLoading(true);
     
     // Simulate loading
@@ -127,18 +133,18 @@ const StreamTile = React.forwardRef(({
     container: cn(
       "aspect-[3/1] rounded-lg overflow-hidden shadow-sm bg-gray-900",
       "transition-all duration-300 ease-out will-change-transform",
-      "hover:scale-102",
-      isHovered && "scale-102 z-20"
+      "",
+      isHovered && "z-20"
     )
   } : {
     container: cn(
       "relative cursor-pointer group outline-none",
       "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
       "transition-all duration-300 ease-out",
-      "focus-visible:scale-110 focus-visible:z-30",
+      "focus-visible:z-30",
       "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
       size === 'featured' ? 'w-[180px]' : 'w-[135px]',
-      isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+      isHovered && "z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
       className
     )
   };
@@ -269,10 +275,10 @@ const StreamTile = React.forwardRef(({
           "relative cursor-pointer group outline-none stream-tile",
           "aspect-[16/9] rounded-lg overflow-hidden shadow-sm bg-gray-800",
           "transition-all duration-300 ease-out",
-          "focus-visible:scale-110 focus-visible:z-30",
+          "focus-visible:z-30",
           "focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]",
           size === 'featured' ? 'w-[230px]' : 'w-[168px]',
-          isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+          isHovered && "z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
           className
         )}
         tabIndex={tabIndex ?? 0}
@@ -351,7 +357,7 @@ const StreamTile = React.forwardRef(({
       style={tileStyle}
       className={cn(
         "relative cursor-pointer group outline-none stream-tile",
-        "focus-visible:scale-110 focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]"
+        "focus-visible:z-30 focus-visible:shadow-[0_0_25px_8px_rgba(51,102,255,0.4)]"
       )}
       tabIndex={tabIndex ?? 0}
       onClick={handleClick}
@@ -365,7 +371,7 @@ const StreamTile = React.forwardRef(({
       <div className={cn(
         "rounded-lg overflow-hidden bg-gray-900 shadow-sm transition-all duration-300 ease-out",
         size === 'featured' ? 'w-[255px]' : 'w-[187px]',
-        isHovered && "scale-105 z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
+        isHovered && "z-20 shadow-[0_0_20px_6px_rgba(51,102,255,0.3)]",
         className
       )}>
         {/* Image Area */}
