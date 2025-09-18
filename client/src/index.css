@@ -464,8 +464,10 @@
   }
   
   /* Prevent focus scaling from being affected by parent transforms */
+  /* Calculate scale to achieve 110% relative to original size when parent has ~2.667x scale */
+  /* Formula: desired_scale / parent_scale = 1.1 / 2.667 ≈ 0.412 */
   .stream-tile:focus-visible {
-    transform: scale(1.1) !important;
+    transform: scale(0.412) !important;
     transform-origin: center center !important;
   }
 
