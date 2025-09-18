@@ -117,11 +117,7 @@ services:
 # Named volumes for data persistence
 volumes:
   postgres_data:
-    driver: local
-    name: obtv_postgres_data
   snapshots_data:
-    driver: local
-    name: obtv_snapshots_data
 
 # Custom network for better container isolation and communication
 networks:
