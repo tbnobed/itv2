@@ -126,6 +126,7 @@ export class MemStorage implements IStorage {
       ...insertStream,
       id,
       studioId: insertStream.studioId ?? null,
+      streamType: insertStream.streamType ?? 'webrtc',
     };
     this.streams.set(id, stream);
     
@@ -260,7 +261,8 @@ export class MemStorage implements IStorage {
         streamId: 'FP001',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=FP001',
         category: 'featured',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Prime Time Broadcast',
@@ -268,7 +270,8 @@ export class MemStorage implements IStorage {
         streamId: 'PT001',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=PT001',
         category: 'featured',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Special Event Coverage',
@@ -276,7 +279,8 @@ export class MemStorage implements IStorage {
         streamId: 'SE001',
         url: 'http://cdn3.obedtv.live:2020/rtc/v1/whep/?app=live&stream=SE001',
         category: 'featured',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       // Over The Air streams
       {
@@ -285,7 +289,8 @@ export class MemStorage implements IStorage {
         streamId: 'MT001',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=MT001',
         category: 'overTheAir',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Backup Tower Feed',
@@ -293,7 +298,8 @@ export class MemStorage implements IStorage {
         streamId: 'BT001',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=BT001',
         category: 'overTheAir',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Repeater Station 1',
@@ -301,7 +307,8 @@ export class MemStorage implements IStorage {
         streamId: 'RS001',
         url: 'http://cdn3.obedtv.live:2020/rtc/v1/whep/?app=live&stream=RS001',
         category: 'overTheAir',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Repeater Station 2',
@@ -309,7 +316,8 @@ export class MemStorage implements IStorage {
         streamId: 'RS002',
         url: 'http://cdn4.obedtv.live:2023/rtc/v1/whep/?app=live&stream=RS002',
         category: 'overTheAir',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       // Live Feeds streams
       {
@@ -318,7 +326,8 @@ export class MemStorage implements IStorage {
         streamId: 'DC001',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=DC001',
         category: 'liveFeeds',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Houston Backup Center',
@@ -326,7 +335,8 @@ export class MemStorage implements IStorage {
         streamId: 'HB001',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=HB001',
         category: 'liveFeeds',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'System Monitoring',
@@ -334,7 +344,8 @@ export class MemStorage implements IStorage {
         streamId: 'SM001',
         url: 'http://cdn3.obedtv.live:2020/rtc/v1/whep/?app=live&stream=SM001',
         category: 'liveFeeds',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Emergency Broadcast',
@@ -342,7 +353,8 @@ export class MemStorage implements IStorage {
         streamId: 'EB001',
         url: 'http://cdn4.obedtv.live:2023/rtc/v1/whep/?app=live&stream=EB001',
         category: 'liveFeeds',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Weather Station',
@@ -350,7 +362,8 @@ export class MemStorage implements IStorage {
         streamId: 'WS001',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=WS001',
         category: 'liveFeeds',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'Traffic Camera Feed',
@@ -358,7 +371,36 @@ export class MemStorage implements IStorage {
         streamId: 'TC001',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=TC001',
         category: 'liveFeeds',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
+      },
+      // HLS Stream Examples
+      {
+        title: 'HLS Live News Feed',
+        thumbnail: '/generated_images/Dallas_Control_newsroom_45c1dfb2.png',
+        streamId: 'HLS001',
+        url: 'http://sample-videos.com/zip/10/m3u8/mp4/SampleVideo_1280x720_1mb.m3u8',
+        category: 'featured',
+        studioId: null,
+        streamType: 'hls'
+      },
+      {
+        title: 'HLS Sports Channel',
+        thumbnail: '/generated_images/Featured_live_production_15b7d8b1.png',
+        streamId: 'HLS002',
+        url: 'hls://example.com/streams/sports.m3u8',
+        category: 'liveFeeds',
+        studioId: null,
+        streamType: 'hls'
+      },
+      {
+        title: 'HLS Weather Stream',
+        thumbnail: '/generated_images/Over-the-air_broadcast_tower_04c20672.png',
+        streamId: 'HLS003',
+        url: 'http://weather.example.com/live/weather.m3u8',
+        category: 'liveFeeds',
+        studioId: null,
+        streamType: 'hls'
       },
       // Studio A feeds
       {
@@ -367,7 +409,8 @@ export class MemStorage implements IStorage {
         streamId: 'SA001',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=SA001',
         category: 'studios',
-        studioId: studioIds[0]
+        studioId: studioIds[0],
+        streamType: 'webrtc'
       },
       {
         title: 'Wide Angle Shot',
@@ -375,7 +418,8 @@ export class MemStorage implements IStorage {
         streamId: 'SA002',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=SA002',
         category: 'studios',
-        studioId: studioIds[0]
+        studioId: studioIds[0],
+        streamType: 'webrtc'
       },
       {
         title: 'Close Up Camera',
@@ -383,7 +427,8 @@ export class MemStorage implements IStorage {
         streamId: 'SA003',
         url: 'http://cdn3.obedtv.live:2020/rtc/v1/whep/?app=live&stream=SA003',
         category: 'studios',
-        studioId: studioIds[0]
+        studioId: studioIds[0],
+        streamType: 'webrtc'
       },
       {
         title: 'Overhead View',
@@ -391,7 +436,8 @@ export class MemStorage implements IStorage {
         streamId: 'SA004',
         url: 'http://cdn4.obedtv.live:2023/rtc/v1/whep/?app=live&stream=SA004',
         category: 'studios',
-        studioId: studioIds[0]
+        studioId: studioIds[0],
+        streamType: 'webrtc'
       },
       // Studio B feeds
       {
@@ -400,7 +446,8 @@ export class MemStorage implements IStorage {
         streamId: 'SB001',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=SB001',
         category: 'studios',
-        studioId: studioIds[1]
+        studioId: studioIds[1],
+        streamType: 'webrtc'
       },
       {
         title: 'Alternate Angle',
@@ -408,7 +455,8 @@ export class MemStorage implements IStorage {
         streamId: 'SB002',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=SB002',
         category: 'studios',
-        studioId: studioIds[1]
+        studioId: studioIds[1],
+        streamType: 'webrtc'
       },
       {
         title: 'Guest Camera',
@@ -416,7 +464,8 @@ export class MemStorage implements IStorage {
         streamId: 'SB003',
         url: 'http://cdn3.obedtv.live:2020/rtc/v1/whep/?app=live&stream=SB003',
         category: 'studios',
-        studioId: studioIds[1]
+        studioId: studioIds[1],
+        streamType: 'webrtc'
       },
       // Studio C feeds
       {
@@ -425,7 +474,8 @@ export class MemStorage implements IStorage {
         streamId: 'SC001',
         url: 'http://cdn4.obedtv.live:2023/rtc/v1/whep/?app=live&stream=SC001',
         category: 'studios',
-        studioId: studioIds[2]
+        studioId: studioIds[2],
+        streamType: 'webrtc'
       },
       {
         title: 'Monitoring Camera',
@@ -433,7 +483,8 @@ export class MemStorage implements IStorage {
         streamId: 'SC002',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=SC002',
         category: 'studios',
-        studioId: studioIds[2]
+        studioId: studioIds[2],
+        streamType: 'webrtc'
       },
       // Mobile Unit feeds
       {
@@ -442,7 +493,8 @@ export class MemStorage implements IStorage {
         streamId: 'MU001',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=MU001',
         category: 'studios',
-        studioId: studioIds[3]
+        studioId: studioIds[3],
+        streamType: 'webrtc'
       },
       {
         title: 'Mobile Wide Shot',
@@ -450,7 +502,8 @@ export class MemStorage implements IStorage {
         streamId: 'MU002',
         url: 'http://cdn3.obedtv.live:2020/rtc/v1/whep/?app=live&stream=MU002',
         category: 'studios',
-        studioId: studioIds[3]
+        studioId: studioIds[3],
+        streamType: 'webrtc'
       },
       // Rehearsal Room feed
       {
@@ -459,7 +512,8 @@ export class MemStorage implements IStorage {
         streamId: 'RR001',
         url: 'http://cdn4.obedtv.live:2023/rtc/v1/whep/?app=live&stream=RR001',
         category: 'studios',
-        studioId: studioIds[4]
+        studioId: studioIds[4],
+        streamType: 'webrtc'
       },
       // UHD Streams
       {
@@ -468,7 +522,8 @@ export class MemStorage implements IStorage {
         streamId: 'UHD001',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=UHD001',
         category: 'uhd',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'UHD Special Event',
@@ -476,7 +531,8 @@ export class MemStorage implements IStorage {
         streamId: 'UHD002',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=UHD002',
         category: 'uhd',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'UHD Documentary Feed',
@@ -484,7 +540,8 @@ export class MemStorage implements IStorage {
         streamId: 'UHD003',
         url: 'http://cdn3.obedtv.live:2020/rtc/v1/whep/?app=live&stream=UHD003',
         category: 'uhd',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'UHD Sports Broadcast',
@@ -492,7 +549,8 @@ export class MemStorage implements IStorage {
         streamId: 'UHD004',
         url: 'http://cdn4.obedtv.live:2023/rtc/v1/whep/?app=live&stream=UHD004',
         category: 'uhd',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'UHD Nature Cam',
@@ -500,7 +558,8 @@ export class MemStorage implements IStorage {
         streamId: 'UHD005',
         url: 'http://cdn1.obedtv.live:2024/rtc/v1/whep/?app=live&stream=UHD005',
         category: 'uhd',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       },
       {
         title: 'UHD City Skyline',
@@ -508,7 +567,8 @@ export class MemStorage implements IStorage {
         streamId: 'UHD006',
         url: 'http://cdn2.obedtv.live:1990/rtc/v1/whep/?app=live&stream=UHD006',
         category: 'uhd',
-        studioId: null
+        studioId: null,
+        streamType: 'webrtc'
       }
     ];
 

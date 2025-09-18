@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import PreviewManager from '@/lib/PreviewManager';
+import HLSPlayer from '@/components/HLSPlayer';
 
 // Declare global SRS SDK types
 declare global {
@@ -21,6 +22,7 @@ interface StreamModalProps {
   streamId: string;
   streamUrl: string;
   streamTitle: string;
+  streamType?: 'webrtc' | 'hls';
   onClose: () => void;
 }
 
@@ -42,6 +44,7 @@ export default function StreamModal({
   streamId, 
   streamUrl, 
   streamTitle, 
+  streamType,
   onClose 
 }: StreamModalProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -60,12 +63,38 @@ export default function StreamModal({
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [sdkLoadError, setSDKLoadError] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [detectedStreamType, setDetectedStreamType] = useState<'webrtc' | 'hls'>('webrtc');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const srsPlayerRef = useRef<any>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+
+  // Stream type detection logic
+  const detectStreamType = useCallback((url: string): 'webrtc' | 'hls' => {
+    if (!url) return 'webrtc';
+    
+    const urlLower = url.toLowerCase();
+    
+    // HLS detection: .m3u8 extension or hls:// protocol
+    if (urlLower.includes('.m3u8') || urlLower.startsWith('hls://')) {
+      return 'hls';
+    }
+    
+    // Default to WebRTC for everything else
+    return 'webrtc';
+  }, []);
+
+  // Update detected stream type when URL changes
+  useEffect(() => {
+    const detected = detectStreamType(streamUrl);
+    setDetectedStreamType(detected);
+    console.log(`StreamModal[${streamId}]: Detected stream type: ${detected} for URL: ${streamUrl}`);
+  }, [streamUrl, streamId, detectStreamType]);
+
+  // Use provided streamType or fall back to detected type
+  const finalStreamType = streamType || detectedStreamType;
 
   // Robust multi-frame focus restoration with retry logic
   const restoreFocus = () => {
@@ -659,12 +688,16 @@ export default function StreamModal({
   }, [isOpen]);
 
   const toggleMute = () => {
-    if (videoRef.current) {
-      const newMutedState = !isMuted;
+    const newMutedState = !isMuted;
+    if (finalStreamType === 'hls') {
+      // HLS player handles mute state internally via onMutedChange callback
+      setIsMuted(newMutedState);
+    } else if (videoRef.current) {
+      // WebRTC video element mute handling
       videoRef.current.muted = newMutedState;
       setIsMuted(newMutedState);
-      console.log(`Audio ${newMutedState ? 'muted' : 'unmuted'}`);
     }
+    console.log(`Audio ${newMutedState ? 'muted' : 'unmuted'}`);
   };
 
   const toggleFullscreen = () => {
@@ -708,18 +741,49 @@ export default function StreamModal({
     >
       {/* Video Container */}
       <div className="relative w-full h-full flex items-center justify-center">
-        {/* WebRTC Video Element */}
-        <video 
-          ref={videoRef}
-          className={cn(
-            "w-full h-full object-contain bg-black",
-            isConnected ? "block" : "hidden"
-          )}
-          autoPlay
-          playsInline
-          muted={isMuted}
-          data-testid="video-player"
-        />
+        {/* Conditional Player Rendering */}
+        {finalStreamType === 'hls' ? (
+          <HLSPlayer
+            streamUrl={streamUrl}
+            streamId={streamId}
+            streamTitle={streamTitle}
+            isMuted={isMuted}
+            onMutedChange={setIsMuted}
+            onError={(error) => {
+              console.error(`StreamModal[${streamId}]: HLS Player Error:`, error);
+              setConnectionError(error);
+              setConnectionStatus('failed');
+            }}
+            onLoadStart={() => {
+              console.log(`StreamModal[${streamId}]: HLS Player Load Start`);
+              setIsLoading(true);
+              setConnectionStatus('connecting');
+            }}
+            onCanPlay={() => {
+              console.log(`StreamModal[${streamId}]: HLS Player Can Play`);
+              setIsLoading(false);
+              setConnectionStatus('connected');
+              setIsConnected(true);
+            }}
+            className={cn(
+              "w-full h-full",
+              isConnected ? "block" : "hidden"
+            )}
+          />
+        ) : (
+          /* WebRTC Video Element */
+          <video 
+            ref={videoRef}
+            className={cn(
+              "w-full h-full object-contain bg-black",
+              isConnected ? "block" : "hidden"
+            )}
+            autoPlay
+            playsInline
+            muted={isMuted}
+            data-testid="video-player"
+          />
+        )}
 
         {/* Loading State */}
         {isLoading && (

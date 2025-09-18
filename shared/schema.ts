@@ -20,6 +20,7 @@ export const streams = pgTable("streams", {
   url: text("url").notNull(),
   category: text("category").notNull(), // featured, overTheAir, liveFeeds, studios, uhd
   studioId: text("studio_id"), // optional, for studio-specific feeds
+  streamType: text("stream_type", { enum: ["webrtc", "hls"] }).notNull().default("webrtc"), // webrtc or hls stream type
 });
 
 export const studios = pgTable("studios", {
