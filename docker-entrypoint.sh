@@ -71,16 +71,59 @@ fi
 
 # Run database migrations FIRST to create tables
 echo "📦 Running database migrations..."
+
+# First, try a regular push
+echo "🔧 Attempting standard migration..."
 if npm run db:push; then
     echo "✅ Database migrations completed successfully"
 else
-    echo "⚠️  Database migrations failed, attempting force push..."
+    echo "⚠️  Standard migration failed, attempting force push..."
     if npm run db:push -- --force; then
         echo "✅ Force migration successful"
     else
         echo "❌ Database migrations failed completely"
         exit 1
     fi
+fi
+
+# Verify the migration actually worked by checking for required columns
+echo "🔍 Verifying database schema..."
+tsx -e "
+import { Pool } from 'pg';
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+(async () => {
+  try {
+    // Check if stream_type column exists
+    const result = await pool.query(\`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'streams' AND column_name = 'stream_type'
+    \`);
+    
+    if (result.rows.length === 0) {
+      console.log('❌ Critical: stream_type column missing, adding manually...');
+      await pool.query(\`
+        ALTER TABLE streams 
+        ADD COLUMN IF NOT EXISTS stream_type text NOT NULL DEFAULT 'webrtc'
+      \`);
+      console.log('✅ stream_type column added manually');
+    } else {
+      console.log('✅ Database schema verification successful');
+    }
+    
+    await pool.end();
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Schema verification failed:', error.message);
+    await pool.end().catch(() => {});
+    process.exit(1);
+  }
+})();
+"
+
+if [ $? -ne 0 ]; then
+    echo "❌ Schema verification failed"
+    exit 1
 fi
 
 # Run database seeding after migrations

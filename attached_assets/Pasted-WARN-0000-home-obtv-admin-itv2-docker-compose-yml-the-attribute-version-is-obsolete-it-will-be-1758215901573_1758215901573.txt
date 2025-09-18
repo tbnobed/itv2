@@ -1,0 +1,304 @@
+WARN[0000] /home/obtv-admin/itv2/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion
+app-1  | 🐳 Starting OBTV Streaming Platform Docker container...
+app-1  | 🔧 Container Environment:
+app-1  |    NODE_ENV: production
+postgres-1  |
+app-1       |    DATABASE_URL: postgresql://obtv_user:***@postgres:5432/obtv_streaming
+app-1       |    HLS_CONNECTION_TIMEOUT: 15
+app-1       |    SNAPSHOT_INTERVAL: 25
+app-1       | 🌐 Testing network connectivity for HLS streams...
+app-1       | ✅ Network connectivity verified
+app-1       | 📦 Database connection detected, checking readiness...
+app-1       | ✅ Database connection successful at 2025-09-18T17:17:01.379Z
+app-1       | 📦 Running database migrations...
+app-1       |
+app-1       | > rest-express@1.0.0 db:push
+postgres-1  | PostgreSQL Database directory appears to contain a database; Skipping initialization
+postgres-1  |
+postgres-1  | 2025-09-18 17:16:48.544 UTC [1] LOG:  starting PostgreSQL 15.14 on x86_64-pc-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+postgres-1  | 2025-09-18 17:16:48.544 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+app-1       | > drizzle-kit push
+app-1       |
+app-1       | No config path provided, using default 'drizzle.config.ts'
+postgres-1  | 2025-09-18 17:16:48.544 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+postgres-1  | 2025-09-18 17:16:48.546 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1  | 2025-09-18 17:16:48.552 UTC [29] LOG:  database system was shut down at 2025-09-18 17:14:51 UTC
+postgres-1  | 2025-09-18 17:16:48.563 UTC [1] LOG:  database system is ready to accept connections
+postgres-1  | 2025-09-18 17:17:20.375 UTC [51] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.375 UTC [51] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.413 UTC [60] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.413 UTC [60] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.442 UTC [61] ERROR:  column "stream_type" does not exist at character 81
+app-1       | Reading config file '/app/drizzle.config.ts'
+app-1       | Using 'pg' driver for database querying
+app-1       | [⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[✓] Pulling schema from database...
+app-1       |  Warning  Found data-loss statements:
+app-1       | · You're about to delete session table with 24 items
+app-1       |
+app-1       | THIS ACTION WILL CAUSE DATA LOSS AND CANNOT BE REVERTED
+app-1       |
+postgres-1  | 2025-09-18 17:17:20.442 UTC [61] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.472 UTC [62] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.472 UTC [62] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.500 UTC [63] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.500 UTC [63] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.529 UTC [64] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.529 UTC [64] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.556 UTC [65] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.556 UTC [65] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.584 UTC [66] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.584 UTC [66] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.611 UTC [67] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.611 UTC [67] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.638 UTC [68] ERROR:  column "stream_type" does not exist at character 81
+app-1       | Do you still want to push changes?
+app-1       | ❯ No, abort
+postgres-1  | 2025-09-18 17:17:20.638 UTC [68] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:20.665 UTC [69] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:20.665 UTC [69] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:25.097 UTC [70] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:25.097 UTC [70] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:26.612 UTC [72] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:26.612 UTC [72] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:36.914 UTC [73] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:36.914 UTC [73] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:36.940 UTC [82] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:36.940 UTC [82] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:36.975 UTC [83] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:36.975 UTC [83] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:37.001 UTC [85] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:37.001 UTC [85] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:37.002 UTC [84] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:37.002 UTC [84] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:37.027 UTC [86] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:37.027 UTC [86] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+app-1       | npm notice
+app-1       | npm notice New major version of npm available! 10.8.2 -> 11.6.0
+app-1       | npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.0
+app-1       | npm notice To update run: npm install -g npm@11.6.0
+app-1       | npm notice
+app-1       |   Yes, I want to remove 1 table, ✅ Database migrations completed successfully
+postgres-1  | 2025-09-18 17:17:37.053 UTC [87] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:37.053 UTC [87] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+postgres-1  | 2025-09-18 17:17:37.079 UTC [88] ERROR:  column "stream_type" does not exist at character 81
+postgres-1  | 2025-09-18 17:17:37.079 UTC [88] STATEMENT:  select "id", "title", "thumbnail", "stream_id", "url", "category", "studio_id", "stream_type" from "streams"
+app-1       | 🌱 Running database seeding...
+app-1       | 🌱 Starting database seeding...
+app-1       | 🔒 Safe seeding mode enabled - preserving existing users
+app-1       | 👑 Creating admin account: obtv-admin...
+app-1       | ⚠️ Admin user obtv-admin already exists - preserved
+app-1       | 👤 Creating regular user account: obtv-user...
+app-1       | ⚠️ Regular user obtv-user already exists - preserved
+app-1       | ✅ Studios and streams already exist, skipping...
+app-1       | 🎉 Database seeding completed successfully!
+app-1       | ✅ Database seeding completed successfully
+app-1       | 🎬 Testing FFmpeg for HLS snapshot generation...
+app-1       | ✅ FFmpeg available: ffmpeg version 6.1.2 Copyright (c) 2000-2024 the FFmpeg developers
+app-1       | ✅ FFmpeg functionality verified
+app-1       | 🚀 Starting OBTV Streaming Platform application...
+app-1       | 🔧 Final startup configuration:
+app-1       |    Working directory: /app
+app-1       |    Node.js version: v20.19.5
+app-1       |    NPM version: 10.8.2
+app-1       |    Server startup: tsx server/production.ts
+app-1       | Setting up PostgreSQL session store
+app-1       | PostgreSQL session store configured successfully
+app-1       | SnapshotService initialized: /app/server/public/snapshots
+app-1       | ✅ SnapshotService initialized in production mode
+app-1       | 5:17:15 PM [db] Database tables already exist, skipping schema setup
+app-1       | 5:17:15 PM [express] serving on port 5000
+app-1       | Database already seeded (studios found)
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/health
+app-1       | Method: GET
+app-1       | Session ID: bOLKysDXE_D5vpF0AzG7fjaB6BioBOt7
+app-1       | Session data keys: [ 'cookie' ]
+app-1       | Passport user data: undefined
+app-1       | isAuthenticated(): false
+app-1       | Cookie header received: NONE
+app-1       | ==========================
+app-1       | 5:17:19 PM [express] GET /api/health 200 in 12ms :: {"status":"ok","timestamp":"2025-09-18T17:17:19.…
+app-1       | Deserializing user with ID: 4197ccce-36ae-4f04-bf8b-f1bb804dcb8c
+app-1       | Found user during deserialization: {
+app-1       |   id: '4197ccce-36ae-4f04-bf8b-f1bb804dcb8c',
+app-1       |   username: 'obtv-user',
+app-1       |   role: 'user'
+app-1       | }
+app-1       | === API REQUEST DEBUG ===
+app-1       | URL: /api/snapshots/register
+app-1       | Method: POST
+app-1       | Session ID: QZ45h1WvHBFeGzuakn74B1fTxcgm-jeT
+app-1       | Session data keys: [ 'cookie', 'passport', 'csrfToken' ]
+app-1       | Passport user data: { user: '4197ccce-36ae-4f04-bf8b-f1bb804dcb8c' }
+app-1       | isAuthenticated(): true
+app-1       | Cookie header received: connect.sid=s%3AQZ45h1WvHBFeGzuakn74B1fTxcgm-jeT.DZZgHWTqlDoszB5y5FOR8O%2FG%2FAU7AsvVj7PDTUN4XN8
+app-1       | ==========================
+app-1       | Failed to register stream NMV1: error: column "stream_type" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+app-1       |     at async DatabaseStorage.getAllStreams (/app/server/storage.ts:653:12)
+app-1       |     at async <anonymous> (/app/server/production.ts:499:32) {
+app-1       |   length: 111,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '81',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | Failed to register stream PMV1: error: column "stream_type" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+app-1       |     at async DatabaseStorage.getAllStreams (/app/server/storage.ts:653:12)
+app-1       |     at async <anonymous> (/app/server/production.ts:499:32) {
+app-1       |   length: 111,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '81',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | Failed to register stream Socalf2: error: column "stream_type" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+app-1       |     at async DatabaseStorage.getAllStreams (/app/server/storage.ts:653:12)
+app-1       |     at async <anonymous> (/app/server/production.ts:499:32) {
+app-1       |   length: 111,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '81',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | Failed to register stream P41: error: column "stream_type" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+app-1       |     at async DatabaseStorage.getAllStreams (/app/server/storage.ts:653:12)
+app-1       |     at async <anonymous> (/app/server/production.ts:499:32) {
+app-1       |   length: 111,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '81',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | Failed to register stream P42: error: column "stream_type" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+app-1       |     at async DatabaseStorage.getAllStreams (/app/server/storage.ts:653:12)
+app-1       |     at async <anonymous> (/app/server/production.ts:499:32) {
+app-1       |   length: 111,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '81',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | Failed to register stream P43: error: column "stream_type" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+app-1       |     at async DatabaseStorage.getAllStreams (/app/server/storage.ts:653:12)
+app-1       |     at async <anonymous> (/app/server/production.ts:499:32) {
+app-1       |   length: 111,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '81',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | Failed to register stream P44: error: column "stream_type" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+app-1       |     at async DatabaseStorage.getAllStreams (/app/server/storage.ts:653:12)
+app-1       |     at async <anonymous> (/app/server/production.ts:499:32) {
+app-1       |   length: 111,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '81',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
