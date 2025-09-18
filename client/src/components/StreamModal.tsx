@@ -487,20 +487,8 @@ export default function StreamModal({
     }
   }, [isOpen]);
 
-  // Auto-enter fullscreen when modal opens
-  useEffect(() => {
-    if (isOpen && modalRef.current && !document.fullscreenElement) {
-      // Small delay to ensure modal is fully rendered before requesting fullscreen
-      const timer = setTimeout(() => {
-        modalRef.current?.requestFullscreen().catch(err => {
-          console.error('Failed to auto-enter fullscreen:', err);
-        });
-        setIsFullscreen(true);
-      }, 100);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
+  // Disabled auto-fullscreen for Fire TV compatibility
+  // Fire TV handles back button differently in fullscreen vs windowed mode
 
   // Maintain focus on modal when entering/exiting fullscreen, but suppress during close
   useEffect(() => {
