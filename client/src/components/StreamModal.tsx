@@ -390,7 +390,7 @@ export default function StreamModal({
   // Track which element we made inert for proper cleanup
   const backgroundElRef = useRef<HTMLElement | null>(null);
 
-  // Focus management and inert background - Capture focus when modal opens
+  // Focus management - Capture focus when modal opens  
   useEffect(() => {
     if (isOpen) {
       // Store the currently focused element
@@ -398,30 +398,16 @@ export default function StreamModal({
       previouslyFocusedElement.current = activeElement;
       console.log('StreamModal: Captured focus element');
       
-      // Make background inert to prevent focus/keyboard events
-      const appElement = document.querySelector('#root') || document.body;
-      // Use contains() check to avoid inerting ancestors containing the modal
-      if (appElement && modalRef.current && !appElement.contains(modalRef.current)) {
-        appElement.setAttribute('aria-hidden', 'true');
-        appElement.setAttribute('inert', '');
-        backgroundElRef.current = appElement;
-        console.log('StreamModal: Made background inert');
-      }
-      
       // Focus the modal container
       if (modalRef.current) {
         modalRef.current.focus();
+        console.log('StreamModal: Focused modal container');
       }
     }
 
-    // CRITICAL: Always cleanup inert state in a cleanup function
+    // Cleanup function to ensure focus is always restored
     return () => {
-      if (backgroundElRef.current) {
-        backgroundElRef.current.removeAttribute('aria-hidden');
-        backgroundElRef.current.removeAttribute('inert');
-        console.log('StreamModal: Removed inert from background (cleanup)');
-        backgroundElRef.current = null;
-      }
+      console.log('StreamModal: Focus effect cleanup running');
     };
   }, [isOpen]);
 
@@ -429,10 +415,8 @@ export default function StreamModal({
   useEffect(() => {
     if (!isOpen && previouslyFocusedElement.current) {
       console.log('StreamModal: Modal closed, restoring focus...');
-      // Use shorter delay with requestAnimationFrame for better reliability
-      setTimeout(() => {
-        restoreFocus();
-      }, 100);
+      // Immediate focus restoration without delay
+      restoreFocus();
     }
   }, [isOpen]);
 
