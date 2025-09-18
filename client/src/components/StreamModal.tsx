@@ -907,7 +907,7 @@ export default function StreamModal({
                 size="icon"
                 variant="ghost"
                 onClick={handleModalClose}
-                className="text-white hover:bg-white/20 pointer-events-auto focus-visible:ring-4 focus-visible:ring-primary"
+                className="text-white hover:bg-white/20 pointer-events-auto"
                 data-testid="button-close-modal"
               >
                 <X className="w-6 h-6" />
@@ -924,7 +924,7 @@ export default function StreamModal({
                     size="icon"
                     variant="ghost"
                     onClick={toggleMute}
-                    className="text-white hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-primary"
+                    className="text-white hover:bg-white/20"
                     data-testid="button-toggle-mute"
                     disabled={!isConnected}
                   >
@@ -947,7 +947,7 @@ export default function StreamModal({
                     size="icon"
                     variant="ghost"
                     onClick={toggleFullscreen}
-                    className="text-white hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-primary"
+                    className="text-white hover:bg-white/20"
                     data-testid="button-toggle-fullscreen"
                   >
                     {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
