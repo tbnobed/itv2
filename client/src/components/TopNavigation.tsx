@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
-import logoUrl from '@assets/generated_images/OBTV_streaming_service_logo_597d82d5.png';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -36,7 +35,6 @@ export default function TopNavigation({
   userRole
 }: TopNavigationProps) {
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const [isLogoHovered, setIsLogoHovered] = useState(false);
   const [, navigate] = useLocation();
   
   const isAdmin = userRole === 'admin';
@@ -129,33 +127,7 @@ export default function TopNavigation({
 
   return (
     <nav className="bg-black/90 backdrop-blur-sm px-8 py-4 flex items-center justify-between sticky top-0 z-40 border-b border-gray-800">
-      {/* OBTV Logo */}
-      <div 
-        className="flex-shrink-0 cursor-pointer transition-transform duration-200 focus-visible:ring-4 focus-visible:ring-white focus-visible:outline-none rounded-md mr-8"
-        tabIndex={0}
-        onMouseEnter={() => setIsLogoHovered(true)}
-        onMouseLeave={() => setIsLogoHovered(false)}
-        data-testid="logo-obtv"
-        style={{
-          transform: isLogoHovered ? 'scale(1.05)' : 'scale(1)'
-        }}
-      >
-        <img 
-          src={logoUrl} 
-          alt="OBTV" 
-          className="h-10 w-auto"
-          onError={(e) => {
-            // Fallback to text logo if image fails
-            e.currentTarget.style.display = 'none';
-            const textLogo = document.createElement('div');
-            textLogo.textContent = 'OBTV';
-            textLogo.className = 'text-xl font-bold text-white';
-            e.currentTarget.parentNode?.appendChild(textLogo);
-          }}
-        />
-      </div>
-
-      {/* Center Section - Navigation Categories */}
+      {/* Left Section - Navigation Categories */}
       <div className="flex items-center gap-2">
         {navigationItems.map((item, index) => (
           <div key={item.id}>
