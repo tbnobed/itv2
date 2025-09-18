@@ -514,6 +514,38 @@ export default function StreamModal({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isOpen, isClosing]);
 
+  // Simplified modal close for Fire TV compatibility
+  const handleModalClose = () => {
+    // Set closing flag to suppress fullscreen re-focus during close
+    setIsClosing(true);
+    
+    // Exit fullscreen if needed
+    if (document.fullscreenElement) {
+      console.log('StreamModal: Exiting fullscreen while closing modal...');
+      document.exitFullscreen().catch(err => {
+        console.error('Failed to exit fullscreen:', err);
+      });
+      setIsFullscreen(false);
+    }
+    
+    // Always trigger focus restoration before closing
+    console.log('StreamModal: Closing modal and will restore focus...');
+    
+    // IMMEDIATE focus restoration before any other logic
+    console.log('StreamModal: Restoring focus immediately...');
+    const focusTarget = document.querySelector('.stream-tile, [data-testid^="stream-tile-"]') as HTMLElement;
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      console.log('StreamModal: Focusing first stream tile immediately');
+      focusTarget.focus();
+    } else {
+      console.log('StreamModal: No stream tiles found, focusing body');
+      document.body.focus();
+    }
+    
+    // Close modal immediately - no complex history management
+    onClose();
+  };
+
   // Fire TV history management - push dummy state to consume back press
   useEffect(() => {
     if (!isOpen) return;
@@ -618,38 +650,6 @@ export default function StreamModal({
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isOpen]);
-
-  // Simplified modal close for Fire TV compatibility
-  const handleModalClose = () => {
-    // Set closing flag to suppress fullscreen re-focus during close
-    setIsClosing(true);
-    
-    // Exit fullscreen if needed
-    if (document.fullscreenElement) {
-      console.log('StreamModal: Exiting fullscreen while closing modal...');
-      document.exitFullscreen().catch(err => {
-        console.error('Failed to exit fullscreen:', err);
-      });
-      setIsFullscreen(false);
-    }
-    
-    // Always trigger focus restoration before closing
-    console.log('StreamModal: Closing modal and will restore focus...');
-    
-    // IMMEDIATE focus restoration before any other logic
-    console.log('StreamModal: Restoring focus immediately...');
-    const focusTarget = document.querySelector('.stream-tile, [data-testid^="stream-tile-"]') as HTMLElement;
-    if (focusTarget && typeof focusTarget.focus === 'function') {
-      console.log('StreamModal: Focusing first stream tile immediately');
-      focusTarget.focus();
-    } else {
-      console.log('StreamModal: No stream tiles found, focusing body');
-      document.body.focus();
-    }
-    
-    // Close modal immediately - no complex history management
-    onClose();
-  };
 
   // Reset closing flag when modal closes
   useEffect(() => {
