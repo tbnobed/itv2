@@ -315,7 +315,7 @@ export default function ApkManagement() {
                     asChild
                     data-testid="button-download-apk"
                   >
-                    <a href="/api/download/firestick-apk" download target="_blank">
+                    <a href="/api/download/firestick-apk" download>
                       <Download className="w-4 h-4 mr-2" />
                       Download
                     </a>
