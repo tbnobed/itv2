@@ -94,8 +94,10 @@ function serveStatic(app: express.Express) {
 }
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Increase body parser limits to handle large file uploads (150MB to be safe)
+app.use(express.json({ limit: '150mb' }));
+app.use(express.urlencoded({ extended: false, limit: '150mb' }));
+app.use(express.raw({ limit: '150mb', type: 'application/*' }));
 
 app.use((req, res, next) => {
   const start = Date.now();
