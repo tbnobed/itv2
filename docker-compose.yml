@@ -18,10 +18,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - obtv_network
 
-  # Database migration service (optional - handled by entrypoint script)
+  # Database migration service
   migrate:
     build:
       context: .
@@ -31,11 +29,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: sh -c "npm run db:push || npm run db:push -- --force"
+    command: npm run db:push
     profiles:
       - migrate
 
-  # Database seeding service (optional - handled by entrypoint script)
+  # Database seeding service - creates admin accounts and initial data
   seed:
     build:
       context: .
@@ -48,15 +46,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: tsx seed.js
+    command: node seed.js
     profiles:
       - seed
 
-  # OBTV Streaming Application with HLS Support
+  # OBTV Streaming Application
   app:
-    build: 
-      context: .
-      target: production
+    build: .
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -68,34 +64,20 @@ services:
       PASSCODE_PEPPER: ${PASSCODE_PEPPER:-obtv-universal-pepper-change-in-production}
       ADMIN_PASSCODE: ${ADMIN_PASSCODE:-1234}
       USER_PASSCODE: ${USER_PASSCODE:-1111}
-      # SRS Server Configuration for Snapshot Generation
+      # SRS Server Configuration for Snapshot Generation (optional fallback)
       # The system auto-detects servers and ports from WHEP URLs
       # Only set this if you need a fallback when WHEP URL parsing fails
       SRS_HTTP_FLV_BASE: ${SRS_HTTP_FLV_BASE:-}
       # Optional: Force HTTPS if your SRS uses SSL
-      SRS_FORCE_HTTPS: ${SRS_FORCE_HTTPS:-false}
-      # HLS Stream Configuration for Production - Optimized for Docker
-      # FFmpeg timeout for HLS stream connections (seconds) - increased for Docker networking
-      HLS_CONNECTION_TIMEOUT: ${HLS_CONNECTION_TIMEOUT:-15}
-      # Maximum retry attempts for failed HLS snapshots
-      HLS_MAX_RETRIES: ${HLS_MAX_RETRIES:-5}
-      # Snapshot generation interval (seconds) - reduced for more frequent updates
-      SNAPSHOT_INTERVAL: ${SNAPSHOT_INTERVAL:-25}
-      # FFmpeg additional options for HLS processing in Docker
-      FFMPEG_LOGLEVEL: ${FFMPEG_LOGLEVEL:-error}
-      # Network timeouts optimized for containerized environment
-      HTTP_TIMEOUT: ${HTTP_TIMEOUT:-20}
+      # SRS_FORCE_HTTPS: ${SRS_FORCE_HTTPS:-false}
     ports:
       - "5000:5000"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - ./attached_assets/generated_images:/app/server/public/generated_images
-      - snapshots_data:/app/server/public/snapshots
-    # Using healthcheck defined in Dockerfile with enhanced HLS support
-    networks:
-      - obtv_network
+      - ./attached_assets/generated_images:/app/client/public/generated_images
+    # Removed healthcheck - using the one defined in Dockerfile
 
   # Nginx Reverse Proxy (optional)
   nginx:
@@ -111,16 +93,7 @@ services:
       - app
     profiles:
       - with-nginx
-    networks:
-      - obtv_network
 
-# Named volumes for data persistence
 volumes:
   postgres_data:
-  snapshots_data:
-
-# Custom network for better container isolation and communication
-networks:
-  obtv_network:
-    driver: bridge
-    name: obtv_network
+    driver: local

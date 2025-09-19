@@ -312,20 +312,13 @@ export default function ApkManagement() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      // Direct download bypassing SPA router
-                      const link = document.createElement('a');
-                      link.href = '/api/download/firestick-apk';
-                      link.download = 'OBTV-FireStick.apk';
-                      link.style.display = 'none';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}
+                    asChild
                     data-testid="button-download-apk"
                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
+                    <a href="/api/download/firestick-apk" download target="_blank">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </a>
                   </Button>
                 </div>
               </div>
