@@ -7,9 +7,51 @@ import { z } from "zod";
 import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
 import { SnapshotService } from "./SnapshotService";
 import { join } from "path";
-import { existsSync, statSync, renameSync, unlinkSync } from "fs";
+import { existsSync, statSync, renameSync, unlinkSync, readFileSync } from "fs";
 import multer from "multer";
 import { promisify } from "util";
+
+// APK validation function to prevent MIME spoofing
+function validateAPKFile(filePath: string): { isValid: boolean; error?: string } {
+  try {
+    // Read full file and slice first 30 bytes to check magic bytes and basic ZIP structure
+    const fullBuffer = readFileSync(filePath);
+    const buffer = fullBuffer.subarray(0, 30);
+    
+    // Check ZIP magic bytes (APK files are ZIP files)
+    if (buffer[0] !== 0x50 || buffer[1] !== 0x4B) {
+      return { isValid: false, error: 'File is not a valid ZIP/APK format (missing ZIP magic bytes)' };
+    }
+    
+    // Check for specific ZIP file signatures
+    if (!(buffer[2] === 0x03 && buffer[3] === 0x04) && // Regular ZIP file
+        !(buffer[2] === 0x05 && buffer[3] === 0x06) && // Empty ZIP
+        !(buffer[2] === 0x07 && buffer[3] === 0x08)) { // Spanned ZIP
+      return { isValid: false, error: 'File has invalid ZIP file signature' };
+    }
+    
+    // Read a larger portion to look for AndroidManifest.xml signature
+    try {
+      const searchLength = Math.min(8192, fullBuffer.length);
+      const largerBuffer = fullBuffer.subarray(0, searchLength);
+      const content = largerBuffer.toString('binary');
+      
+      // Look for AndroidManifest.xml in the central directory or local file headers
+      // APK files should contain AndroidManifest.xml
+      if (!content.includes('AndroidManifest.xml') && 
+          !content.includes('META-INF/MANIFEST.MF')) {
+        return { isValid: false, error: 'File does not appear to be a valid APK (missing Android manifest signatures)' };
+      }
+    } catch (readError) {
+      // If we can't read more, but basic ZIP checks passed, allow it
+      console.warn('Could not perform extended APK validation, basic ZIP validation passed:', readError);
+    }
+    
+    return { isValid: true };
+  } catch (error: any) {
+    return { isValid: false, error: `Failed to validate APK file: ${error?.message || 'Unknown error'}` };
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes first
@@ -481,29 +523,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate file size
       if (file.size === 0) {
+        // Clean up temp file before returning error
+        try {
+          unlinkSync(tempFilePath);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup empty temp file:', cleanupError);
+        }
         return res.status(400).json({ error: 'Uploaded file is empty' });
       }
       
       if (file.size > 100 * 1024 * 1024) { // 100MB
+        // Clean up temp file before returning error
+        try {
+          unlinkSync(tempFilePath);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup oversized temp file:', cleanupError);
+        }
         return res.status(400).json({ error: 'File size exceeds 100MB limit' });
       }
       
       // Validate file extension
       if (!file.originalname.toLowerCase().endsWith('.apk')) {
+        // Clean up temp file before returning error
+        try {
+          unlinkSync(tempFilePath);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup invalid extension temp file:', cleanupError);
+        }
         return res.status(400).json({ error: 'File must have .apk extension' });
       }
       
-      // Remove existing APK file if it exists
-      if (existsSync(targetPath)) {
+      // Validate APK file structure and magic bytes
+      const validation = validateAPKFile(tempFilePath);
+      if (!validation.isValid) {
+        // Clean up temp file before returning error
         try {
-          unlinkSync(targetPath);
-        } catch (unlinkError) {
-          console.warn('Could not remove existing APK file:', unlinkError);
-          // Continue with upload - the rename should overwrite
+          unlinkSync(tempFilePath);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup invalid APK temp file:', cleanupError);
         }
+        return res.status(400).json({ error: validation.error });
       }
       
-      // Move temp file to final destination
+      // Atomically move temp file to final destination (this overwrites existing file safely)
+      // Using rename is atomic on Unix systems - no race condition window for downloads
       renameSync(tempFilePath, targetPath);
       tempFilePath = undefined; // Clear reference since file is now moved
       
@@ -605,6 +668,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.route('/api/download/firestick-apk')
     .get(handleApkDownload)
     .head(handleApkDownload);
+
+  // APK file deletion endpoint
+  app.delete('/api/admin/apk', requireAdmin, csrfProtection, async (req, res) => {
+    try {
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      if (existsSync(apkPath)) {
+        unlinkSync(apkPath);
+        console.log('APK file deleted successfully');
+        res.json({ success: true, message: 'APK file deleted successfully' });
+      } else {
+        res.status(404).json({ error: 'APK file not found' });
+      }
+    } catch (error) {
+      console.error('Error deleting APK:', error);
+      res.status(500).json({ error: 'Failed to delete APK' });
+    }
+  });
 
   // Static file serving for snapshots (generated by SnapshotService)
   const snapshotsDir = join(process.cwd(), 'server', 'public', 'snapshots');
