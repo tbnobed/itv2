@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage, seedDatabase } from "./storage";
+import { storage } from "./storage";
 import { insertStreamSchema, updateStreamSchema, insertStudioSchema, updateStudioSchema, insertUserSchema } from "../shared/schema";
 import { z } from "zod";
 import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
@@ -22,56 +22,15 @@ function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-// Automatic database initialization - idempotent
-async function initializeDatabase() {
+// Check database connectivity - simplified for production
+async function checkDatabaseConnectivity() {
   try {
-    // Check if tables exist by trying to query studios table
+    // Simple connectivity check - don't initialize schema in production
     await db.select().from(studios).limit(1);
-    log("Database tables already exist, skipping schema setup", "db");
+    log("Database connection verified", "db");
   } catch (error) {
-    // Tables don't exist, run schema push
-    log("Database tables not found, initializing schema...", "db");
-    
-    try {
-      // Import dynamically to avoid issues
-      const { spawn } = await import('child_process');
-      const { promisify } = await import('util');
-      
-      const execCommand = promisify(spawn);
-      
-      // Run npm run db:push to create tables
-      const dbPush = spawn('npm', ['run', 'db:push'], {
-        stdio: 'pipe',
-        cwd: process.cwd()
-      });
-      
-      let output = '';
-      let errorOutput = '';
-      
-      dbPush.stdout?.on('data', (data) => {
-        output += data.toString();
-      });
-      
-      dbPush.stderr?.on('data', (data) => {
-        errorOutput += data.toString();
-      });
-      
-      await new Promise((resolve, reject) => {
-        dbPush.on('close', (code) => {
-          if (code === 0) {
-            log("Database schema initialized successfully", "db");
-            resolve(code);
-          } else {
-            log(`Database schema initialization failed with code ${code}: ${errorOutput}`, "db");
-            reject(new Error(`DB push failed: ${errorOutput}`));
-          }
-        });
-      });
-      
-    } catch (pushError) {
-      log(`Failed to initialize database schema: ${pushError}`, "db");
-      throw pushError;
-    }
+    log("Database connection failed - ensure migrations have been run", "db");
+    throw new Error("Database not ready. Ensure Docker entrypoint has completed migrations and seeding.");
   }
 }
 
@@ -169,11 +128,8 @@ async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Initialize database schema automatically (idempotent)
-  await initializeDatabase();
-  
-  // Seed database on startup
-  seedDatabase();
+  // Check database connectivity (schema and seeding handled by Docker entrypoint)
+  await checkDatabaseConnectivity();
   // Stream endpoints
   app.get('/api/streams', async (req, res) => {
     try {

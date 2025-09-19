@@ -29,7 +29,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: npm run db:push
+    command: npx drizzle-kit migrate
     profiles:
       - migrate
 
@@ -43,6 +43,8 @@ services:
       PASSCODE_PEPPER: ${PASSCODE_PEPPER:-obtv-universal-pepper-change-in-production}
       ADMIN_PASSCODE: ${ADMIN_PASSCODE:-1234}
       USER_PASSCODE: ${USER_PASSCODE:-1111}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-obtv-admin}
+      USER_USERNAME: ${USER_USERNAME:-obtv-user}
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,10 +66,12 @@ services:
       PASSCODE_PEPPER: ${PASSCODE_PEPPER:-obtv-universal-pepper-change-in-production}
       ADMIN_PASSCODE: ${ADMIN_PASSCODE:-1234}
       USER_PASSCODE: ${USER_PASSCODE:-1111}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-obtv-admin}
+      USER_USERNAME: ${USER_USERNAME:-obtv-user}
       # SRS Server Configuration for Snapshot Generation (optional fallback)
       # The system auto-detects servers and ports from WHEP URLs
       # Only set this if you need a fallback when WHEP URL parsing fails
-      SRS_HTTP_FLV_BASE: ${SRS_HTTP_FLV_BASE:-}
+      SRS_HTTP_HLS_BASE: ${SRS_HTTP_HLS_BASE:-}
       # Optional: Force HTTPS if your SRS uses SSL
       # SRS_FORCE_HTTPS: ${SRS_FORCE_HTTPS:-false}
     ports:
