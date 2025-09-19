@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Volume2, VolumeX, AlertCircle, Wifi, Play } from 'lucide-react';
+import { Volume2, VolumeX, AlertCircle, Wifi, Play, Settings, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import Hls from 'hls.js';
 
@@ -45,6 +46,10 @@ export default function HLSPlayer({
   const [isHlsSupported, setIsHlsSupported] = useState(false);
   const [useNativeHls, setUseNativeHls] = useState(false);
   const [needsUserInteraction, setNeedsUserInteraction] = useState(false);
+  const [currentQuality, setCurrentQuality] = useState<{ level: number; height?: number; bitrate?: number } | null>(null);
+  const [availableQualityLevels, setAvailableQualityLevels] = useState<Array<{ level: number; height?: number; bitrate?: number; width?: number }>>([]);
+  const [currentBandwidth, setCurrentBandwidth] = useState<number>(0);
+  const [isAutoQuality, setIsAutoQuality] = useState(true);
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
   const maxRetries = 5;
@@ -303,18 +308,65 @@ export default function HLSPlayer({
           liveSyncDurationCount: 3,
           liveMaxLatencyDurationCount: 10,
           liveDurationInfinity: false,
-          enableSoftwareAES: true
+          enableSoftwareAES: true,
+          // Adaptive Bitrate Configuration
+          abrEwmaFastLive: 3.0,          // Fast EWMA for live streams
+          abrEwmaSlowLive: 9.0,          // Slow EWMA for live streams
+          abrEwmaFastVoD: 3.0,           // Fast EWMA for VoD
+          abrEwmaSlowVoD: 9.0,           // Slow EWMA for VoD
+          abrEwmaDefaultEstimate: 500000, // Default bandwidth estimate (500kbps)
+          abrBandWidthFactor: 0.95,      // Safety factor for bandwidth
+          abrBandWidthUpFactor: 0.7,     // Up-switching factor
+          abrMaxWithRealBitrate: false,  // Use real bitrate for switching
+          maxStarvationDelay: 4,         // Max starvation before quality switch
+          maxLoadingDelay: 4,            // Max loading delay before switch
+          minAutoBitrate: 0,             // Minimum auto bitrate (0 = no limit)
+          emeEnabled: true               // Enable encrypted media extensions
         });
 
         hlsRef.current = hls;
 
         // HLS.js event handlers
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
           console.log(`HLSPlayer[${streamId}]: HLS manifest parsed successfully`);
+          
+          // Extract available quality levels
+          const levels = data.levels?.map((level: any, index: number) => ({
+            level: index,
+            height: level.height,
+            width: level.width,
+            bitrate: level.bitrate,
+            name: level.name || `${level.height}p`
+          })) || [];
+          
+          setAvailableQualityLevels(levels);
+          console.log(`HLSPlayer[${streamId}]: Available quality levels:`, levels);
+          
           setIsLoading(false);
           setConnectionStatus('connected');
           onCanPlay?.();
           retryCountRef.current = 0; // Reset retry count on success
+        });
+
+        // Track quality level changes
+        hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+          const level = data.level;
+          const levelDetails = hls.levels[level];
+          
+          setCurrentQuality({
+            level,
+            height: levelDetails?.height,
+            bitrate: levelDetails?.bitrate
+          });
+          
+          console.log(`HLSPlayer[${streamId}]: Quality switched to level ${level} (${levelDetails?.height}p, ${Math.round((levelDetails?.bitrate || 0) / 1000)}kbps)`);
+        });
+
+        // Monitor bandwidth changes
+        hls.on(Hls.Events.FRAG_LOADED, (event, data: any) => {
+          if (data.stats?.bandwidth) {
+            setCurrentBandwidth(data.stats.bandwidth);
+          }
         });
 
         hls.on(Hls.Events.ERROR, (event: any, data: any) => {
@@ -581,6 +633,40 @@ export default function HLSPlayer({
     onMutedChange(!isMuted);
   };
 
+  // Quality selection functions
+  const handleQualityChange = (levelIndex: number) => {
+    const hls = hlsRef.current;
+    if (!hls) return;
+
+    if (levelIndex === -1) {
+      // Auto quality
+      hls.currentLevel = -1;
+      setIsAutoQuality(true);
+      console.log(`HLSPlayer[${streamId}]: Switched to auto quality`);
+    } else {
+      // Manual quality selection
+      hls.currentLevel = levelIndex;
+      setIsAutoQuality(false);
+      console.log(`HLSPlayer[${streamId}]: Manually switched to quality level ${levelIndex}`);
+    }
+  };
+
+  const formatBitrate = (bitrate: number): string => {
+    if (bitrate >= 1000000) {
+      return `${(bitrate / 1000000).toFixed(1)}Mbps`;
+    } else {
+      return `${Math.round(bitrate / 1000)}kbps`;
+    }
+  };
+
+  const formatBandwidth = (bandwidth: number): string => {
+    if (bandwidth >= 1000000) {
+      return `${(bandwidth / 1000000).toFixed(1)}Mbps`;
+    } else {
+      return `${Math.round(bandwidth / 1000)}kbps`;
+    }
+  };
+
   const getConnectionStatusIcon = () => {
     switch (connectionStatus) {
       case 'connecting':
@@ -688,10 +774,46 @@ export default function HLSPlayer({
               >
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
               </Button>
+
+              {/* Quality Selection */}
+              {availableQualityLevels.length > 1 && !useNativeHls && (
+                <Select
+                  value={isAutoQuality ? 'auto' : currentQuality?.level.toString()}
+                  onValueChange={(value) => handleQualityChange(value === 'auto' ? -1 : parseInt(value))}
+                >
+                  <SelectTrigger className="w-24 h-8 text-xs bg-black/50 border-white/20 text-white hover:bg-white/20">
+                    <SelectValue placeholder="Quality" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-black/90 border-white/20">
+                    <SelectItem value="auto" className="text-white hover:bg-white/20">
+                      Auto
+                    </SelectItem>
+                    {availableQualityLevels.map((level) => (
+                      <SelectItem 
+                        key={level.level} 
+                        value={level.level.toString()}
+                        className="text-white hover:bg-white/20"
+                      >
+                        {level.height}p ({formatBitrate(level.bitrate || 0)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
-            <div className="text-sm text-white/80">
-              {getStatusText()}
+            <div className="flex flex-col items-end text-xs text-white/80">
+              <div>{getStatusText()}</div>
+              {currentBandwidth > 0 && (
+                <div className="text-white/60">
+                  Bandwidth: {formatBandwidth(currentBandwidth)}
+                </div>
+              )}
+              {currentQuality && (
+                <div className="text-white/60">
+                  Quality: {currentQuality.height}p {isAutoQuality ? '(Auto)' : '(Manual)'}
+                </div>
+              )}
             </div>
           </div>
         </div>
