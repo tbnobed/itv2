@@ -322,8 +322,8 @@ export default function HLSPlayer({
           abrEwmaFastVoD: 2.0,             // Reduced from 3.0
           abrEwmaSlowVoD: 12.0,            // Increased from 9.0
           abrEwmaDefaultEstimate: 500000,   // Default bandwidth estimate (500kbps)
-          abrBandWidthFactor: 0.9,         // Increased safety factor from 0.95
-          abrBandWidthUpFactor: 0.5,       // Reduced from 0.7 for less aggressive upswitching
+          abrBandwidthFactor: 0.9,         // Increased safety factor from 0.95
+          abrBandwidthUpFactor: 0.5,       // Reduced from 0.7 for less aggressive upswitching
           abrMaxWithRealBitrate: false,    // Use real bitrate for switching
           maxStarvationDelay: 4,           // Max starvation before quality switch
           maxLoadingDelay: 4,              // Max loading delay before switch
@@ -353,8 +353,8 @@ export default function HLSPlayer({
           abrEwmaFastVoD: 3.0,           // Fast EWMA for VoD
           abrEwmaSlowVoD: 9.0,           // Slow EWMA for VoD
           abrEwmaDefaultEstimate: 500000, // Default bandwidth estimate (500kbps)
-          abrBandWidthFactor: 0.95,      // Safety factor for bandwidth
-          abrBandWidthUpFactor: 0.7,     // Up-switching factor
+          abrBandwidthFactor: 0.95,      // Safety factor for bandwidth
+          abrBandwidthUpFactor: 0.7,     // Up-switching factor
           abrMaxWithRealBitrate: false,  // Use real bitrate for switching
           maxStarvationDelay: 4,         // Max starvation before quality switch
           maxLoadingDelay: 4,            // Max loading delay before switch
@@ -393,14 +393,22 @@ export default function HLSPlayer({
               return maxLevel;
             }, -1);
             
+            let targetLevel: number;
             if (maxFireTVLevel >= 0) {
-              hls.autoLevelCapping = maxFireTVLevel;
-              console.log(`HLSPlayer[${streamId}]: Fire TV - Auto level capped to level ${maxFireTVLevel} (${levels[maxFireTVLevel].height}p) to prevent crashes`);
+              targetLevel = maxFireTVLevel;
+              console.log(`HLSPlayer[${streamId}]: Fire TV - Auto level capped to level ${targetLevel} (${levels[targetLevel].height}p) to prevent crashes`);
             } else {
-              // Fallback: use current level if no suitable level found
-              hls.autoLevelCapping = hls.currentLevel >= 0 ? hls.currentLevel : 0;
-              console.log(`HLSPlayer[${streamId}]: Fire TV - Auto level capped to fallback level ${hls.autoLevelCapping}`);
+              // Fallback: use lowest available level to minimize decoder pressure
+              targetLevel = 0;
+              console.log(`HLSPlayer[${streamId}]: Fire TV - No ≤720p level found, capped to lowest level ${targetLevel} (${levels[targetLevel]?.height || 'unknown'}p)`);
             }
+            
+            // Apply capping and set initial level to the capped level
+            hls.autoLevelCapping = targetLevel;
+            hls.startLevel = targetLevel;
+            hls.currentLevel = targetLevel;
+            
+            console.log(`HLSPlayer[${streamId}]: Fire TV - Set startLevel and currentLevel to ${targetLevel} for maximum stability`);
           }
           
           setIsLoading(false);
