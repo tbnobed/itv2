@@ -628,10 +628,8 @@ export default function HLSPlayer({
             hls.on(Hls.Events.LEVEL_SWITCHING, levelSwitchHandler);
           }
           
-          setIsLoading(false);
-          setConnectionStatus('connected');
-          onCanPlay?.();
-          retryCountRef.current = 0; // Reset retry count on success
+          // Don't set connected yet - wait for video to be ready
+          console.log(`HLSPlayer[${streamId}]: HLS manifest parsed, waiting for video readiness...`);
         });
 
         // Track quality level changes with Fire TV-specific logging
@@ -733,11 +731,21 @@ export default function HLSPlayer({
         const handlePause = () => setIsPlaying(false);
         const handleWaiting = () => setIsLoading(true);
         const handlePlaying = () => setIsLoading(false);
+        
+        // Handle when video is ready to play
+        const handleCanPlay = () => {
+          console.log(`HLSPlayer[${streamId}]: Video can play - setting connected status`);
+          setIsLoading(false);
+          setConnectionStatus('connected');
+          onCanPlay?.();
+          retryCountRef.current = 0; // Reset retry count on success
+        };
 
         video.addEventListener('play', handlePlay);
         video.addEventListener('pause', handlePause);
         video.addEventListener('waiting', handleWaiting);
         video.addEventListener('playing', handlePlaying);
+        video.addEventListener('canplay', handleCanPlay);
 
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
@@ -749,6 +757,7 @@ export default function HLSPlayer({
           video.removeEventListener('pause', handlePause);
           video.removeEventListener('waiting', handleWaiting);
           video.removeEventListener('playing', handlePlaying);
+          video.removeEventListener('canplay', handleCanPlay);
         };
 
       } else {
