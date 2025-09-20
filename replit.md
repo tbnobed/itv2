@@ -43,6 +43,7 @@ The application is designed to support multiple video streaming protocols:
 - **HLS/DASH**: Fallback streaming protocols via included player libraries
 - **Player Support**: Integration points for SRS (Simple Realtime Server) WebRTC player
 - **Multi-format**: Support for RTMP, WebRTC, HLS, and DASH protocols
+- **Fire TV Optimization**: Device-specific hls.js configuration to prevent crashes during adaptive streaming resolution changes, including 720p resolution capping, reduced buffer sizes, and disabled workers for memory optimization
 
 ### Data Storage
 Currently implements in-memory storage with planned PostgreSQL integration:
