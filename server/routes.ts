@@ -511,18 +511,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/apk/upload', requireAdmin, csrfProtection, upload.single('apk'), async (req, res) => {
     let tempFilePath: string | undefined;
     
+    console.log('🚀 APK UPLOAD ATTEMPT STARTED');
+    console.log('📋 Upload Request Details:', {
+      headers: {
+        'content-type': req.headers['content-type'],
+        'content-length': req.headers['content-length'],
+        'user-agent': req.headers['user-agent']
+      },
+      method: req.method,
+      url: req.url,
+      sessionId: req.session.id,
+      authenticated: req.isAuthenticated(),
+      userId: req.user?.id
+    });
+    
     try {
       const file = req.file;
       
+      console.log('📁 File Upload Info:', {
+        fileReceived: !!file
+      });
+      
       if (!file) {
+        console.log('❌ NO FILE - Upload failed: No file in request');
         return res.status(400).json({ error: 'No APK file uploaded' });
       }
+      
+      console.log('📄 File Details:', {
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        tempPath: file.path,
+        fieldname: file.fieldname
+      });
       
       tempFilePath = file.path;
       const targetPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
       // Validate file size
+      console.log('🔍 Starting file validation checks...');
       if (file.size === 0) {
+        console.log('❌ VALIDATION FAILED - File is empty');
         // Clean up temp file before returning error
         try {
           unlinkSync(tempFilePath);
@@ -533,6 +562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (file.size > 100 * 1024 * 1024) { // 100MB
+        console.log('❌ VALIDATION FAILED - File too large:', file.size, 'bytes');
         // Clean up temp file before returning error
         try {
           unlinkSync(tempFilePath);
@@ -544,6 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate file extension
       if (!file.originalname.toLowerCase().endsWith('.apk')) {
+        console.log('❌ VALIDATION FAILED - Invalid extension. File:', file.originalname);
         // Clean up temp file before returning error
         try {
           unlinkSync(tempFilePath);
@@ -553,9 +584,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'File must have .apk extension' });
       }
       
+      console.log('✅ Basic validation passed - checking APK file structure...');
+      
       // Validate APK file structure and magic bytes
       const validation = validateAPKFile(tempFilePath);
       if (!validation.isValid) {
+        console.log('❌ VALIDATION FAILED - APK structure invalid:', validation.error);
         // Clean up temp file before returning error
         try {
           unlinkSync(tempFilePath);
@@ -565,6 +599,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error });
       }
       
+      console.log('✅ APK validation passed - moving file to target location...');
+      console.log('🗂️  Target path:', targetPath);
+      
       // Atomically move temp file to final destination (this overwrites existing file safely)
       // Using rename is atomic on Unix systems - no race condition window for downloads
       renameSync(tempFilePath, targetPath);
@@ -573,7 +610,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get file stats for response
       const stats = statSync(targetPath);
       
-      console.log(`APK file uploaded successfully: ${file.originalname} (${formatFileSize(file.size)})`);
+      console.log(`✅ APK UPLOAD SUCCESSFUL: ${file.originalname} (${formatFileSize(file.size)})`);
+      console.log('📊 Final file stats:', {
+        size: stats.size,
+        lastModified: stats.mtime.toISOString(),
+        targetPath
+      });
       
       res.status(201).json({
         success: true,
@@ -586,6 +628,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
+      console.log('💥 UPLOAD EXCEPTION OCCURRED');
+      console.error('🔴 Upload error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        tempFilePath,
+        errorType: error?.constructor?.name
+      });
       // Clean up temp file if upload failed
       if (tempFilePath && existsSync(tempFilePath)) {
         try {
@@ -612,11 +661,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Dynamic APK file serving endpoint with proper HTTP caching and HEAD support
   const handleApkDownload = (req: express.Request, res: express.Response) => {
+    console.log('📥 APK DOWNLOAD REQUEST STARTED');
+    console.log('📋 Download Request Details:', {
+      method: req.method,
+      url: req.url,
+      userAgent: req.headers['user-agent'],
+      referer: req.headers.referer,
+      origin: req.headers.origin,
+      host: req.headers.host,
+      protocol: req.protocol,
+      secure: req.secure,
+      ip: req.ip || req.connection.remoteAddress
+    });
+    
     try {
       const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
+      console.log('🗂️  Checking APK file:', apkPath);
+      
       // Check if APK file exists
       if (!existsSync(apkPath)) {
+        console.log('❌ DOWNLOAD FAILED - APK file not found at path:', apkPath);
         return res.status(404).json({ error: 'APK file not found' });
       }
       
@@ -625,11 +690,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const lastModified = stats.mtime.toUTCString();
       const etag = `"${stats.mtime.getTime()}-${stats.size}"`;
       
+      console.log('📊 APK File Stats:', {
+        size: stats.size,
+        sizeFormatted: `${(stats.size / (1024 * 1024)).toFixed(2)} MB`,
+        lastModified,
+        etag
+      });
+      
       // Handle conditional requests (304 Not Modified)
       const ifNoneMatch = req.headers['if-none-match'];
       const ifModifiedSince = req.headers['if-modified-since'];
       
+      console.log('🔍 Cache Headers Check:', {
+        ifNoneMatch,
+        ifModifiedSince,
+        currentEtag: etag
+      });
+      
       if (ifNoneMatch && ifNoneMatch === etag) {
+        console.log('✅ CACHE HIT - Returning 304 Not Modified (ETag match)');
         res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
         res.setHeader('Last-Modified', lastModified);
         res.setHeader('ETag', etag);
@@ -637,30 +716,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (ifModifiedSince && new Date(ifModifiedSince) >= stats.mtime) {
+        console.log('✅ CACHE HIT - Returning 304 Not Modified (If-Modified-Since)');
         res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
         res.setHeader('Last-Modified', lastModified);
         res.setHeader('ETag', etag);
         return res.status(304).end();
       }
       
+      console.log('🚀 Preparing APK download response...');
+      
       // Set appropriate headers for APK download
-      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-      res.setHeader('Content-Disposition', 'attachment; filename="OBTV-FireStick.apk"');
-      res.setHeader('Content-Length', stats.size);
-      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-      res.setHeader('Last-Modified', lastModified);
-      res.setHeader('ETag', etag);
-      res.setHeader('X-Content-Type-Options', 'nosniff');
+      const headers = {
+        'Content-Type': 'application/vnd.android.package-archive',
+        'Content-Disposition': 'attachment; filename="OBTV-FireStick.apk"',
+        'Content-Length': stats.size,
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        'Last-Modified': lastModified,
+        'ETag': etag,
+        'X-Content-Type-Options': 'nosniff'
+      };
+      
+      console.log('📤 Setting download headers:', headers);
+      
+      res.setHeader('Content-Type', headers['Content-Type']);
+      res.setHeader('Content-Disposition', headers['Content-Disposition']);
+      res.setHeader('Content-Length', headers['Content-Length']);
+      res.setHeader('Cache-Control', headers['Cache-Control']);
+      res.setHeader('Last-Modified', headers['Last-Modified']);
+      res.setHeader('ETag', headers['ETag']);
+      res.setHeader('X-Content-Type-Options', headers['X-Content-Type-Options']);
       
       // Handle HEAD requests
       if (req.method === 'HEAD') {
+        console.log('✅ HEAD request - sending headers only');
         return res.end();
       }
       
       // Stream the file to the response for GET requests
+      console.log('📁 Streaming APK file to client...');
       res.sendFile(apkPath);
+      console.log('✅ APK download initiated successfully');
     } catch (error) {
-      console.error('Error serving APK file:', error);
+      console.log('💥 DOWNLOAD EXCEPTION OCCURRED');
+      console.error('🔴 Download error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        errorType: error?.constructor?.name
+      });
       res.status(500).json({ error: 'Failed to serve APK file' });
     }
   };
