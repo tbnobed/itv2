@@ -54,6 +54,11 @@ export default function HLSPlayer({
   const retryCountRef = useRef(0);
   const maxRetries = 5;
   const globalAutoplayUnlockedRef = useRef(false);
+  
+  // Fire TV device detection
+  const isFireTV = /AFT|AmazonWebAppPlatform|Silk/i.test(navigator.userAgent);
+  
+  console.log(`HLSPlayer[${streamId}]: Fire TV detection - isFireTV: ${isFireTV}, userAgent: ${navigator.userAgent}`);
 
   // Check HLS support
   useEffect(() => {
@@ -292,7 +297,40 @@ export default function HLSPlayer({
           hlsRef.current.destroy();
         }
 
-        const hls = new Hls({
+        // Fire TV-optimized configuration to prevent crashes during resolution switches
+        const hlsConfig = isFireTV ? {
+          debug: false,
+          enableWorker: false,              // Disable workers to reduce memory usage
+          lowLatencyMode: false,
+          backBufferLength: 8,              // Reduced from 90s to 8s
+          maxBufferLength: 12,              // Reduced from 30s to 12s  
+          maxMaxBufferLength: 60,           // Reduced from 600s to 60s
+          maxBufferSize: 20 * 1000 * 1000,  // Reduced from 60MB to 20MB
+          maxBufferHole: 0.1,               // Reduced from 0.5
+          highBufferWatchdogPeriod: 1.5,    // Reduced from 2
+          nudgeOffset: 0.1,
+          nudgeMaxRetry: 3,
+          maxFragLookUpTolerance: 0.2,      // Reduced from 0.25
+          liveSyncDurationCount: 2,         // Reduced from 3
+          liveMaxLatencyDurationCount: 6,   // Reduced from 10
+          liveDurationInfinity: false,
+          capLevelToPlayerSize: true,       // Cap quality to player size
+          enableSoftwareAES: false,         // Disable to reduce CPU/memory overhead
+          // Gentler ABR to reduce switching frequency
+          abrEwmaFastLive: 2.0,            // Reduced from 3.0 for slower response
+          abrEwmaSlowLive: 12.0,           // Increased from 9.0 for more stability
+          abrEwmaFastVoD: 2.0,             // Reduced from 3.0
+          abrEwmaSlowVoD: 12.0,            // Increased from 9.0
+          abrEwmaDefaultEstimate: 500000,   // Default bandwidth estimate (500kbps)
+          abrBandWidthFactor: 0.9,         // Increased safety factor from 0.95
+          abrBandWidthUpFactor: 0.5,       // Reduced from 0.7 for less aggressive upswitching
+          abrMaxWithRealBitrate: false,    // Use real bitrate for switching
+          maxStarvationDelay: 4,           // Max starvation before quality switch
+          maxLoadingDelay: 4,              // Max loading delay before switch
+          minAutoBitrate: 150000,          // Set minimum bitrate (150kbps) instead of 0
+          emeEnabled: false                // Disable encrypted media extensions
+        } : {
+          // Standard configuration for other devices
           debug: false,
           enableWorker: true,
           lowLatencyMode: false,
@@ -322,7 +360,10 @@ export default function HLSPlayer({
           maxLoadingDelay: 4,            // Max loading delay before switch
           minAutoBitrate: 0,             // Minimum auto bitrate (0 = no limit)
           emeEnabled: true               // Enable encrypted media extensions
-        });
+        };
+
+        console.log(`HLSPlayer[${streamId}]: Creating hls.js instance with ${isFireTV ? 'Fire TV-optimized' : 'standard'} configuration`);
+        const hls = new Hls(hlsConfig);
 
         hlsRef.current = hls;
 
@@ -342,13 +383,33 @@ export default function HLSPlayer({
           setAvailableQualityLevels(levels);
           console.log(`HLSPlayer[${streamId}]: Available quality levels:`, levels);
           
+          // Fire TV: Cap auto level to 720p to prevent crashes during high-res switches
+          if (isFireTV && levels.length > 0) {
+            // Find the highest level that's 720p or below
+            const maxFireTVLevel = levels.reduce((maxLevel, level, index) => {
+              if (level.height && level.height <= 720) {
+                return Math.max(maxLevel, index);
+              }
+              return maxLevel;
+            }, -1);
+            
+            if (maxFireTVLevel >= 0) {
+              hls.autoLevelCapping = maxFireTVLevel;
+              console.log(`HLSPlayer[${streamId}]: Fire TV - Auto level capped to level ${maxFireTVLevel} (${levels[maxFireTVLevel].height}p) to prevent crashes`);
+            } else {
+              // Fallback: use current level if no suitable level found
+              hls.autoLevelCapping = hls.currentLevel >= 0 ? hls.currentLevel : 0;
+              console.log(`HLSPlayer[${streamId}]: Fire TV - Auto level capped to fallback level ${hls.autoLevelCapping}`);
+            }
+          }
+          
           setIsLoading(false);
           setConnectionStatus('connected');
           onCanPlay?.();
           retryCountRef.current = 0; // Reset retry count on success
         });
 
-        // Track quality level changes
+        // Track quality level changes with Fire TV-specific logging
         hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
           const level = data.level;
           const levelDetails = hls.levels[level];
@@ -359,7 +420,13 @@ export default function HLSPlayer({
             bitrate: levelDetails?.bitrate
           });
           
-          console.log(`HLSPlayer[${streamId}]: Quality switched to level ${level} (${levelDetails?.height}p, ${Math.round((levelDetails?.bitrate || 0) / 1000)}kbps)`);
+          const logPrefix = isFireTV ? '[Fire TV]' : '';
+          console.log(`HLSPlayer[${streamId}]: ${logPrefix} Quality switched to level ${level} (${levelDetails?.height}p, ${Math.round((levelDetails?.bitrate || 0) / 1000)}kbps)`);
+          
+          // Fire TV: Log capping status to help debug issues
+          if (isFireTV && hls.autoLevelCapping >= 0) {
+            console.log(`HLSPlayer[${streamId}]: [Fire TV] Auto level capping active at level ${hls.autoLevelCapping}, current level ${level}`);
+          }
         });
 
         // Monitor bandwidth changes
