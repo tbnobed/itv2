@@ -599,6 +599,36 @@ async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public APK download endpoint (no authentication required)
+  app.get('/api/download/firestick-apk', async (req, res) => {
+    try {
+      const { join } = await import("path");
+      const { existsSync, statSync } = await import("fs");
+      
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      if (!existsSync(apkPath)) {
+        return res.status(404).json({ error: 'APK file not found' });
+      }
+      
+      const stats = statSync(apkPath);
+      
+      // Set headers for APK download
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      res.setHeader('Content-Disposition', 'attachment; filename="OBTV-FireStick.apk"');
+      res.setHeader('Content-Length', stats.size.toString());
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+      res.setHeader('Last-Modified', stats.mtime.toUTCString());
+      res.setHeader('ETag', `"${stats.mtime.getTime()}-${stats.size}"`);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      
+      console.log(`Public APK download: ${stats.size} bytes`);
+      res.sendFile(apkPath);
+    } catch (error) {
+      console.error('Error serving public APK download:', error);
+      res.status(500).json({ error: 'Failed to serve APK file' });
+    }
+  });
 
   const httpServer = createServer(app);
 
