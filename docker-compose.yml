@@ -29,7 +29,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: npx drizzle-kit migrate
+    command: npm run db:push
     profiles:
       - migrate
 

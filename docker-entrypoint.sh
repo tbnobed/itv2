@@ -48,7 +48,7 @@ fi
 
 # Run database migrations FIRST to create tables
 echo "📦 Running database migrations..."
-npx drizzle-kit migrate
+npm run db:push
 
 if [ $? -eq 0 ]; then
     echo "✅ Database migrations completed successfully"

@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, seedDatabase } from "./storage";
 import { insertStreamSchema, updateStreamSchema, insertStudioSchema, updateStudioSchema, insertUserSchema } from "../shared/schema";
 import { z } from "zod";
 import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
@@ -128,8 +128,11 @@ async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Check database connectivity (schema and seeding handled by Docker entrypoint)
+  // Check database connectivity (schema should be initialized by Docker entrypoint)
   await checkDatabaseConnectivity();
+  
+  // Seed database on startup
+  seedDatabase();
   // Stream endpoints
   app.get('/api/streams', async (req, res) => {
     try {
