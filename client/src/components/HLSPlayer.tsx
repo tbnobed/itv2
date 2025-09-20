@@ -506,74 +506,22 @@ export default function HLSPlayer({
           hlsRef.current.destroy();
         }
 
-        // Fire TV-optimized configuration to prevent crashes during resolution switches
-        const hlsConfig = isFireTV ? {
+        // Simplified HLS.js configuration that works reliably
+        const hlsConfig = {
           debug: false,
-          enableWorker: false,              // Disable workers to reduce memory usage
-          lowLatencyMode: false,
-          backBufferLength: 3,              // Ultra-reduced from 8s to 3s
-          maxBufferLength: 6,               // Ultra-reduced from 12s to 6s  
-          maxMaxBufferLength: 15,           // Ultra-reduced from 60s to 15s
-          maxBufferSize: 8 * 1000 * 1000,   // Ultra-reduced from 20MB to 8MB
-          maxBufferHole: 0.05,              // Ultra-reduced from 0.1
-          highBufferWatchdogPeriod: 0.5,    // Ultra-reduced from 1.5
-          nudgeOffset: 0.05,
-          nudgeMaxRetry: 1,                 // Reduced from 3
-          maxFragLookUpTolerance: 0.1,      // Ultra-reduced from 0.2
-          liveSyncDurationCount: 1,         // Ultra-reduced from 2
-          liveMaxLatencyDurationCount: 3,   // Ultra-reduced from 6
-          liveDurationInfinity: false,
-          capLevelToPlayerSize: true,       // Cap quality to player size
-          enableSoftwareAES: false,         // Disable to reduce CPU/memory overhead
-          startLevel: 0,                    // Force start at lowest quality
-          // DISABLE ADAPTIVE BITRATE COMPLETELY FOR FIRE TV
-          abrEwmaFastLive: 999,            // Extremely slow response to prevent switches
-          abrEwmaSlowLive: 999,            // Extremely slow response to prevent switches
-          abrEwmaFastVoD: 999,             // Extremely slow response to prevent switches
-          abrEwmaSlowVoD: 999,             // Extremely slow response to prevent switches
-          abrEwmaDefaultEstimate: 150000,   // Very low bandwidth estimate
-          abrBandwidthFactor: 0.1,         // Extremely conservative factor
-          abrBandwidthUpFactor: 0.01,      // Almost no upswitching
-          abrMaxWithRealBitrate: false,    // Use real bitrate for switching
-          maxStarvationDelay: 10,          // Longer delay before quality switch
-          maxLoadingDelay: 10,             // Longer delay before switch
-          enableEme: false                 // Disable encrypted media extensions
-        } : {
-          // Standard configuration for other devices
-          debug: false,
-          enableWorker: true,
-          lowLatencyMode: false,
-          backBufferLength: 90,
-          maxBufferLength: 30,
-          maxMaxBufferLength: 600,
-          maxBufferSize: 60 * 1000 * 1000, // 60MB
-          maxBufferHole: 0.5,
-          highBufferWatchdogPeriod: 2,
-          nudgeOffset: 0.1,
-          nudgeMaxRetry: 3,
-          maxFragLookUpTolerance: 0.25,
-          liveSyncDurationCount: 3,
-          liveMaxLatencyDurationCount: 10,
-          liveDurationInfinity: false,
-          enableSoftwareAES: true,
-          // Adaptive Bitrate Configuration
-          abrEwmaFastLive: 3.0,          // Fast EWMA for live streams
-          abrEwmaSlowLive: 9.0,          // Slow EWMA for live streams
-          abrEwmaFastVoD: 3.0,           // Fast EWMA for VoD
-          abrEwmaSlowVoD: 9.0,           // Slow EWMA for VoD
-          abrEwmaDefaultEstimate: 500000, // Default bandwidth estimate (500kbps)
-          abrBandwidthFactor: 0.95,      // Safety factor for bandwidth
-          abrBandwidthUpFactor: 0.7,     // Up-switching factor
-          abrMaxWithRealBitrate: false,  // Use real bitrate for switching
-          maxStarvationDelay: 4,         // Max starvation before quality switch
-          maxLoadingDelay: 4,            // Max loading delay before switch
-          enableEme: true                // Enable encrypted media extensions
+          enableWorker: !isFireTV, // Disable workers on Fire TV only
+          lowLatencyMode: false
         };
 
         console.log(`HLSPlayer[${streamId}]: Creating hls.js instance with ${isFireTV ? 'Fire TV-optimized' : 'standard'} configuration`);
         const hls = new Hls(hlsConfig);
 
         hlsRef.current = hls;
+
+        // Add detailed logging for debugging
+        hls.on(Hls.Events.MANIFEST_LOADING, (event, data) => {
+          console.log(`HLSPlayer[${streamId}]: HLS manifest loading started for URL: ${data.url}`);
+        });
 
         // HLS.js event handlers
         hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
@@ -628,8 +576,10 @@ export default function HLSPlayer({
             hls.on(Hls.Events.LEVEL_SWITCHING, levelSwitchHandler);
           }
           
-          // Don't set connected yet - wait for video to be ready
-          console.log(`HLSPlayer[${streamId}]: HLS manifest parsed, waiting for video readiness...`);
+          setIsLoading(false);
+          setConnectionStatus('connected');
+          onCanPlay?.();
+          retryCountRef.current = 0; // Reset retry count on success
         });
 
         // Track quality level changes with Fire TV-specific logging
@@ -661,6 +611,7 @@ export default function HLSPlayer({
 
         hls.on(Hls.Events.ERROR, (event: any, data: any) => {
           console.error(`HLSPlayer[${streamId}]: HLS.js error:`, data);
+          console.error(`HLSPlayer[${streamId}]: Error type: ${data.type}, details: ${data.details}, fatal: ${data.fatal}`);
           
           const hlsError = analyzeHLSError(data);
           setHlsError(hlsError);
@@ -732,13 +683,16 @@ export default function HLSPlayer({
         const handleWaiting = () => setIsLoading(true);
         const handlePlaying = () => setIsLoading(false);
         
-        // Handle when video is ready to play
+        // Handle when video is ready to play (additional check)
         const handleCanPlay = () => {
-          console.log(`HLSPlayer[${streamId}]: Video can play - setting connected status`);
-          setIsLoading(false);
-          setConnectionStatus('connected');
-          onCanPlay?.();
-          retryCountRef.current = 0; // Reset retry count on success
+          console.log(`HLSPlayer[${streamId}]: Video can play event received`);
+          // Don't override if already connected
+          if (connectionStatus !== 'connected') {
+            setIsLoading(false);
+            setConnectionStatus('connected');
+            onCanPlay?.();
+            retryCountRef.current = 0;
+          }
         };
 
         video.addEventListener('play', handlePlay);
