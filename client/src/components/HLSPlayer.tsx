@@ -55,10 +55,14 @@ export default function HLSPlayer({
   const maxRetries = 5;
   const globalAutoplayUnlockedRef = useRef(false);
   
-  // Fire TV device detection
+  // Fire TV device detection and fallback state
   const isFireTV = /AFT|AmazonWebAppPlatform|Silk/i.test(navigator.userAgent);
+  const [useNativeVideoForFireTV, setUseNativeVideoForFireTV] = useState(false);
+  const [fireTVFallbackTriggered, setFireTVFallbackTriggered] = useState(false);
+  const fireTVErrorCountRef = useRef(0);
+  const maxFireTVErrors = 2; // Switch to native fallback after 2 hls.js errors
   
-  console.log(`HLSPlayer[${streamId}]: Fire TV detection - isFireTV: ${isFireTV}, userAgent: ${navigator.userAgent}`);
+  console.log(`HLSPlayer[${streamId}]: [FIRE TV INIT] Fire TV detection - isFireTV: ${isFireTV}, userAgent: ${navigator.userAgent}`);
 
   // Check HLS support
   useEffect(() => {
@@ -201,15 +205,220 @@ export default function HLSPlayer({
     }, delay);
   }, [streamId]);
 
-  // Connect to HLS stream
+  // Native HTML5 video fallback for Fire TV devices
+  const connectToNativeVideoForFireTV = useCallback(async (): Promise<(() => void) | undefined> => {
+    const video = videoRef.current;
+    if (!video || !streamUrl || !isFireTV) {
+      console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Cannot connect - missing requirements`);
+      return undefined;
+    }
+
+    console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Switching to native HTML5 video fallback with URL: ${streamUrl}`);
+    setIsLoading(true);
+    setConnectionStatus('connecting');
+    setHlsError(null);
+    setFireTVFallbackTriggered(true);
+    onLoadStart?.();
+
+    try {
+      // Clean up any existing hls.js instance
+      if (hlsRef.current) {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Destroying existing hls.js instance`);
+        try {
+          hlsRef.current.destroy();
+        } catch (error) {
+          console.warn(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Error destroying hls.js:`, error);
+        }
+        hlsRef.current = null;
+      }
+
+      // Use native HTML5 video with HLS URL directly
+      console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Setting video.src directly to: ${streamUrl}`);
+      video.src = streamUrl;
+      video.muted = true; // Start muted for autoplay
+      video.preload = 'auto';
+      video.crossOrigin = 'anonymous';
+      
+      // Ultra-conservative video settings for Fire TV
+      video.controls = false;
+      video.playsInline = true;
+      video.autoplay = false; // We'll trigger play manually
+      
+      console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Applied ultra-conservative video settings`);
+
+      // Set up event handlers for native video fallback
+      const handleCanPlay = () => {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Native video can play - SUCCESS!`);
+        setIsLoading(false);
+        setConnectionStatus('connected');
+        setIsPlaying(false);
+        onCanPlay?.();
+        retryCountRef.current = 0; // Reset retry count on success
+        
+        // CRITICAL: Sync mute state with isMuted prop after canplay
+        if (video) {
+          video.muted = isMuted;
+          console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Synced mute state to: ${isMuted}`);
+          
+          // Ensure the onMutedChange callback reflects the current state
+          if (video.muted !== isMuted) {
+            onMutedChange(video.muted);
+          }
+        }
+        
+        // Try immediate autoplay for Fire TV
+        setTimeout(() => {
+          if (video && !isPlaying) {
+            console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Attempting autoplay`);
+            video.play().then(() => {
+              console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Autoplay successful!`);
+            }).catch(error => {
+              console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Autoplay failed, user interaction needed:`, error);
+              setNeedsUserInteraction(true);
+            });
+          }
+        }, 100);
+      };
+
+      const handlePlay = () => {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Video playing`);
+        setIsPlaying(true);
+        setNeedsUserInteraction(false);
+      };
+
+      const handlePause = () => {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Video paused`);
+        setIsPlaying(false);
+      };
+
+      const handleError = (e: Event) => {
+        const error = (e.target as HTMLVideoElement)?.error;
+        console.error(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Native video error:`, error);
+        
+        const hlsError = analyzeHLSError(error);
+        setHlsError(hlsError);
+        setConnectionStatus('failed');
+        setIsLoading(false);
+        onError?.(hlsError.message);
+        
+        // Even native fallback failed - this is a serious issue
+        console.error(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] CRITICAL - Even native video fallback failed!`);
+      };
+
+      const handleLoadStart = () => {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Native video load started`);
+      };
+
+      const handleWaiting = () => {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Video waiting/buffering`);
+        setIsLoading(true);
+      };
+
+      const handlePlaying = () => {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Video playing smoothly`);
+        setIsLoading(false);
+      };
+
+      const handleStalled = () => {
+        console.warn(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Video stalled - buffering issue`);
+      };
+
+      const handleSuspend = () => {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Video suspended`);
+      };
+
+      const handleAbort = () => {
+        console.warn(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Video loading aborted`);
+      };
+
+      // Add comprehensive event listeners for Fire TV monitoring
+      video.addEventListener('canplay', handleCanPlay);
+      video.addEventListener('play', handlePlay);
+      video.addEventListener('pause', handlePause);
+      video.addEventListener('error', handleError);
+      video.addEventListener('loadstart', handleLoadStart);
+      video.addEventListener('waiting', handleWaiting);
+      video.addEventListener('playing', handlePlaying);
+      video.addEventListener('stalled', handleStalled);
+      video.addEventListener('suspend', handleSuspend);
+      video.addEventListener('abort', handleAbort);
+
+      // Load the video
+      video.load();
+      console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Video load initiated`);
+
+      // Cleanup function for native video fallback
+      return () => {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Cleaning up native video event listeners`);
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('play', handlePlay);
+        video.removeEventListener('pause', handlePause);
+        video.removeEventListener('error', handleError);
+        video.removeEventListener('loadstart', handleLoadStart);
+        video.removeEventListener('waiting', handleWaiting);
+        video.removeEventListener('playing', handlePlaying);
+        video.removeEventListener('stalled', handleStalled);
+        video.removeEventListener('suspend', handleSuspend);
+        video.removeEventListener('abort', handleAbort);
+      };
+
+    } catch (error) {
+      console.error(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Failed to setup native video:`, error);
+      
+      const hlsError = analyzeHLSError(error);
+      setHlsError(hlsError);
+      setConnectionStatus('failed');
+      setIsLoading(false);
+      onError?.(hlsError.message);
+      return undefined;
+    }
+  }, [streamUrl, streamId, isMuted, analyzeHLSError, onLoadStart, onCanPlay, onError, isFireTV, isPlaying]);
+
+  // Fire TV fallback trigger function
+  const triggerFireTVFallback = useCallback(() => {
+    if (!isFireTV || useNativeVideoForFireTV) {
+      console.log(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] Fallback trigger ignored - not Fire TV or already using native`);
+      return;
+    }
+
+    console.warn(`HLSPlayer[${streamId}]: [FIRE TV FALLBACK] TRIGGERING NATIVE VIDEO FALLBACK - hls.js failed too many times`);
+    setUseNativeVideoForFireTV(true);
+    fireTVErrorCountRef.current = 0; // Reset error count
+    
+    // Clear any existing timeouts
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = undefined;
+    }
+    
+    // Switch to native video immediately
+    connectToNativeVideoForFireTV();
+  }, [isFireTV, useNativeVideoForFireTV, streamId, connectToNativeVideoForFireTV]);
+
+  // Connect to HLS stream (with Fire TV native fallback support)
   const connectToHLSStream = useCallback(async (): Promise<(() => void) | undefined> => {
     const video = videoRef.current;
-    if (!video || !streamUrl || !isHlsSupported) {
-      console.log(`HLSPlayer[${streamId}]: Cannot connect - missing video element or unsupported HLS`);
+    if (!video || !streamUrl) {
+      console.log(`HLSPlayer[${streamId}]: Cannot connect - missing video element or stream URL`);
+      return undefined;
+    }
+
+    // Fire TV: Check if we should use native fallback instead (BEFORE HLS support check)
+    if (isFireTV && useNativeVideoForFireTV) {
+      console.log(`HLSPlayer[${streamId}]: [FIRE TV] Using native video fallback instead of hls.js`);
+      return connectToNativeVideoForFireTV();
+    }
+
+    // Check HLS support only after Fire TV fallback check
+    if (!isHlsSupported) {
+      console.log(`HLSPlayer[${streamId}]: Cannot connect - HLS not supported and not using Fire TV native fallback`);
       return undefined;
     }
 
     console.log(`HLSPlayer[${streamId}]: Connecting to HLS stream: ${streamUrl}`);
+    if (isFireTV) {
+      console.log(`HLSPlayer[${streamId}]: [FIRE TV] Attempting hls.js connection with ultra-conservative settings`);
+    }
     setIsLoading(true);
     setConnectionStatus('connecting');
     setHlsError(null);
@@ -302,33 +511,33 @@ export default function HLSPlayer({
           debug: false,
           enableWorker: false,              // Disable workers to reduce memory usage
           lowLatencyMode: false,
-          backBufferLength: 8,              // Reduced from 90s to 8s
-          maxBufferLength: 12,              // Reduced from 30s to 12s  
-          maxMaxBufferLength: 60,           // Reduced from 600s to 60s
-          maxBufferSize: 20 * 1000 * 1000,  // Reduced from 60MB to 20MB
-          maxBufferHole: 0.1,               // Reduced from 0.5
-          highBufferWatchdogPeriod: 1.5,    // Reduced from 2
-          nudgeOffset: 0.1,
-          nudgeMaxRetry: 3,
-          maxFragLookUpTolerance: 0.2,      // Reduced from 0.25
-          liveSyncDurationCount: 2,         // Reduced from 3
-          liveMaxLatencyDurationCount: 6,   // Reduced from 10
+          backBufferLength: 3,              // Ultra-reduced from 8s to 3s
+          maxBufferLength: 6,               // Ultra-reduced from 12s to 6s  
+          maxMaxBufferLength: 15,           // Ultra-reduced from 60s to 15s
+          maxBufferSize: 8 * 1000 * 1000,   // Ultra-reduced from 20MB to 8MB
+          maxBufferHole: 0.05,              // Ultra-reduced from 0.1
+          highBufferWatchdogPeriod: 0.5,    // Ultra-reduced from 1.5
+          nudgeOffset: 0.05,
+          nudgeMaxRetry: 1,                 // Reduced from 3
+          maxFragLookUpTolerance: 0.1,      // Ultra-reduced from 0.2
+          liveSyncDurationCount: 1,         // Ultra-reduced from 2
+          liveMaxLatencyDurationCount: 3,   // Ultra-reduced from 6
           liveDurationInfinity: false,
           capLevelToPlayerSize: true,       // Cap quality to player size
           enableSoftwareAES: false,         // Disable to reduce CPU/memory overhead
-          // Gentler ABR to reduce switching frequency
-          abrEwmaFastLive: 2.0,            // Reduced from 3.0 for slower response
-          abrEwmaSlowLive: 12.0,           // Increased from 9.0 for more stability
-          abrEwmaFastVoD: 2.0,             // Reduced from 3.0
-          abrEwmaSlowVoD: 12.0,            // Increased from 9.0
-          abrEwmaDefaultEstimate: 500000,   // Default bandwidth estimate (500kbps)
-          abrBandwidthFactor: 0.9,         // Increased safety factor from 0.95
-          abrBandwidthUpFactor: 0.5,       // Reduced from 0.7 for less aggressive upswitching
+          startLevel: 0,                    // Force start at lowest quality
+          // DISABLE ADAPTIVE BITRATE COMPLETELY FOR FIRE TV
+          abrEwmaFastLive: 999,            // Extremely slow response to prevent switches
+          abrEwmaSlowLive: 999,            // Extremely slow response to prevent switches
+          abrEwmaFastVoD: 999,             // Extremely slow response to prevent switches
+          abrEwmaSlowVoD: 999,             // Extremely slow response to prevent switches
+          abrEwmaDefaultEstimate: 150000,   // Very low bandwidth estimate
+          abrBandwidthFactor: 0.1,         // Extremely conservative factor
+          abrBandwidthUpFactor: 0.01,      // Almost no upswitching
           abrMaxWithRealBitrate: false,    // Use real bitrate for switching
-          maxStarvationDelay: 4,           // Max starvation before quality switch
-          maxLoadingDelay: 4,              // Max loading delay before switch
-          minAutoBitrate: 150000,          // Set minimum bitrate (150kbps) instead of 0
-          emeEnabled: false                // Disable encrypted media extensions
+          maxStarvationDelay: 10,          // Longer delay before quality switch
+          maxLoadingDelay: 10,             // Longer delay before switch
+          enableEme: false                 // Disable encrypted media extensions
         } : {
           // Standard configuration for other devices
           debug: false,
@@ -358,8 +567,7 @@ export default function HLSPlayer({
           abrMaxWithRealBitrate: false,  // Use real bitrate for switching
           maxStarvationDelay: 4,         // Max starvation before quality switch
           maxLoadingDelay: 4,            // Max loading delay before switch
-          minAutoBitrate: 0,             // Minimum auto bitrate (0 = no limit)
-          emeEnabled: true               // Enable encrypted media extensions
+          enableEme: true                // Enable encrypted media extensions
         };
 
         console.log(`HLSPlayer[${streamId}]: Creating hls.js instance with ${isFireTV ? 'Fire TV-optimized' : 'standard'} configuration`);
@@ -383,32 +591,41 @@ export default function HLSPlayer({
           setAvailableQualityLevels(levels);
           console.log(`HLSPlayer[${streamId}]: Available quality levels:`, levels);
           
-          // Fire TV: Cap auto level to 720p to prevent crashes during high-res switches
+          // Fire TV: COMPLETELY DISABLE ADAPTIVE BITRATE AND FORCE LOWEST QUALITY
           if (isFireTV && levels.length > 0) {
-            // Find the highest level that's 720p or below
-            const maxFireTVLevel = levels.reduce((maxLevel, level, index) => {
-              if (level.height && level.height <= 720) {
-                return Math.max(maxLevel, index);
+            // Find the lowest quality level (smallest bitrate/resolution)
+            const lowestLevel = levels.reduce((minLevel, level, index) => {
+              const currentMin = levels[minLevel];
+              if (!currentMin || (level.bitrate && level.bitrate < currentMin.bitrate)) {
+                return index;
               }
-              return maxLevel;
-            }, -1);
+              return minLevel;
+            }, 0);
             
-            let targetLevel: number;
-            if (maxFireTVLevel >= 0) {
-              targetLevel = maxFireTVLevel;
-              console.log(`HLSPlayer[${streamId}]: Fire TV - Auto level capped to level ${targetLevel} (${levels[targetLevel].height}p) to prevent crashes`);
-            } else {
-              // Fallback: use lowest available level to minimize decoder pressure
-              targetLevel = 0;
-              console.log(`HLSPlayer[${streamId}]: Fire TV - No ≤720p level found, capped to lowest level ${targetLevel} (${levels[targetLevel]?.height || 'unknown'}p)`);
-            }
+            console.log(`HLSPlayer[${streamId}]: [FIRE TV ULTRA-CONSERVATIVE] Forcing lowest quality level ${lowestLevel} (${levels[lowestLevel]?.height || 'unknown'}p, ${Math.round((levels[lowestLevel]?.bitrate || 0) / 1000)}kbps)`);
             
-            // Apply capping and set initial level to the capped level
-            hls.autoLevelCapping = targetLevel;
-            hls.startLevel = targetLevel;
-            hls.currentLevel = targetLevel;
+            // COMPLETELY DISABLE ADAPTIVE BITRATE
+            hls.autoLevelEnabled = false;
+            hls.autoLevelCapping = lowestLevel;
+            hls.startLevel = lowestLevel;
+            hls.currentLevel = lowestLevel;
             
-            console.log(`HLSPlayer[${streamId}]: Fire TV - Set startLevel and currentLevel to ${targetLevel} for maximum stability`);
+            // Force the level and prevent any changes
+            hls.nextAutoLevel = lowestLevel;
+            hls.nextLevel = lowestLevel;
+            
+            console.log(`HLSPlayer[${streamId}]: [FIRE TV ULTRA-CONSERVATIVE] Adaptive bitrate DISABLED, locked to level ${lowestLevel}`);
+            
+            // Monitor for any unwanted level changes and force them back
+            const levelSwitchHandler = (event: any, data: any) => {
+              if (data.level !== lowestLevel) {
+                console.warn(`HLSPlayer[${streamId}]: [FIRE TV] Unwanted level switch to ${data.level}, forcing back to ${lowestLevel}`);
+                hls.currentLevel = lowestLevel;
+                hls.nextLevel = lowestLevel;
+              }
+            };
+            
+            hls.on(Hls.Events.LEVEL_SWITCHING, levelSwitchHandler);
           }
           
           setIsLoading(false);
@@ -450,6 +667,19 @@ export default function HLSPlayer({
           const hlsError = analyzeHLSError(data);
           setHlsError(hlsError);
           
+          // Fire TV: Track errors and trigger fallback if needed
+          if (isFireTV && data.fatal) {
+            fireTVErrorCountRef.current += 1;
+            console.warn(`HLSPlayer[${streamId}]: [FIRE TV ERROR TRACKING] Fatal error ${fireTVErrorCountRef.current}/${maxFireTVErrors} - Type: ${data.type}, Details: ${data.details}`);
+            
+            // If we've had too many errors on Fire TV, switch to native fallback
+            if (fireTVErrorCountRef.current >= maxFireTVErrors && !useNativeVideoForFireTV) {
+              console.error(`HLSPlayer[${streamId}]: [FIRE TV ERROR LIMIT] Reached ${maxFireTVErrors} fatal errors, triggering native fallback`);
+              triggerFireTVFallback();
+              return; // Exit early, don't do normal retry logic
+            }
+          }
+          
           if (data.fatal) {
             console.error(`HLSPlayer[${streamId}]: Fatal HLS error`);
             setConnectionStatus('failed');
@@ -459,24 +689,42 @@ export default function HLSPlayer({
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
                 console.log(`HLSPlayer[${streamId}]: Network error, attempting recovery`);
-                retryConnection();
+                if (isFireTV) {
+                  console.log(`HLSPlayer[${streamId}]: [FIRE TV] Network error recovery with extended delay`);
+                  // Fire TV gets longer delays between retries
+                  setTimeout(() => retryConnection(), 2000);
+                } else {
+                  retryConnection();
+                }
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
                 console.log(`HLSPlayer[${streamId}]: Media error, attempting recovery`);
                 try {
+                  if (isFireTV) {
+                    console.log(`HLSPlayer[${streamId}]: [FIRE TV] Attempting conservative media error recovery`);
+                  }
                   hls.recoverMediaError();
                 } catch (recoveryError) {
                   console.error(`HLSPlayer[${streamId}]: Recovery failed:`, recoveryError);
+                  if (isFireTV) {
+                    console.warn(`HLSPlayer[${streamId}]: [FIRE TV] Media recovery failed, considering fallback`);
+                  }
                   retryConnection();
                 }
                 break;
               default:
                 console.log(`HLSPlayer[${streamId}]: Fatal error, retrying connection`);
+                if (isFireTV) {
+                  console.log(`HLSPlayer[${streamId}]: [FIRE TV] Unknown fatal error, using conservative retry`);
+                }
                 retryConnection();
                 break;
             }
           } else {
             console.warn(`HLSPlayer[${streamId}]: Non-fatal HLS error, continuing playback`);
+            if (isFireTV) {
+              console.log(`HLSPlayer[${streamId}]: [FIRE TV] Non-fatal error handled gracefully`);
+            }
           }
         });
 
@@ -518,14 +766,20 @@ export default function HLSPlayer({
       retryConnection();
       return undefined;
     }
-  }, [streamUrl, streamId, isMuted, isHlsSupported, useNativeHls, analyzeHLSError, onLoadStart, onCanPlay, onError, retryConnection]);
+  }, [streamUrl, streamId, isMuted, isHlsSupported, useNativeHls, analyzeHLSError, onLoadStart, onCanPlay, onError, retryConnection, isFireTV, useNativeVideoForFireTV, connectToNativeVideoForFireTV, triggerFireTVFallback]);
 
-  // Effect to handle stream connection
+  // Effect to handle stream connection (including Fire TV fallback)
   useEffect(() => {
     console.log(`HLSPlayer[${streamId}]: Connection effect triggered. streamUrl=${streamUrl}, isHlsSupported=${isHlsSupported}`);
+    if (isFireTV) {
+      console.log(`HLSPlayer[${streamId}]: [FIRE TV] Connection effect - useNativeVideoForFireTV=${useNativeVideoForFireTV}, fireTVFallbackTriggered=${fireTVFallbackTriggered}`);
+    }
     
     if (streamUrl && isHlsSupported) {
-      console.log(`HLSPlayer[${streamId}]: Initializing HLS connection to ${streamUrl}`);
+      console.log(`HLSPlayer[${streamId}]: Initializing connection to ${streamUrl}`);
+      if (isFireTV && useNativeVideoForFireTV) {
+        console.log(`HLSPlayer[${streamId}]: [FIRE TV] Using native video fallback mode`);
+      }
       let cleanupFunction: (() => void) | undefined;
       
       connectToHLSStream().then((cleanup) => {
@@ -543,7 +797,7 @@ export default function HLSPlayer({
       console.log(`HLSPlayer[${streamId}]: Cannot connect - streamUrl="${streamUrl}", isHlsSupported=${isHlsSupported}`);
       cleanup();
     }
-  }, [streamUrl, isHlsSupported, streamId]);
+  }, [streamUrl, isHlsSupported, streamId, useNativeVideoForFireTV, connectToHLSStream]);
 
   // Handle mute changes - but keep muted for autoplay
   useEffect(() => {
