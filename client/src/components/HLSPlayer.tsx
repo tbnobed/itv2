@@ -506,11 +506,24 @@ export default function HLSPlayer({
           hlsRef.current.destroy();
         }
 
-        // Simplified HLS.js configuration that works reliably
+        // HLS.js configuration with audio support and Fire TV compatibility
         const hlsConfig = {
           debug: false,
-          enableWorker: !isFireTV, // Disable workers on Fire TV only
-          lowLatencyMode: false
+          enableWorker: !isFireTV,
+          lowLatencyMode: false,
+          backBufferLength: isFireTV ? 10 : 30,
+          maxBufferLength: isFireTV ? 15 : 30,
+          maxMaxBufferLength: isFireTV ? 60 : 600,
+          maxBufferSize: isFireTV ? 10 * 1000 * 1000 : 60 * 1000 * 1000,
+          startLevel: isFireTV ? 0 : -1,
+          capLevelToPlayerSize: isFireTV,
+          enableSoftwareAES: !isFireTV,
+          // Audio-specific settings
+          abrEwmaDefaultEstimate: isFireTV ? 500000 : 1000000,
+          abrBandwidthFactor: 0.95,
+          abrBandwidthUpFactor: 0.7,
+          maxStarvationDelay: 4,
+          maxLoadingDelay: 4
         };
 
         console.log(`HLSPlayer[${streamId}]: Creating hls.js instance with ${isFireTV ? 'Fire TV-optimized' : 'standard'} configuration`);
@@ -539,9 +552,11 @@ export default function HLSPlayer({
           setAvailableQualityLevels(levels);
           console.log(`HLSPlayer[${streamId}]: Available quality levels:`, levels);
           
-          // Fire TV: COMPLETELY DISABLE ADAPTIVE BITRATE AND FORCE LOWEST QUALITY
+          // Fire TV: Use conservative quality settings
           if (isFireTV && levels.length > 0) {
-            // Find the lowest quality level (smallest bitrate/resolution)
+            console.log(`HLSPlayer[${streamId}]: [FIRE TV] Setting conservative quality limits for ${levels.length} available levels`);
+            
+            // Find the lowest quality level for Fire TV
             const lowestLevel = levels.reduce((minLevel, level, index) => {
               const currentMin = levels[minLevel];
               if (!currentMin || (level.bitrate && level.bitrate < currentMin.bitrate)) {
@@ -550,30 +565,11 @@ export default function HLSPlayer({
               return minLevel;
             }, 0);
             
-            console.log(`HLSPlayer[${streamId}]: [FIRE TV ULTRA-CONSERVATIVE] Forcing lowest quality level ${lowestLevel} (${levels[lowestLevel]?.height || 'unknown'}p, ${Math.round((levels[lowestLevel]?.bitrate || 0) / 1000)}kbps)`);
-            
-            // COMPLETELY DISABLE ADAPTIVE BITRATE
-            hls.autoLevelEnabled = false;
-            hls.autoLevelCapping = lowestLevel;
-            hls.startLevel = lowestLevel;
+            // Set quality ceiling for Fire TV
+            hls.autoLevelCapping = Math.min(lowestLevel + 1, levels.length - 1);
             hls.currentLevel = lowestLevel;
             
-            // Force the level and prevent any changes
-            hls.nextAutoLevel = lowestLevel;
-            hls.nextLevel = lowestLevel;
-            
-            console.log(`HLSPlayer[${streamId}]: [FIRE TV ULTRA-CONSERVATIVE] Adaptive bitrate DISABLED, locked to level ${lowestLevel}`);
-            
-            // Monitor for any unwanted level changes and force them back
-            const levelSwitchHandler = (event: any, data: any) => {
-              if (data.level !== lowestLevel) {
-                console.warn(`HLSPlayer[${streamId}]: [FIRE TV] Unwanted level switch to ${data.level}, forcing back to ${lowestLevel}`);
-                hls.currentLevel = lowestLevel;
-                hls.nextLevel = lowestLevel;
-              }
-            };
-            
-            hls.on(Hls.Events.LEVEL_SWITCHING, levelSwitchHandler);
+            console.log(`HLSPlayer[${streamId}]: [FIRE TV] Quality capped at level ${hls.autoLevelCapping}, starting at level ${lowestLevel}`);
           }
           
           setIsLoading(false);
