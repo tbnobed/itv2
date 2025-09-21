@@ -75,12 +75,10 @@ const StreamTile = React.forwardRef(({
     console.log(`Opening stream: ${streamId} - ${title}`);
     setIsLoading(true);
     
-    // Call onSelect immediately to preserve user gesture for autoplay
-    onSelect?.(streamId);
-    
-    // Stop loading after modal opens
+    // Simulate loading
     setTimeout(() => {
       setIsLoading(false);
+      onSelect?.(streamId);
     }, 500);
   };
 
