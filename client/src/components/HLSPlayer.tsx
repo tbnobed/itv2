@@ -784,28 +784,36 @@ export default function HLSPlayer({
     }
   }, [isMuted, isPlaying]);
 
-  // Try autoplay once when connected, but don't be aggressive about it  
+  // Auto-play when connected - use user gesture immediately
   useEffect(() => {
-    if (connectionStatus === 'connected' && videoRef.current && globalAutoplayUnlockedRef.current) {
+    if (connectionStatus === 'connected' && videoRef.current) {
       const video = videoRef.current;
       
-      console.log(`HLSPlayer[${streamId}]: Attempting autoplay since user has interacted`);
+      console.log(`HLSPlayer[${streamId}]: Stream connected, attempting immediate playback`);
       
-      // Set up for autoplay
-      video.muted = isMuted;
-      video.volume = isMuted ? 0 : 1.0;
+      // Set required attributes for reliable playback
+      video.muted = true;
+      video.playsInline = true;
       video.preload = 'auto';
+      video.volume = 0;
       
+      // Try to play immediately using the preserved user gesture
       video.play().then(() => {
-        console.log(`HLSPlayer[${streamId}]: AUTOPLAY SUCCESS with audio!`);
+        console.log(`HLSPlayer[${streamId}]: ✅ PLAYING! Stream started successfully`);
         setNeedsUserInteraction(false);
+        setIsPlaying(true);
+        
+        // Only unmute if user has explicitly requested audio
+        if (!isMuted && globalAutoplayUnlockedRef.current) {
+          video.muted = false;
+          video.volume = 1.0;
+          console.log(`HLSPlayer[${streamId}]: 🔊 Audio enabled`);
+        }
       }).catch((error) => {
-        console.log(`HLSPlayer[${streamId}]: Autoplay failed:`, error);
+        console.log(`HLSPlayer[${streamId}]: Autoplay blocked, showing play overlay:`, error);
         setNeedsUserInteraction(true);
+        setIsPlaying(false);
       });
-    } else if (connectionStatus === 'connected') {
-      console.log(`HLSPlayer[${streamId}]: Connected but waiting for user interaction`);
-      setNeedsUserInteraction(true);
     }
   }, [connectionStatus, streamId, isMuted]);
 
