@@ -536,6 +536,16 @@ export default function HLSPlayer({
           console.log(`HLSPlayer[${streamId}]: HLS manifest loading started for URL: ${data.url}`);
         });
 
+        // Critical error logging
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          console.error(`HLSPlayer[${streamId}]: HLS ERROR:`, data);
+          if (data.fatal) {
+            console.error(`HLSPlayer[${streamId}]: FATAL HLS ERROR - Type: ${data.type}, Details:`, data.details);
+            setConnectionStatus('failed');
+            setIsLoading(false);
+          }
+        });
+
         // HLS.js event handlers
         hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
           console.log(`HLSPlayer[${streamId}]: HLS manifest parsed successfully`);
@@ -774,102 +784,46 @@ export default function HLSPlayer({
     }
   }, [isMuted, isPlaying]);
 
-  // Ultra-aggressive autoplay when connected
+  // Try autoplay once when connected, but don't be aggressive about it  
   useEffect(() => {
-    if (connectionStatus === 'connected' && videoRef.current) {
+    if (connectionStatus === 'connected' && videoRef.current && globalAutoplayUnlockedRef.current) {
       const video = videoRef.current;
       
-      console.log(`HLSPlayer[${streamId}]: Starting autoplay sequence`);
+      console.log(`HLSPlayer[${streamId}]: Attempting autoplay since user has interacted`);
       
-      // Ensure optimal autoplay settings
-      video.muted = true;
-      video.volume = 0;
+      // Set up for autoplay
+      video.muted = isMuted;
+      video.volume = isMuted ? 0 : 1.0;
       video.preload = 'auto';
       
-      const tryAutoplay = async () => {
-        try {
-          console.log(`HLSPlayer[${streamId}]: Attempting autoplay...`);
-          await video.play();
-          console.log(`HLSPlayer[${streamId}]: AUTOPLAY SUCCESS!`);
-          
-          // Enable audio once video starts playing
-          setTimeout(() => {
-            if (video && video.readyState >= 2) {
-              video.muted = isMuted; // Respect user's mute preference
-              if (!isMuted) {
-                video.volume = 1.0; // Full volume
-                console.log(`HLSPlayer[${streamId}]: Audio enabled - volume set to 1.0, muted: ${isMuted}`);
-              }
-            }
-          }, 100);
-          
-          return true;
-        } catch (error) {
-          console.log(`HLSPlayer[${streamId}]: Autoplay failed:`, error);
-          return false;
-        }
-      };
-      
-      // Method 1: Immediate play attempt
-      tryAutoplay().then(success => {
-        if (success) return;
-        
-        // Method 2: Brief delay for manifest to fully load
-        setTimeout(() => {
-          if (!isPlaying) {
-            tryAutoplay().then(success => {
-              if (!success) {
-                console.log(`HLSPlayer[${streamId}]: Autoplay blocked - user interaction required`);
-                setNeedsUserInteraction(true);
-              }
-            });
-          }
-        }, 200);
+      video.play().then(() => {
+        console.log(`HLSPlayer[${streamId}]: AUTOPLAY SUCCESS with audio!`);
+        setNeedsUserInteraction(false);
+      }).catch((error) => {
+        console.log(`HLSPlayer[${streamId}]: Autoplay failed:`, error);
+        setNeedsUserInteraction(true);
       });
+    } else if (connectionStatus === 'connected') {
+      console.log(`HLSPlayer[${streamId}]: Connected but waiting for user interaction`);
+      setNeedsUserInteraction(true);
     }
-  }, [connectionStatus, streamId, isPlaying, isMuted]);
+  }, [connectionStatus, streamId, isMuted]);
 
-  // Global autoplay unlock on any page interaction  
+  // Simple click anywhere to unlock autoplay
   useEffect(() => {
     if (globalAutoplayUnlockedRef.current) return;
 
-    const unlockAutoplay = async () => {
-      if (globalAutoplayUnlockedRef.current) return;
-      
-      console.log(`HLSPlayer[${streamId}]: User interaction detected - unlocking autoplay`);
+    const unlockAutoplay = () => {
+      console.log(`HLSPlayer[${streamId}]: Click detected - unlocking autoplay globally`);
       globalAutoplayUnlockedRef.current = true;
-      
-      // If video is connected and needs interaction, try to play with audio
-      if (connectionStatus === 'connected' && videoRef.current && needsUserInteraction) {
-        const video = videoRef.current;
-        
-        // Enable full audio for user-initiated playback
-        video.muted = isMuted;
-        video.volume = isMuted ? 0 : 1.0;
-        
-        try {
-          await video.play();
-          console.log(`HLSPlayer[${streamId}]: Auto-playing with audio after interaction, muted: ${isMuted}`);
-          setNeedsUserInteraction(false);
-        } catch (error) {
-          console.log(`HLSPlayer[${streamId}]: Interaction-triggered play failed:`, error);
-        }
-      }
     };
 
-    const interactionEvents = ['click', 'touchstart', 'keydown'];
+    document.addEventListener('click', unlockAutoplay, { once: true, capture: true });
     
-    // Add listeners for any user interaction
-    interactionEvents.forEach(eventType => {
-      document.addEventListener(eventType, unlockAutoplay, { once: true, capture: true, passive: true });
-    });
-
     return () => {
-      interactionEvents.forEach(eventType => {
-        document.removeEventListener(eventType, unlockAutoplay, { capture: true });
-      });
+      document.removeEventListener('click', unlockAutoplay, { capture: true });
     };
-  }, [streamId, connectionStatus, needsUserInteraction, isMuted]);
+  }, [streamId]);
 
   // Keyboard navigation support for Fire TV
   useEffect(() => {
@@ -909,19 +863,22 @@ export default function HLSPlayer({
     if (isPlaying) {
       video.pause();
     } else {
-      // User clicked to play - enable audio immediately
-      console.log(`HLSPlayer[${streamId}]: User clicked play - enabling audio`);
+      // User clicked to play - this should always work
+      console.log(`HLSPlayer[${streamId}]: User clicked play button - starting playback`);
+      
+      // Enable audio immediately since user clicked
       video.muted = isMuted;
       video.volume = isMuted ? 0 : 1.0;
       
-      setNeedsUserInteraction(false);
+      // Mark that user has interacted
       globalAutoplayUnlockedRef.current = true;
+      setNeedsUserInteraction(false);
       
       try {
         await video.play();
-        console.log(`HLSPlayer[${streamId}]: Playing with audio enabled, muted: ${isMuted}`);
+        console.log(`HLSPlayer[${streamId}]: ✅ PLAYING SUCCESS! Audio enabled, muted: ${isMuted}`);
       } catch (error) {
-        console.error(`HLSPlayer[${streamId}]: Play error:`, error);
+        console.error(`HLSPlayer[${streamId}]: ❌ Play button failed:`, error);
       }
     }
   };
