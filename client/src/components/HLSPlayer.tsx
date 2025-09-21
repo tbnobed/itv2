@@ -829,44 +829,39 @@ export default function HLSPlayer({
     }
   }, [connectionStatus, streamId, isPlaying, isMuted]);
 
-  // Global autoplay unlock on any page interaction
+  // Global autoplay unlock on any page interaction  
   useEffect(() => {
     if (globalAutoplayUnlockedRef.current) return;
 
-    const unlockAutoplay = () => {
+    const unlockAutoplay = async () => {
       if (globalAutoplayUnlockedRef.current) return;
       
       console.log(`HLSPlayer[${streamId}]: User interaction detected - unlocking autoplay`);
       globalAutoplayUnlockedRef.current = true;
       
-      // Immediately try to play if video is connected
-      if (connectionStatus === 'connected' && videoRef.current && !isPlaying) {
+      // If video is connected and needs interaction, try to play with audio
+      if (connectionStatus === 'connected' && videoRef.current && needsUserInteraction) {
         const video = videoRef.current;
-        video.muted = true;
-        video.volume = 0;
         
-        video.play().then(() => {
-          console.log(`HLSPlayer[${streamId}]: INTERACTION-TRIGGERED AUTOPLAY SUCCESS!`);
+        // Enable full audio for user-initiated playback
+        video.muted = isMuted;
+        video.volume = isMuted ? 0 : 1.0;
+        
+        try {
+          await video.play();
+          console.log(`HLSPlayer[${streamId}]: Auto-playing with audio after interaction, muted: ${isMuted}`);
           setNeedsUserInteraction(false);
-          
-          // After successful start, unmute if needed
-          setTimeout(() => {
-            if (!isMuted) {
-              video.muted = false;
-              video.volume = 1;
-            }
-          }, 500);
-        }).catch((error) => {
+        } catch (error) {
           console.log(`HLSPlayer[${streamId}]: Interaction-triggered play failed:`, error);
-        });
+        }
       }
     };
 
-    const interactionEvents = ['click', 'touchstart', 'keydown', 'mousedown', 'touchend'];
+    const interactionEvents = ['click', 'touchstart', 'keydown'];
     
     // Add listeners for any user interaction
     interactionEvents.forEach(eventType => {
-      document.addEventListener(eventType, unlockAutoplay, { once: false, capture: true, passive: true });
+      document.addEventListener(eventType, unlockAutoplay, { once: true, capture: true, passive: true });
     });
 
     return () => {
@@ -874,7 +869,7 @@ export default function HLSPlayer({
         document.removeEventListener(eventType, unlockAutoplay, { capture: true });
       });
     };
-  }, [streamId, connectionStatus, isPlaying, isMuted]);
+  }, [streamId, connectionStatus, needsUserInteraction, isMuted]);
 
   // Keyboard navigation support for Fire TV
   useEffect(() => {
@@ -907,17 +902,27 @@ export default function HLSPlayer({
     return () => video.removeEventListener('keydown', handleKeyDown);
   }, [isPlaying, onMutedChange]);
 
-  const handleTogglePlay = () => {
+  const handleTogglePlay = async () => {
     const video = videoRef.current;
     if (!video) return;
 
     if (isPlaying) {
       video.pause();
     } else {
+      // User clicked to play - enable audio immediately
+      console.log(`HLSPlayer[${streamId}]: User clicked play - enabling audio`);
+      video.muted = isMuted;
+      video.volume = isMuted ? 0 : 1.0;
+      
       setNeedsUserInteraction(false);
-      video.play().catch((error) => {
+      globalAutoplayUnlockedRef.current = true;
+      
+      try {
+        await video.play();
+        console.log(`HLSPlayer[${streamId}]: Playing with audio enabled, muted: ${isMuted}`);
+      } catch (error) {
         console.error(`HLSPlayer[${streamId}]: Play error:`, error);
-      });
+      }
     }
   };
 
