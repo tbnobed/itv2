@@ -779,7 +779,7 @@ export default function HLSPlayer({
     if (connectionStatus === 'connected' && videoRef.current) {
       const video = videoRef.current;
       
-      console.log(`HLSPlayer[${streamId}]: Starting ultra autoplay sequence`);
+      console.log(`HLSPlayer[${streamId}]: Starting autoplay sequence`);
       
       // Ensure optimal autoplay settings
       video.muted = true;
@@ -791,6 +791,18 @@ export default function HLSPlayer({
           console.log(`HLSPlayer[${streamId}]: Attempting autoplay...`);
           await video.play();
           console.log(`HLSPlayer[${streamId}]: AUTOPLAY SUCCESS!`);
+          
+          // Enable audio once video starts playing
+          setTimeout(() => {
+            if (video && video.readyState >= 2) {
+              video.muted = isMuted; // Respect user's mute preference
+              if (!isMuted) {
+                video.volume = 1.0; // Full volume
+                console.log(`HLSPlayer[${streamId}]: Audio enabled - volume set to 1.0, muted: ${isMuted}`);
+              }
+            }
+          }, 100);
+          
           return true;
         } catch (error) {
           console.log(`HLSPlayer[${streamId}]: Autoplay failed:`, error);
@@ -798,40 +810,24 @@ export default function HLSPlayer({
         }
       };
       
-      // Method 1: Immediate play
-      tryAutoplay();
-      
-      // Method 2: After 10ms
-      setTimeout(tryAutoplay, 10);
-      
-      // Method 3: After 50ms  
-      setTimeout(tryAutoplay, 50);
-      
-      // Method 4: After 100ms
-      setTimeout(tryAutoplay, 100);
-      
-      // Method 5: After 200ms
-      setTimeout(tryAutoplay, 200);
-      
-      // Method 6: After requestAnimationFrame
-      requestAnimationFrame(() => {
-        tryAutoplay();
+      // Method 1: Immediate play attempt
+      tryAutoplay().then(success => {
+        if (success) return;
+        
+        // Method 2: Brief delay for manifest to fully load
+        setTimeout(() => {
+          if (!isPlaying) {
+            tryAutoplay().then(success => {
+              if (!success) {
+                console.log(`HLSPlayer[${streamId}]: Autoplay blocked - user interaction required`);
+                setNeedsUserInteraction(true);
+              }
+            });
+          }
+        }, 200);
       });
-      
-      // Method 7: Last resort after 1 second
-      setTimeout(() => {
-        if (!isPlaying) {
-          console.log(`HLSPlayer[${streamId}]: Last resort autoplay attempt`);
-          tryAutoplay().then((success) => {
-            if (!success) {
-              console.log(`HLSPlayer[${streamId}]: All autoplay methods exhausted`);
-              setNeedsUserInteraction(true);
-            }
-          });
-        }
-      }, 1000);
     }
-  }, [connectionStatus, streamId, isPlaying]);
+  }, [connectionStatus, streamId, isPlaying, isMuted]);
 
   // Global autoplay unlock on any page interaction
   useEffect(() => {
