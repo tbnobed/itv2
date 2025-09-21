@@ -730,6 +730,9 @@ export default function HLSPlayer({
   // Effect to handle stream connection (including Fire TV fallback)
   useEffect(() => {
     console.log(`HLSPlayer[${streamId}]: Connection effect triggered. streamUrl=${streamUrl}, isHlsSupported=${isHlsSupported}`);
+    console.log(`HLSPlayer[${streamId}]: HLS.js support check:`, !!Hls?.isSupported?.());
+    console.log(`HLSPlayer[${streamId}]: Hls object available:`, !!Hls);
+    
     if (isFireTV) {
       console.log(`HLSPlayer[${streamId}]: [FIRE TV] Connection effect - useNativeVideoForFireTV=${useNativeVideoForFireTV}, fireTVFallbackTriggered=${fireTVFallbackTriggered}`);
     }
@@ -739,10 +742,15 @@ export default function HLSPlayer({
       if (isFireTV && useNativeVideoForFireTV) {
         console.log(`HLSPlayer[${streamId}]: [FIRE TV] Using native video fallback mode`);
       }
+      
+      console.log(`HLSPlayer[${streamId}]: About to call connectToHLSStream()`);
       let cleanupFunction: (() => void) | undefined;
       
       connectToHLSStream().then((cleanup) => {
+        console.log(`HLSPlayer[${streamId}]: connectToHLSStream resolved with cleanup function`);
         cleanupFunction = cleanup;
+      }).catch((error) => {
+        console.error(`HLSPlayer[${streamId}]: connectToHLSStream failed:`, error);
       });
       
       return () => {
@@ -753,7 +761,7 @@ export default function HLSPlayer({
         cleanup();
       };
     } else {
-      console.log(`HLSPlayer[${streamId}]: Cannot connect - streamUrl="${streamUrl}", isHlsSupported=${isHlsSupported}`);
+      console.log(`HLSPlayer[${streamId}]: Cannot connect - streamUrl="${streamUrl}", isHlsSupported=${isHlsSupported}, streamUrl length=${streamUrl?.length || 0}`);
       cleanup();
     }
   }, [streamUrl, isHlsSupported, streamId, useNativeVideoForFireTV, connectToHLSStream]);
