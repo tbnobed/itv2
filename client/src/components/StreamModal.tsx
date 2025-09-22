@@ -402,8 +402,9 @@ export default function StreamModal({
             setTimeout(() => {
               if (videoRef.current) {
                 const video = videoRef.current;
-                video.muted = true;
-                video.volume = 0;
+                // Respect user's mute preference instead of always muting
+                video.muted = isMuted;
+                video.volume = isMuted ? 0 : 1;
                 
                 video.play().then(() => {
                   console.log('WebRTC: AUTOPLAY SUCCESS!');
