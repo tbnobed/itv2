@@ -582,7 +582,7 @@ export default function StreamModal({
 
   // Simplified modal close for Fire TV compatibility
   const handleModalClose = useCallback(() => {
-    // Set closing flag to suppress fullscreen re-focus during close
+    // Set closing flag to suppress re-focus during close
     setIsClosing(true);
     
     // Exit fullscreen if needed
@@ -591,7 +591,6 @@ export default function StreamModal({
       document.exitFullscreen().catch(err => {
         console.error('Failed to exit fullscreen:', err);
       });
-      setIsFullscreen(false);
     }
     
     // Always trigger focus restoration before closing
@@ -610,7 +609,7 @@ export default function StreamModal({
     
     // Close modal immediately - no complex history management
     onClose();
-  }, [onClose, setIsClosing, setIsFullscreen]);
+  }, [onClose, setIsClosing]);
 
   // Fire TV history management - push dummy state to consume back press
   useEffect(() => {
