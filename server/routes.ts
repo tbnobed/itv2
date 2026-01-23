@@ -536,6 +536,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public APK version check endpoint (for app self-update)
+  app.get('/api/apk/version', async (req, res) => {
+    try {
+      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      
+      if (!existsSync(apkPath)) {
+        return res.status(404).json({ 
+          available: false,
+          message: 'No APK available' 
+        });
+      }
+      
+      const stats = statSync(apkPath);
+      // Use file modification time as version identifier
+      const versionCode = Math.floor(stats.mtime.getTime() / 1000);
+      
+      res.json({
+        available: true,
+        versionCode: versionCode,
+        versionName: stats.mtime.toISOString().split('T')[0], // e.g., "2025-01-23"
+        size: stats.size,
+        lastModified: stats.mtime.toISOString(),
+        downloadUrl: '/api/download/firestick-apk'
+      });
+    } catch (error) {
+      console.error('Error checking APK version:', error);
+      res.status(500).json({ error: 'Failed to check APK version' });
+    }
+  });
+
   // APK management endpoints (admin only)
   app.get('/api/admin/apk/info', requireAdmin, async (req, res) => {
     try {
