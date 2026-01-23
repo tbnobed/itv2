@@ -6,7 +6,7 @@ import { passcodeLoginSchema } from '@shared/schema';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import LogoAnimation from '@/components/LogoAnimation';
 
@@ -198,34 +198,34 @@ export default function PasscodeAuthPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               
-              {/* Passcode Display */}
+              {/* Passcode Input - Simple input for Android TV compatibility */}
               <div className="flex flex-col items-center space-y-3">
-                <InputOTP
+                <div className="flex gap-3">
+                  {[0, 1, 2, 3].map((index) => (
+                    <div
+                      key={index}
+                      className="h-12 w-12 text-xl border-2 rounded-md flex items-center justify-center bg-background font-mono"
+                    >
+                      {passcode[index] ? '•' : ''}
+                    </div>
+                  ))}
+                </div>
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   maxLength={4}
                   value={passcode}
-                  onChange={setPasscode}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                    setPasscode(value);
+                  }}
+                  placeholder="Enter 4-digit code"
+                  className="w-48 text-center text-xl tracking-widest"
                   data-testid="input-passcode"
                   disabled={lockoutState.isLocked}
-                >
-                  <InputOTPGroup className="gap-3">
-                    <InputOTPSlot 
-                      index={0} 
-                      className="h-12 w-12 text-xl border-2 focus:ring-2 focus:ring-primary/50" 
-                    />
-                    <InputOTPSlot 
-                      index={1} 
-                      className="h-12 w-12 text-xl border-2 focus:ring-2 focus:ring-primary/50" 
-                    />
-                    <InputOTPSlot 
-                      index={2} 
-                      className="h-12 w-12 text-xl border-2 focus:ring-2 focus:ring-primary/50" 
-                    />
-                    <InputOTPSlot 
-                      index={3} 
-                      className="h-12 w-12 text-xl border-2 focus:ring-2 focus:ring-primary/50" 
-                    />
-                  </InputOTPGroup>
-                </InputOTP>
+                  autoFocus
+                />
 
                 {/* Status Message */}
                 {lockoutState.isLocked ? (
