@@ -468,13 +468,15 @@ export default function HLSPlayer({
     }
   }, [streamUrl, isHlsSupported, streamId]);
 
-  // Handle mute changes - but keep muted for autoplay
+  // Handle mute changes - sync video element with isMuted prop
   useEffect(() => {
     if (videoRef.current && isPlaying) {
       // Only unmute after video starts playing
       videoRef.current.muted = isMuted;
+      videoRef.current.volume = isMuted ? 0 : 1;
+      console.log(`HLSPlayer[${streamId}]: Mute changed - muted=${isMuted}, volume=${isMuted ? 0 : 1}`);
     }
-  }, [isMuted, isPlaying]);
+  }, [isMuted, isPlaying, streamId]);
 
   // Ultra-aggressive autoplay when connected
   useEffect(() => {
@@ -493,6 +495,13 @@ export default function HLSPlayer({
           console.log(`HLSPlayer[${streamId}]: Attempting autoplay...`);
           await video.play();
           console.log(`HLSPlayer[${streamId}]: AUTOPLAY SUCCESS!`);
+          
+          // After successful autoplay, restore audio based on isMuted state
+          if (!isMuted) {
+            video.muted = false;
+            video.volume = 1;
+            console.log(`HLSPlayer[${streamId}]: Audio restored after autoplay success`);
+          }
           return true;
         } catch (error) {
           console.log(`HLSPlayer[${streamId}]: Autoplay failed:`, error);
@@ -533,7 +542,7 @@ export default function HLSPlayer({
         }
       }, 1000);
     }
-  }, [connectionStatus, streamId, isPlaying]);
+  }, [connectionStatus, streamId, isPlaying, isMuted]);
 
   // Global autoplay unlock on any page interaction
   useEffect(() => {
