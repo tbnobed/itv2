@@ -416,6 +416,33 @@ export default function StreamModal({
               const video = videoRef.current;
               video.volume = 1;
               
+              // Add stall detection to resync A/V when video freezes (Fire TV issue)
+              let lastTime = 0;
+              let stallCount = 0;
+              const stallCheckInterval = setInterval(() => {
+                if (video.paused || video.ended) return;
+                
+                // If video time hasn't changed but we're playing, it's stalled
+                if (video.currentTime === lastTime && !video.paused) {
+                  stallCount++;
+                  if (stallCount >= 3) { // ~1.5 seconds of stall
+                    console.log('WebRTC: Video stall detected, attempting resync');
+                    // Force a resync by briefly pausing and resuming
+                    video.pause();
+                    setTimeout(() => {
+                      video.play().catch(() => {});
+                    }, 50);
+                    stallCount = 0;
+                  }
+                } else {
+                  stallCount = 0;
+                }
+                lastTime = video.currentTime;
+              }, 500);
+              
+              // Clean up interval when video ends or modal closes
+              video.addEventListener('ended', () => clearInterval(stallCheckInterval));
+              
               // Try to play with audio first (works on Fire TV)
               video.muted = isMuted;
               console.log(`WebRTC: Attempting play with muted=${isMuted}`);
