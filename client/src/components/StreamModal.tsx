@@ -719,6 +719,14 @@ export default function StreamModal({
     }
   }, [isOpen]);
 
+  // Sync WebRTC video element muted state with isMuted prop (for immediate audio response)
+  useEffect(() => {
+    if (finalStreamType !== 'hls' && videoRef.current && isConnected) {
+      videoRef.current.muted = isMuted;
+      console.log(`WebRTC: Synced muted state to ${isMuted}`);
+    }
+  }, [isMuted, isConnected, finalStreamType]);
+
   const toggleMute = () => {
     const newMutedState = !isMuted;
     if (finalStreamType === 'hls') {
