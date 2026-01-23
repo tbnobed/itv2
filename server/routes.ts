@@ -394,6 +394,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Username already exists' });
       }
       
+      // Check if passcode is already in use by another user
+      const passcodeInUse = await storage.isPasscodeInUse(validatedData.password);
+      if (passcodeInUse) {
+        return res.status(400).json({ error: 'This access code is already in use. Please choose a different 4-digit code.' });
+      }
+      
       // Hash the password before storing
       const bcrypt = await import('bcrypt');
       const hashedPassword = await bcrypt.hash(validatedData.password, 12);
@@ -486,6 +492,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!password || typeof password !== 'string' || password.length !== 4 || !/^\d{4}$/.test(password)) {
         return res.status(400).json({ error: 'Password must be a 4-digit code' });
+      }
+      
+      // Check if passcode is already in use by another user (excluding current user)
+      const passcodeInUse = await storage.isPasscodeInUse(password, id);
+      if (passcodeInUse) {
+        return res.status(400).json({ error: 'This access code is already in use. Please choose a different 4-digit code.' });
       }
       
       const hashedPassword = await bcrypt.hash(password, 10);

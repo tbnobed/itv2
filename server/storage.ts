@@ -22,6 +22,7 @@ export interface IStorage {
   updateUserRole(id: string, role: string): Promise<boolean>;
   updateUserStatus(id: string, isActive: string): Promise<boolean>;
   updateUserPassword(id: string, password: string): Promise<boolean>;
+  isPasscodeInUse(passcode: string, excludeUserId?: string): Promise<boolean>;
   
   // Stream operations
   getAllStreams(): Promise<Stream[]>;
@@ -111,6 +112,15 @@ export class MemStorage implements IStorage {
     user.password = password;
     this.users.set(id, user);
     return true;
+  }
+
+  async isPasscodeInUse(passcode: string, excludeUserId?: string): Promise<boolean> {
+    for (const user of this.users.values()) {
+      if (excludeUserId && user.id === excludeUserId) continue;
+      const matches = await bcrypt.compare(passcode, user.password);
+      if (matches) return true;
+    }
+    return false;
   }
 
   // Stream operations
@@ -665,6 +675,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return result.length > 0;
+  }
+
+  async isPasscodeInUse(passcode: string, excludeUserId?: string): Promise<boolean> {
+    const allUsers = await db.select().from(users);
+    for (const user of allUsers) {
+      if (excludeUserId && user.id === excludeUserId) continue;
+      const matches = await bcrypt.compare(passcode, user.password);
+      if (matches) return true;
+    }
+    return false;
   }
 
   // Stream operations
