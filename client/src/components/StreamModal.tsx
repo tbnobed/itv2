@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Volume2, VolumeX, Maximize, Minimize, AlertCircle, Wifi } from 'lucide-react';
+import { X, Volume2, VolumeX, AlertCircle, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -51,8 +51,7 @@ export default function StreamModal({
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'failed'>('idle');
   const [connectionState, setConnectionState] = useState<ConnectionState>({
     iceConnectionState: 'new',
@@ -661,9 +660,23 @@ export default function StreamModal({
     return () => document.removeEventListener('keydown', handleNativeKeyDown, { capture: true });
   }, [isOpen]);
 
+  // Show controls on user interaction and auto-hide after 3 seconds
+  const showControlsTemporarily = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+  }, []);
+
   // Simplified keyboard handling - scoped to modal, no global interference
   const handleModalKeyDown = (e: React.KeyboardEvent) => {
     console.log('StreamModal: Key pressed:', e.key, e.keyCode, e.code);
+    
+    // Show controls on any key press
+    showControlsTemporarily();
     
     // Handle multiple Fire TV back button variations
     const isBackButton = 
@@ -685,11 +698,6 @@ export default function StreamModal({
 
     // Only preventDefault for keys we actually handle
     switch (e.key) {
-      case 'f':
-      case 'F':
-        e.preventDefault();
-        toggleFullscreen();
-        break;
       case 'm':
       case 'M':
       case ' ':
@@ -706,17 +714,6 @@ export default function StreamModal({
       // Let arrow keys and other keys pass through normally - no preventDefault
     }
   };
-
-  // Simple fullscreen handling only
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isCurrentlyFullscreen = !!document.fullscreenElement;
-      setIsFullscreen(isCurrentlyFullscreen);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [isOpen]);
 
   // Reset closing flag when modal closes
   useEffect(() => {
@@ -738,28 +735,8 @@ export default function StreamModal({
     console.log(`Audio ${newMutedState ? 'muted' : 'unmuted'}`);
   };
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      modalRef.current?.requestFullscreen().catch(err => {
-        console.error('Failed to enter fullscreen:', err);
-      });
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen().catch(err => {
-        console.error('Failed to exit fullscreen:', err);
-      });
-      setIsFullscreen(false);
-    }
-  };
-
   const handleMouseMove = () => {
-    setShowControls(true);
-    if (controlsTimeoutRef.current) {
-      clearTimeout(controlsTimeoutRef.current);
-    }
-    controlsTimeoutRef.current = setTimeout(() => {
-      setShowControls(false);
-    }, 3000);
+    showControlsTemporarily();
   };
 
   if (!isOpen) return null;
@@ -1014,21 +991,9 @@ export default function StreamModal({
                 </div>
 
                 <div className="flex items-center gap-4 pointer-events-auto">
-                  {connectionError ? (
-                    <span className="text-sm text-gray-300">Press R to retry, ESC to close</span>
-                  ) : (
-                    <span className="text-sm text-gray-300">Press ESC to close, F for fullscreen, M to mute</span>
-                  )}
-                  
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={toggleFullscreen}
-                    className="text-white hover:bg-white/20 focus-visible:ring-4 focus-visible:ring-primary"
-                    data-testid="button-toggle-fullscreen"
-                  >
-                    {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-                  </Button>
+                  <span className="text-sm text-gray-300">
+                    {connectionError ? 'Press R to retry' : 'M to mute'} | Back to close
+                  </span>
                 </div>
               </div>
             </div>

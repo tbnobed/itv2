@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Volume2, VolumeX, AlertCircle, Wifi, Play, Settings, ChevronDown } from 'lucide-react';
+import { AlertCircle, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import Hls from 'hls.js';
 
@@ -629,73 +627,6 @@ export default function HLSPlayer({
     }
   };
 
-  const handleToggleMute = () => {
-    onMutedChange(!isMuted);
-  };
-
-  // Quality selection functions
-  const handleQualityChange = (levelIndex: number) => {
-    const hls = hlsRef.current;
-    if (!hls) return;
-
-    if (levelIndex === -1) {
-      // Auto quality
-      hls.currentLevel = -1;
-      setIsAutoQuality(true);
-      console.log(`HLSPlayer[${streamId}]: Switched to auto quality`);
-    } else {
-      // Manual quality selection
-      hls.currentLevel = levelIndex;
-      setIsAutoQuality(false);
-      console.log(`HLSPlayer[${streamId}]: Manually switched to quality level ${levelIndex}`);
-    }
-  };
-
-  const formatBitrate = (bitrate: number): string => {
-    if (bitrate >= 1000000) {
-      return `${(bitrate / 1000000).toFixed(1)}Mbps`;
-    } else {
-      return `${Math.round(bitrate / 1000)}kbps`;
-    }
-  };
-
-  const formatBandwidth = (bandwidth: number): string => {
-    if (bandwidth >= 1000000) {
-      return `${(bandwidth / 1000000).toFixed(1)}Mbps`;
-    } else {
-      return `${Math.round(bandwidth / 1000)}kbps`;
-    }
-  };
-
-  const getConnectionStatusIcon = () => {
-    switch (connectionStatus) {
-      case 'connecting':
-        return <Wifi className="w-4 h-4 animate-pulse" />;
-      case 'connected':
-        return <Wifi className="w-4 h-4 text-green-400" />;
-      case 'failed':
-        return <AlertCircle className="w-4 h-4 text-red-400" />;
-      default:
-        return <Wifi className="w-4 h-4 text-gray-400" />;
-    }
-  };
-
-  const getStatusText = () => {
-    if (hlsError) {
-      return `Error: ${hlsError.message}`;
-    }
-    switch (connectionStatus) {
-      case 'connecting':
-        return 'Connecting to HLS stream...';
-      case 'connected':
-        return isLoading ? 'Buffering...' : (isPlaying ? 'Playing HLS Stream' : 'Ready to Play');
-      case 'failed':
-        return 'Connection Failed';
-      default:
-        return 'Initializing HLS Player';
-    }
-  };
-
   return (
     <div className={cn("relative bg-black overflow-hidden rounded-lg", className)}>
       <video
@@ -721,103 +652,21 @@ export default function HLSPlayer({
         </div>
       )}
 
-      {/* Control overlay - always visible when needs user interaction or on hover */}
-      <div className={cn(
-        "absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 transition-opacity duration-300",
-        needsUserInteraction || !isPlaying ? "opacity-100" : "opacity-0 hover:opacity-100"
-      )}>
-        <div className="absolute top-4 left-4">
-          <Badge variant="secondary" className="bg-black/70 text-white">
-            <div className="flex items-center space-x-2">
-              {getConnectionStatusIcon()}
-              <span className="text-xs">{useNativeHls ? 'Native HLS' : 'HLS.js'}</span>
-            </div>
-          </Badge>
+      {/* Center play button when needs user interaction (autoplay blocked) */}
+      {needsUserInteraction && !isPlaying && connectionStatus === 'connected' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+          <Button
+            size="lg"
+            variant="secondary"
+            onClick={handleTogglePlay}
+            className="bg-white/90 text-black hover:bg-white font-semibold px-8 py-4"
+            data-testid={`button-hls-play-center-${streamId}`}
+          >
+            <Play className="w-6 h-6 mr-2" />
+            Click to Play
+          </Button>
         </div>
-
-        {/* Center play button when needs user interaction */}
-        {needsUserInteraction && !isPlaying && connectionStatus === 'connected' && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={handleTogglePlay}
-              className="bg-white/90 text-black hover:bg-white font-semibold px-8 py-4"
-              data-testid={`button-hls-play-center-${streamId}`}
-            >
-              <Play className="w-6 h-6 mr-2" />
-              Click to Play
-            </Button>
-          </div>
-        )}
-
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="flex items-center justify-between text-white">
-            <div className="flex items-center space-x-3">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleTogglePlay}
-                className="text-white hover:bg-white/20"
-                data-testid={`button-hls-play-${streamId}`}
-              >
-                <Play className={cn("w-4 h-4", isPlaying && "hidden")} />
-                <span className={cn("w-4 h-4", !isPlaying && "hidden")}>⏸</span>
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleToggleMute}
-                className="text-white hover:bg-white/20"
-                data-testid={`button-hls-mute-${streamId}`}
-              >
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </Button>
-
-              {/* Quality Selection */}
-              {availableQualityLevels.length > 1 && !useNativeHls && (
-                <Select
-                  value={isAutoQuality ? 'auto' : currentQuality?.level.toString()}
-                  onValueChange={(value) => handleQualityChange(value === 'auto' ? -1 : parseInt(value))}
-                >
-                  <SelectTrigger className="w-24 h-8 text-xs bg-black/50 border-white/20 text-white hover:bg-white/20">
-                    <SelectValue placeholder="Quality" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-black/90 border-white/20">
-                    <SelectItem value="auto" className="text-white hover:bg-white/20">
-                      Auto
-                    </SelectItem>
-                    {availableQualityLevels.map((level) => (
-                      <SelectItem 
-                        key={level.level} 
-                        value={level.level.toString()}
-                        className="text-white hover:bg-white/20"
-                      >
-                        {level.height}p ({formatBitrate(level.bitrate || 0)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div className="flex flex-col items-end text-xs text-white/80">
-              <div>{getStatusText()}</div>
-              {currentBandwidth > 0 && (
-                <div className="text-white/60">
-                  Bandwidth: {formatBandwidth(currentBandwidth)}
-                </div>
-              )}
-              {currentQuality && (
-                <div className="text-white/60">
-                  Quality: {currentQuality.height}p {isAutoQuality ? '(Auto)' : '(Manual)'}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Error message */}
       {hlsError && connectionStatus === 'failed' && (
