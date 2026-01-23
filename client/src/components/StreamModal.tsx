@@ -397,27 +397,29 @@ export default function StreamModal({
             setIsConnected(true);
             setConnectionStatus('connected');
             
-            // Trigger autoplay for WebRTC video immediately (no delay for low latency)
+            // Trigger autoplay for WebRTC video immediately with audio (Fire TV is lenient)
             if (videoRef.current) {
               const video = videoRef.current;
+              video.volume = 1;
               
-              // CRITICAL: Start with muted for autoplay compliance, then unmute if needed
-              video.muted = true;  // Always start muted for autoplay
-              video.volume = 1;    // Set volume to full
+              // Try to play with audio first (works on Fire TV)
+              video.muted = isMuted;
+              console.log(`WebRTC: Attempting play with muted=${isMuted}`);
               
               video.play().then(() => {
-                console.log('WebRTC: AUTOPLAY SUCCESS!');
-                
-                // Now apply user's mute preference AFTER successful autoplay
-                if (!isMuted) {
-                  video.muted = false;
-                  console.log('WebRTC: Audio unmuted after successful autoplay');
-                }
+                console.log('WebRTC: AUTOPLAY SUCCESS with audio!');
               }).catch((error) => {
-                console.log('WebRTC: Autoplay blocked:', error);
-                // Try again with explicit muted=true
+                console.log('WebRTC: Autoplay with audio blocked, trying muted:', error);
+                // Fall back to muted autoplay, then unmute
                 video.muted = true;
-                video.play().catch(err => {
+                video.play().then(() => {
+                  console.log('WebRTC: Muted autoplay succeeded');
+                  // Immediately try to unmute after muted play succeeds
+                  if (!isMuted) {
+                    video.muted = false;
+                    console.log('WebRTC: Unmuted after fallback');
+                  }
+                }).catch(err => {
                   console.error('WebRTC: Second autoplay attempt failed:', err);
                 });
               });
