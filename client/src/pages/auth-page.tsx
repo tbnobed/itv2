@@ -262,15 +262,15 @@ export default function PasscodeAuthPage() {
                   Download the OBTV app for Amazon FireStick
                 </p>
                 <Button
-                  asChild
                   variant="outline"
                   className="w-full hover-elevate active-elevate-2"
                   data-testid="button-download-apk"
+                  onClick={() => {
+                    window.location.href = '/api/download/firestick-apk';
+                  }}
                 >
-                  <a href="/api/download/firestick-apk" target="_blank" rel="noopener noreferrer">
-                    <Download className="w-4 h-4 mr-2" />
-                    Download APK
-                  </a>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download APK
                 </Button>
               </div>
             </CardContent>
