@@ -21,6 +21,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUserRole(id: string, role: string): Promise<boolean>;
   updateUserStatus(id: string, isActive: string): Promise<boolean>;
+  updateUserPassword(id: string, password: string): Promise<boolean>;
   
   // Stream operations
   getAllStreams(): Promise<Stream[]>;
@@ -99,6 +100,15 @@ export class MemStorage implements IStorage {
     if (!user) return false;
     
     user.isActive = isActive;
+    this.users.set(id, user);
+    return true;
+  }
+
+  async updateUserPassword(id: string, password: string): Promise<boolean> {
+    const user = this.users.get(id);
+    if (!user) return false;
+    
+    user.password = password;
     this.users.set(id, user);
     return true;
   }
@@ -643,6 +653,15 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .update(users)
       .set({ isActive })
+      .where(eq(users.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async updateUserPassword(id: string, password: string): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ password })
       .where(eq(users.id, id))
       .returning();
     return result.length > 0;
