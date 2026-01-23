@@ -411,57 +411,26 @@ export default function StreamModal({
             setIsConnected(true);
             setConnectionStatus('connected');
             
-            // Trigger autoplay for WebRTC video immediately with audio (Fire TV is lenient)
+            // Trigger autoplay for WebRTC video
             if (videoRef.current) {
               const video = videoRef.current;
               video.volume = 1;
-              
-              // Add stall detection to resync A/V when video freezes (Fire TV issue)
-              let lastTime = 0;
-              let stallCount = 0;
-              const stallCheckInterval = setInterval(() => {
-                if (video.paused || video.ended) return;
-                
-                // If video time hasn't changed but we're playing, it's stalled
-                if (video.currentTime === lastTime && !video.paused) {
-                  stallCount++;
-                  if (stallCount >= 3) { // ~1.5 seconds of stall
-                    console.log('WebRTC: Video stall detected, attempting resync');
-                    // Force a resync by briefly pausing and resuming
-                    video.pause();
-                    setTimeout(() => {
-                      video.play().catch(() => {});
-                    }, 50);
-                    stallCount = 0;
-                  }
-                } else {
-                  stallCount = 0;
-                }
-                lastTime = video.currentTime;
-              }, 500);
-              
-              // Clean up interval when video ends or modal closes
-              video.addEventListener('ended', () => clearInterval(stallCheckInterval));
-              
-              // Try to play with audio first (works on Fire TV)
               video.muted = isMuted;
               console.log(`WebRTC: Attempting play with muted=${isMuted}`);
               
               video.play().then(() => {
-                console.log('WebRTC: AUTOPLAY SUCCESS with audio!');
+                console.log('WebRTC: AUTOPLAY SUCCESS!');
               }).catch((error) => {
-                console.log('WebRTC: Autoplay with audio blocked, trying muted:', error);
-                // Fall back to muted autoplay, then unmute
+                console.log('WebRTC: Autoplay blocked, trying muted:', error);
                 video.muted = true;
                 video.play().then(() => {
                   console.log('WebRTC: Muted autoplay succeeded');
-                  // Immediately try to unmute after muted play succeeds
                   if (!isMuted) {
                     video.muted = false;
                     console.log('WebRTC: Unmuted after fallback');
                   }
                 }).catch(err => {
-                  console.error('WebRTC: Second autoplay attempt failed:', err);
+                  console.error('WebRTC: Autoplay failed:', err);
                 });
               });
             }
