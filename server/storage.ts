@@ -679,9 +679,15 @@ export class DatabaseStorage implements IStorage {
 
   async isPasscodeInUse(passcode: string, excludeUserId?: string): Promise<boolean> {
     const allUsers = await db.select().from(users);
+    console.log(`[isPasscodeInUse] Checking passcode "${passcode}" against ${allUsers.length} users, excluding: ${excludeUserId || 'none'}`);
     for (const user of allUsers) {
-      if (excludeUserId && user.id === excludeUserId) continue;
+      if (excludeUserId && user.id === excludeUserId) {
+        console.log(`[isPasscodeInUse] Skipping user ${user.username} (excluded)`);
+        continue;
+      }
+      console.log(`[isPasscodeInUse] Comparing against user ${user.username}, hash: ${user.password.substring(0, 20)}...`);
       const matches = await bcrypt.compare(passcode, user.password);
+      console.log(`[isPasscodeInUse] Match result for ${user.username}: ${matches}`);
       if (matches) return true;
     }
     return false;
