@@ -39,6 +39,23 @@ interface DetailedError {
   suggestion?: string;
 }
 
+// AUDIO SYNC OPTIMIZATION: Configuration for sync management
+interface SyncConfig {
+  targetLatency: number;      // Target latency in seconds (0.5s = 500ms)
+  maxLatency: number;          // Max latency before skipping forward
+  syncCheckInterval: number;   // How often to check sync (ms)
+  playbackRateAdjustment: boolean; // Enable dynamic playback rate
+  aggressiveSync: boolean;     // Enable aggressive sync corrections
+}
+
+const DEFAULT_SYNC_CONFIG: SyncConfig = {
+  targetLatency: 0.5,
+  maxLatency: 2.0,
+  syncCheckInterval: 500,
+  playbackRateAdjustment: true,
+  aggressiveSync: true
+};
+
 export default function StreamModal({ 
   isOpen, 
   streamId, 
@@ -65,11 +82,23 @@ export default function StreamModal({
   const [detectedStreamType, setDetectedStreamType] = useState<'webrtc' | 'hls'>('webrtc');
   const [isResyncing, setIsResyncing] = useState(false);
   
+  // AUDIO SYNC OPTIMIZATION: Track sync metrics
+  const [syncStats, setSyncStats] = useState({
+    currentLatency: 0,
+    playbackRate: 1.0,
+    bufferHealth: 0
+  });
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
   const srsPlayerRef = useRef<any>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+  
+  // AUDIO SYNC OPTIMIZATION: Refs for sync management
+  const syncIntervalRef = useRef<NodeJS.Timeout>();
+  const syncConfigRef = useRef<SyncConfig>(DEFAULT_SYNC_CONFIG);
+  const lastSyncTimeRef = useRef<number>(0);
 
   // Stream type detection logic
   const detectStreamType = useCallback((url: string): 'webrtc' | 'hls' => {
@@ -95,6 +124,95 @@ export default function StreamModal({
 
   // Use provided streamType or fall back to detected type
   const finalStreamType = streamType || detectedStreamType;
+
+  // AUDIO SYNC OPTIMIZATION: Sync monitoring and correction
+  const startSyncMonitoring = useCallback(() => {
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current);
+    }
+
+    console.log(`StreamModal[${streamId}]: Starting audio/video sync monitoring`);
+
+    syncIntervalRef.current = setInterval(() => {
+      const video = videoRef.current;
+      if (!video || video.paused || !video.buffered.length) return;
+
+      try {
+        const buffered = video.buffered;
+        const currentTime = video.currentTime;
+        const bufferedEnd = buffered.end(buffered.length - 1);
+        const latency = bufferedEnd - currentTime;
+
+        // Update stats
+        setSyncStats({
+          currentLatency: latency,
+          playbackRate: video.playbackRate,
+          bufferHealth: latency
+        });
+
+        // AGGRESSIVE LATENCY CORRECTION
+        if (syncConfigRef.current.aggressiveSync) {
+          // Too far behind - skip forward aggressively
+          if (latency > syncConfigRef.current.maxLatency) {
+            const skipTo = bufferedEnd - syncConfigRef.current.targetLatency;
+            console.warn(
+              `StreamModal[${streamId}]: HIGH LATENCY! Skipping from ${currentTime.toFixed(2)}s to ${skipTo.toFixed(2)}s (latency: ${latency.toFixed(2)}s)`
+            );
+            video.currentTime = skipTo;
+            video.playbackRate = 1.0;
+            lastSyncTimeRef.current = Date.now();
+            return;
+          }
+
+          // Dynamic playback rate adjustment
+          if (syncConfigRef.current.playbackRateAdjustment) {
+            let targetRate = 1.0;
+
+            if (latency > 1.5) {
+              targetRate = 1.1; // Speed up 10%
+            } else if (latency > 1.0) {
+              targetRate = 1.05; // Speed up 5%
+            } else if (latency > 0.8) {
+              targetRate = 1.02; // Speed up 2%
+            } else if (latency < 0.3) {
+              targetRate = 0.98; // Slow down 2%
+            } else if (latency < 0.2) {
+              targetRate = 0.95; // Slow down 5%
+            }
+
+            // Only adjust if rate change is significant
+            if (Math.abs(video.playbackRate - targetRate) > 0.01) {
+              video.playbackRate = targetRate;
+
+              if (targetRate !== 1.0) {
+                console.log(
+                  `StreamModal[${streamId}]: Playback rate adjusted to ${targetRate.toFixed(2)}x (latency: ${latency.toFixed(2)}s)`
+                );
+              }
+            }
+          }
+        }
+
+        // Periodic forced resync every 10 seconds if needed
+        const now = Date.now();
+        if (now - lastSyncTimeRef.current > 10000 && latency > 1.0) {
+          console.log(`StreamModal[${streamId}]: Periodic resync triggered`);
+          video.currentTime = bufferedEnd - syncConfigRef.current.targetLatency;
+          lastSyncTimeRef.current = now;
+        }
+      } catch (error) {
+        console.error(`StreamModal[${streamId}]: Sync monitoring error:`, error);
+      }
+    }, syncConfigRef.current.syncCheckInterval);
+  }, [streamId]);
+
+  const stopSyncMonitoring = useCallback(() => {
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current);
+      syncIntervalRef.current = undefined;
+      console.log(`StreamModal[${streamId}]: Stopped audio/video sync monitoring`);
+    }
+  }, [streamId]);
 
   // Robust multi-frame focus restoration with retry logic
   const restoreFocus = () => {
@@ -238,14 +356,15 @@ export default function StreamModal({
     };
   }, [isOpen, streamUrl, isSDKLoaded, finalStreamType, streamId]);
 
-  // Clean up controls timeout on unmount
+  // Clean up controls timeout and sync monitoring on unmount
   useEffect(() => {
     return () => {
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
       }
+      stopSyncMonitoring();
     };
-  }, []);
+  }, [stopSyncMonitoring]);
 
   const analyzeError = (error: any): DetailedError => {
     const errorStr = error?.message || error?.toString() || 'Unknown error';
@@ -374,6 +493,7 @@ export default function StreamModal({
               suggestion: 'Check your network connection and firewall settings. WebRTC requires UDP access.'
             });
             setConnectionStatus('failed');
+            stopSyncMonitoring(); // Stop sync monitoring on failure
           } else if (iceState === 'connected' || iceState === 'completed') {
             console.log('ICE connection established successfully');
           }
@@ -393,10 +513,14 @@ export default function StreamModal({
               suggestion: 'The WebRTC connection could not be established. Check network connectivity.'
             });
             setConnectionStatus('failed');
+            stopSyncMonitoring(); // Stop sync monitoring on failure
           } else if (connState === 'connected') {
             console.log('Peer connection established successfully');
             setIsConnected(true);
             setConnectionStatus('connected');
+            
+            // AUDIO SYNC OPTIMIZATION: Start sync monitoring after connection
+            startSyncMonitoring();
             
             // Trigger autoplay for WebRTC video - keep it simple like native SRS player
             if (videoRef.current) {
@@ -405,7 +529,6 @@ export default function StreamModal({
               video.muted = isMuted;
               
               console.log(`WebRTC: Attempting play with muted=${isMuted}`);
-              
               
               video.play().then(() => {
                 console.log('WebRTC: AUTOPLAY SUCCESS!');
@@ -469,10 +592,14 @@ export default function StreamModal({
       setConnectionStatus('failed');
       setIsLoading(false);
       setIsConnected(false);
+      stopSyncMonitoring(); // Stop sync monitoring on error
     }
   };
 
   const disconnectStream = () => {
+    // Stop sync monitoring first
+    stopSyncMonitoring();
+    
     if (srsPlayerRef.current) {
       console.log('Disconnecting WebRTC stream');
       srsPlayerRef.current.close();
@@ -501,6 +628,13 @@ export default function StreamModal({
       iceConnectionState: 'new',
       connectionState: 'new',
       iceGatheringState: 'new'
+    });
+    
+    // Reset sync stats
+    setSyncStats({
+      currentLatency: 0,
+      playbackRate: 1.0,
+      bufferHealth: 0
     });
   };
 
@@ -961,6 +1095,13 @@ export default function StreamModal({
                 )}
                 <span className="text-white font-medium">{streamTitle}</span>
                 <span className="text-gray-400">#{streamId}</span>
+                
+                {/* AUDIO SYNC OPTIMIZATION: Show sync stats when connected */}
+                {isConnected && syncStats.currentLatency > 0 && (
+                  <span className="text-xs text-gray-400 font-mono">
+                    {syncStats.currentLatency.toFixed(2)}s | {syncStats.playbackRate.toFixed(2)}x
+                  </span>
+                )}
               </div>
               
               <Button
