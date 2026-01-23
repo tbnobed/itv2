@@ -418,6 +418,49 @@ export default function StreamModal({
               video.muted = isMuted;
               console.log(`WebRTC: Attempting play with muted=${isMuted}`);
               
+              // Handle stall/waiting events to resync A/V after network hiccups
+              let wasStalled = false;
+              let resyncTimeout: ReturnType<typeof setTimeout> | null = null;
+              
+              const attemptResync = () => {
+                if (resyncTimeout) return; // Already scheduled
+                resyncTimeout = setTimeout(() => {
+                  resyncTimeout = null;
+                  if (video && !video.paused) {
+                    console.log('WebRTC: Attempting A/V resync after stall');
+                    // Briefly mute/unmute can help resync audio buffer
+                    const wasMuted = video.muted;
+                    video.muted = true;
+                    requestAnimationFrame(() => {
+                      video.muted = wasMuted;
+                      console.log('WebRTC: Resync complete');
+                    });
+                  }
+                }, 100);
+              };
+              
+              const handleStall = () => {
+                console.log('WebRTC: Video stalled');
+                wasStalled = true;
+              };
+              
+              const handleWaiting = () => {
+                console.log('WebRTC: Video waiting for data');
+                wasStalled = true;
+              };
+              
+              const handlePlaying = () => {
+                console.log('WebRTC: Video resumed playing');
+                if (wasStalled) {
+                  wasStalled = false;
+                  attemptResync();
+                }
+              };
+              
+              video.addEventListener('stalled', handleStall);
+              video.addEventListener('waiting', handleWaiting);
+              video.addEventListener('playing', handlePlaying);
+              
               video.play().then(() => {
                 console.log('WebRTC: AUTOPLAY SUCCESS!');
               }).catch((error) => {
