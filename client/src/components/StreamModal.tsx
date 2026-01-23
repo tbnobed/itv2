@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Volume2, VolumeX, AlertCircle, Wifi } from 'lucide-react';
+import { X, Volume2, VolumeX, AlertCircle, Wifi, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -63,6 +63,7 @@ export default function StreamModal({
   const [sdkLoadError, setSDKLoadError] = useState<string | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [detectedStreamType, setDetectedStreamType] = useState<'webrtc' | 'hls'>('webrtc');
+  const [isResyncing, setIsResyncing] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -424,47 +425,6 @@ export default function StreamModal({
               }
               
               video.playbackRate = 1.0;
-              
-              // Monitor for stalls and auto-reconnect if needed
-              let lastTime = 0;
-              let stallCount = 0;
-              const syncMonitor = setInterval(() => {
-                if (!video || video.paused) return;
-                
-                const currentTime = video.currentTime;
-                // If time hasn't advanced in 2 seconds, we might be stalled
-                if (currentTime === lastTime && currentTime > 0) {
-                  stallCount++;
-                  console.log(`WebRTC: Potential stall detected (count: ${stallCount})`);
-                  if (stallCount >= 2) {
-                    console.log('WebRTC: Multiple stalls - reconnecting stream');
-                    clearInterval(syncMonitor);
-                    // Trigger reconnection by calling disconnect and reconnect
-                    if (srsPlayerRef.current) {
-                      srsPlayerRef.current.close();
-                      srsPlayerRef.current = null;
-                    }
-                    // Re-connect after brief delay
-                    setTimeout(() => {
-                      if (videoRef.current && streamUrl) {
-                        connectWebRTC(streamUrl);
-                      }
-                    }, 500);
-                  }
-                } else {
-                  stallCount = 0;
-                }
-                lastTime = currentTime;
-              }, 2000);
-              
-              // Clean up monitor on unmount
-              const originalClose = srsPlayerRef.current?.close?.bind(srsPlayerRef.current);
-              if (srsPlayerRef.current && originalClose) {
-                srsPlayerRef.current.close = () => {
-                  clearInterval(syncMonitor);
-                  originalClose();
-                };
-              }
               
               console.log(`WebRTC: Attempting play with muted=${isMuted}`);
               

@@ -564,7 +564,7 @@ function SrsRtcWhipWhepAsync() {
             // @see https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addStream#Migrating_to_addTrack
             displayStream.getTracks().forEach(function (track) {
                 self.pc.addTrack(track);
-				// Notify about local track when stream is ok.
+                                // Notify about local track when stream is ok.
                 self.ontrack && self.ontrack({track: track});
             });
         }
@@ -653,7 +653,17 @@ function SrsRtcWhipWhepAsync() {
         self.stream.addTrack(event.track);
     };
 
-    self.pc = new RTCPeerConnection(null);
+    // Configure RTCPeerConnection for optimal live streaming performance
+    const rtcConfig = {
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require',
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+        ],
+        sdpSemantics: 'unified-plan'
+    };
+    self.pc = new RTCPeerConnection(rtcConfig);
 
     // To keep api consistent between player and publisher.
     // @see https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addStream#Migrating_to_addTrack
