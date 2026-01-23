@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'wouter';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -63,6 +64,29 @@ export default function StreamsListPage() {
       toast({
         title: 'Error',
         description: error.message || 'Failed to delete stream',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Toggle stream type mutation
+  const toggleStreamTypeMutation = useMutation({
+    mutationFn: ({ streamId, newType }: { streamId: string; newType: 'webrtc' | 'hls' }) => 
+      apiRequest(`/api/streams/${streamId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ streamType: newType }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/streams'] });
+      toast({
+        title: 'Stream type changed',
+        description: `Switched to ${variables.newType.toUpperCase()}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to change stream type',
         variant: 'destructive',
       });
     },
@@ -178,6 +202,7 @@ export default function StreamsListPage() {
                   <TableHead>Preview</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Stream ID</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>URL</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -186,7 +211,7 @@ export default function StreamsListPage() {
               <TableBody>
                 {filteredStreams.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       {searchQuery ? 'No streams match your search' : 'No streams found'}
                     </TableCell>
                   </TableRow>
@@ -205,6 +230,29 @@ export default function StreamsListPage() {
                       </TableCell>
                       <TableCell className="font-medium">{stream.title}</TableCell>
                       <TableCell className="font-mono text-sm">{stream.streamId}</TableCell>
+                      <TableCell>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleStreamTypeMutation.mutate({
+                                streamId: stream.id,
+                                newType: stream.streamType === 'webrtc' ? 'hls' : 'webrtc'
+                              })}
+                              disabled={toggleStreamTypeMutation.isPending}
+                              className="font-mono text-xs"
+                              data-testid={`button-toggle-type-${stream.id}`}
+                            >
+                              <RefreshCw className={`w-3 h-3 mr-1 ${toggleStreamTypeMutation.isPending ? 'animate-spin' : ''}`} />
+                              {stream.streamType?.toUpperCase() || 'WEBRTC'}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Click to switch to {stream.streamType === 'webrtc' ? 'HLS' : 'WebRTC'}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TableCell>
                       <TableCell>
                         <Badge
                           className={getCategoryColor(stream.category)}
