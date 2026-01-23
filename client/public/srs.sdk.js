@@ -653,17 +653,7 @@ function SrsRtcWhipWhepAsync() {
         self.stream.addTrack(event.track);
     };
 
-    // Configure RTCPeerConnection for optimal live streaming performance
-    const rtcConfig = {
-        bundlePolicy: 'max-bundle',
-        rtcpMuxPolicy: 'require',
-        iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-        ],
-        sdpSemantics: 'unified-plan'
-    };
-    self.pc = new RTCPeerConnection(rtcConfig);
+    self.pc = new RTCPeerConnection(null);
 
     // To keep api consistent between player and publisher.
     // @see https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addStream#Migrating_to_addTrack
