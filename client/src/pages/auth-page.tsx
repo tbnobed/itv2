@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Shield, Monitor, Delete, CheckCircle, Lock, Download, Smartphone } from 'lucide-react';
+import { Shield, Monitor, CheckCircle, Lock, Download, Smartphone } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { passcodeLoginSchema } from '@shared/schema';
 
@@ -130,77 +130,6 @@ export default function PasscodeAuthPage() {
       } else if (key === 'Escape' || key === 'Delete') {
         event.preventDefault();
         handleClear();
-      } else if (key === 'ArrowDown') {
-        event.preventDefault();
-        const inputOTP = document.querySelector('[data-testid="input-passcode"]') as HTMLElement;
-        const activeElement = document.activeElement;
-        
-        // If we're on the input field, go to first digit button
-        if (!activeElement || activeElement === inputOTP || inputOTP?.contains(activeElement)) {
-          const firstDigitButton = document.querySelector('[data-testid="button-digit-1"]') as HTMLElement;
-          firstDigitButton?.focus();
-        }
-        // If we're on a digit button, go to clear button
-        else if (activeElement?.getAttribute('data-testid')?.startsWith('button-digit-')) {
-          const clearButton = document.querySelector('[data-testid="button-backspace"]') as HTMLElement;
-          clearButton?.focus();
-        }
-        // Otherwise focus on the input field first
-        else {
-          inputOTP?.focus();
-        }
-      } else if (key === 'ArrowUp') {
-        event.preventDefault();
-        const activeElement = document.activeElement;
-        const inputOTP = document.querySelector('[data-testid="input-passcode"]') as HTMLElement;
-        
-        // If we're on clear/submit buttons, go back to digit buttons
-        if (activeElement?.getAttribute('data-testid') === 'button-backspace' || 
-            activeElement?.getAttribute('data-testid') === 'button-submit') {
-          const firstDigitButton = document.querySelector('[data-testid="button-digit-1"]') as HTMLElement;
-          firstDigitButton?.focus();
-        }
-        // If we're on digit buttons, go back to input field
-        else if (activeElement?.getAttribute('data-testid')?.startsWith('button-digit-')) {
-          inputOTP?.focus();
-        }
-        // Otherwise go to input field
-        else {
-          inputOTP?.focus();
-        }
-      } else if (key === 'ArrowLeft' || key === 'ArrowRight') {
-        event.preventDefault();
-        const activeElement = document.activeElement as HTMLElement;
-        
-        // Navigate between digit buttons
-        if (activeElement?.getAttribute('data-testid')?.startsWith('button-digit-')) {
-          const currentDigit = activeElement.getAttribute('data-testid')?.replace('button-digit-', '');
-          const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-          const currentIndex = digits.indexOf(currentDigit || '');
-          
-          let nextIndex = currentIndex;
-          if (key === 'ArrowRight') {
-            nextIndex = currentIndex < digits.length - 1 ? currentIndex + 1 : 0;
-          } else if (key === 'ArrowLeft') {
-            nextIndex = currentIndex > 0 ? currentIndex - 1 : digits.length - 1;
-          }
-          
-          const nextButton = document.querySelector(`[data-testid="button-digit-${digits[nextIndex]}"]`) as HTMLElement;
-          nextButton?.focus();
-        }
-        // Navigate between clear and submit buttons
-        else if (activeElement?.getAttribute('data-testid') === 'button-backspace') {
-          if (key === 'ArrowRight') {
-            const submitButton = document.querySelector('[data-testid="button-submit"]') as HTMLElement;
-            submitButton?.focus();
-          }
-        }
-        else if (activeElement?.getAttribute('data-testid') === 'button-submit') {
-          if (key === 'ArrowLeft') {
-            const clearButton = document.querySelector('[data-testid="button-backspace"]') as HTMLElement;
-            clearButton?.focus();
-          }
-        }
       }
     };
 
@@ -218,12 +147,6 @@ export default function PasscodeAuthPage() {
     }
   }, [passcode, lockoutState.isLocked]);
 
-  const numberButtons = [
-    '1', '2', '3',
-    '4', '5', '6', 
-    '7', '8', '9',
-    '', '0', ''
-  ];
 
   // Apply TV-specific scaling for auth page
   React.useEffect(() => {
@@ -324,48 +247,6 @@ export default function PasscodeAuthPage() {
                 )}
               </div>
 
-              {/* Numeric Keypad */}
-              <div className="grid grid-cols-3 gap-2">
-                {numberButtons.map((digit, index) => {
-                  if (!digit) return <div key={`empty-${index}`} />;
-                  
-                  return (
-                    <Button
-                      key={`digit-${digit}`}
-                      variant="outline"
-                      className="h-12 text-xl font-bold focus:ring-2 focus:ring-primary/50 hover-elevate active-elevate-2"
-                      onClick={() => handleNumberClick(digit)}
-                      disabled={lockoutState.isLocked || passcode.length >= 4}
-                      data-testid={`button-digit-${digit}`}
-                    >
-                      {digit}
-                    </Button>
-                  );
-                })}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="h-10 text-base focus:ring-2 focus:ring-primary/50"
-                  onClick={handleBackspace}
-                  disabled={lockoutState.isLocked || passcode.length === 0}
-                  data-testid="button-backspace"
-                >
-                  <Delete className="w-4 h-4 mr-1" />
-                  Clear
-                </Button>
-                <Button
-                  className="h-10 text-base focus:ring-2 focus:ring-primary/50"
-                  onClick={handleSubmit}
-                  disabled={lockoutState.isLocked || passcode.length !== 4 || passcodeLoginMutation?.isPending}
-                  data-testid="button-submit"
-                >
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  {passcodeLoginMutation?.isPending ? 'Checking...' : 'Submit'}
-                </Button>
-              </div>
             </CardContent>
           </Card>
 
