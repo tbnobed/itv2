@@ -69,13 +69,41 @@ export default function StreamsListPage() {
     },
   });
 
+  // Convert URL between WebRTC and HLS formats
+  const convertStreamUrl = (url: string, toType: 'webrtc' | 'hls'): string => {
+    try {
+      if (toType === 'hls') {
+        // WebRTC to HLS: extract stream name from ?app=live&stream=NAME
+        const streamMatch = url.match(/[?&]stream=([^&]+)/);
+        if (streamMatch) {
+          const streamName = streamMatch[1];
+          const baseUrl = url.split('/rtc/')[0];
+          return `${baseUrl}/live/${streamName}.m3u8`;
+        }
+      } else {
+        // HLS to WebRTC: extract stream name from /live/NAME.m3u8
+        const hlsMatch = url.match(/\/live\/([^/]+)\.m3u8/);
+        if (hlsMatch) {
+          const streamName = hlsMatch[1];
+          const baseUrl = url.split('/live/')[0];
+          return `${baseUrl}/rtc/v1/whep/?app=live&stream=${streamName}`;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to convert URL:', e);
+    }
+    return url; // Return original if conversion fails
+  };
+
   // Toggle stream type mutation
   const toggleStreamTypeMutation = useMutation({
-    mutationFn: ({ streamId, newType }: { streamId: string; newType: 'webrtc' | 'hls' }) => 
-      apiRequest(`/api/streams/${streamId}`, {
+    mutationFn: ({ streamId, newType, currentUrl }: { streamId: string; newType: 'webrtc' | 'hls'; currentUrl: string }) => {
+      const newUrl = convertStreamUrl(currentUrl, newType);
+      return apiRequest(`/api/streams/${streamId}`, {
         method: 'PUT',
-        body: JSON.stringify({ streamType: newType }),
-      }),
+        body: JSON.stringify({ streamType: newType, url: newUrl }),
+      });
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/streams'] });
       toast({
@@ -238,7 +266,8 @@ export default function StreamsListPage() {
                               size="sm"
                               onClick={() => toggleStreamTypeMutation.mutate({
                                 streamId: stream.id,
-                                newType: stream.streamType === 'webrtc' ? 'hls' : 'webrtc'
+                                newType: stream.streamType === 'webrtc' ? 'hls' : 'webrtc',
+                                currentUrl: stream.url
                               })}
                               disabled={toggleStreamTypeMutation.isPending}
                               className="font-mono text-xs"
