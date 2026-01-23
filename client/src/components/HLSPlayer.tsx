@@ -634,7 +634,7 @@ export default function HLSPlayer({
         className="w-full h-full object-contain"
         playsInline
         controls={false}
-        muted={true}
+        muted={isMuted}
         autoPlay={true}
         data-testid={`hls-video-${streamId}`}
         tabIndex={0}

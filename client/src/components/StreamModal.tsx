@@ -397,33 +397,31 @@ export default function StreamModal({
             setIsConnected(true);
             setConnectionStatus('connected');
             
-            // Trigger autoplay for WebRTC video
-            setTimeout(() => {
-              if (videoRef.current) {
-                const video = videoRef.current;
+            // Trigger autoplay for WebRTC video immediately (no delay for low latency)
+            if (videoRef.current) {
+              const video = videoRef.current;
+              
+              // CRITICAL: Start with muted for autoplay compliance, then unmute if needed
+              video.muted = true;  // Always start muted for autoplay
+              video.volume = 1;    // Set volume to full
+              
+              video.play().then(() => {
+                console.log('WebRTC: AUTOPLAY SUCCESS!');
                 
-                // CRITICAL: Start with muted for autoplay compliance, then unmute if needed
-                video.muted = true;  // Always start muted for autoplay
-                video.volume = 1;    // Set volume to full
-                
-                video.play().then(() => {
-                  console.log('WebRTC: AUTOPLAY SUCCESS!');
-                  
-                  // Now apply user's mute preference AFTER successful autoplay
-                  if (!isMuted) {
-                    video.muted = false;
-                    console.log('WebRTC: Audio unmuted after successful autoplay');
-                  }
-                }).catch((error) => {
-                  console.log('WebRTC: Autoplay blocked:', error);
-                  // Try again with explicit muted=true
-                  video.muted = true;
-                  video.play().catch(err => {
-                    console.error('WebRTC: Second autoplay attempt failed:', err);
-                  });
+                // Now apply user's mute preference AFTER successful autoplay
+                if (!isMuted) {
+                  video.muted = false;
+                  console.log('WebRTC: Audio unmuted after successful autoplay');
+                }
+              }).catch((error) => {
+                console.log('WebRTC: Autoplay blocked:', error);
+                // Try again with explicit muted=true
+                video.muted = true;
+                video.play().catch(err => {
+                  console.error('WebRTC: Second autoplay attempt failed:', err);
                 });
-              }
-            }, 100);
+              });
+            }
           }
         };
 
