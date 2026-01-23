@@ -253,7 +253,19 @@ async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/studios', async (req, res) => {
     try {
       const studios = await storage.getAllStudios();
-      res.json(studios);
+      
+      // Calculate actual stream counts for each studio
+      const studiosWithCounts = await Promise.all(
+        studios.map(async (studio) => {
+          const streams = await storage.getStreamsByStudio(studio.id);
+          return {
+            ...studio,
+            feedCount: streams.length
+          };
+        })
+      );
+      
+      res.json(studiosWithCounts);
     } catch (error) {
       console.error('Error fetching studios:', error);
       res.status(500).json({ error: 'Failed to fetch studios' });
