@@ -397,6 +397,20 @@ export default function StreamModal({
             setIsConnected(true);
             setConnectionStatus('connected');
             
+            // Configure receivers for minimal latency
+            try {
+              const receivers = sdk.pc.getReceivers();
+              receivers.forEach((receiver: RTCRtpReceiver) => {
+                // Set minimum playout delay for low latency
+                if ('playoutDelayHint' in receiver) {
+                  (receiver as any).playoutDelayHint = 0;
+                  console.log(`WebRTC: Set playoutDelayHint=0 for ${receiver.track?.kind}`);
+                }
+              });
+            } catch (e) {
+              console.log('WebRTC: Could not configure receiver playout delay');
+            }
+            
             // Trigger autoplay for WebRTC video
             if (videoRef.current) {
               const video = videoRef.current;
