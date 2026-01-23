@@ -687,16 +687,11 @@ export class DatabaseStorage implements IStorage {
     const pepperedPasscode = passcode + PASSCODE_PEPPER;
     
     const allUsers = await db.select().from(users);
-    console.log(`[isPasscodeInUse] Checking passcode against ${allUsers.length} users, excluding: ${excludeUserId || 'none'}`);
     for (const user of allUsers) {
-      if (excludeUserId && user.id === excludeUserId) {
-        console.log(`[isPasscodeInUse] Skipping user ${user.username} (excluded)`);
-        continue;
-      }
+      if (excludeUserId && user.id === excludeUserId) continue;
       // Check both peppered and legacy (non-peppered) formats
       const isPepperedMatch = await bcrypt.compare(pepperedPasscode, user.password);
       const isLegacyMatch = await bcrypt.compare(passcode, user.password);
-      console.log(`[isPasscodeInUse] User ${user.username}: peppered=${isPepperedMatch}, legacy=${isLegacyMatch}`);
       if (isPepperedMatch || isLegacyMatch) return true;
     }
     return false;

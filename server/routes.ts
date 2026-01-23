@@ -495,11 +495,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if passcode is already in use by another user (excluding current user)
-      console.log(`Checking if passcode is in use (excluding user ${id})`);
       const passcodeInUse = await storage.isPasscodeInUse(password, id);
-      console.log(`Passcode in use check result: ${passcodeInUse}`);
       if (passcodeInUse) {
-        console.log('Rejecting duplicate passcode');
         return res.status(400).json({ error: 'This access code is already in use. Please choose a different 4-digit code.' });
       }
       
