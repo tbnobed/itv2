@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { User, Shield, UserPlus, Search, Settings, X } from 'lucide-react';
+import { User, Shield, UserPlus, Search, Settings, X, Edit } from 'lucide-react';
 import { User as UserType, insertUserSchema, createUserSchema } from '@shared/schema';
 import { z } from 'zod';
 
@@ -20,10 +20,24 @@ interface UserWithDetails extends UserType {
   lastActive?: string;
 }
 
+const updatePasswordSchema = z.object({
+  code: z.string()
+    .length(4, "Code must be exactly 4 digits")
+    .regex(/^\d{4}$/, "Code must contain only numbers"),
+  confirmCode: z.string()
+    .length(4, "Code must be exactly 4 digits")
+    .regex(/^\d{4}$/, "Code must contain only numbers"),
+}).refine((data) => data.code === data.confirmCode, {
+  message: "Codes don't match",
+  path: ["confirmCode"],
+});
+
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserWithDetails | null>(null);
   const { toast } = useToast();
 
   // Form for creating new users uses the imported createUserSchema
@@ -35,6 +49,14 @@ export default function UserManagement() {
       code: '',
       confirmCode: '',
       role: 'user' as const,
+    },
+  });
+
+  const editForm = useForm({
+    resolver: zodResolver(updatePasswordSchema),
+    defaultValues: {
+      code: '',
+      confirmCode: '',
     },
   });
 
@@ -114,6 +136,32 @@ export default function UserManagement() {
     },
   });
 
+  const updatePasswordMutation = useMutation({
+    mutationFn: async ({ userId, password }: { userId: string, password: string }) => {
+      return apiRequest(`/api/admin/users/${userId}/password`, {
+        method: 'PUT',
+        body: JSON.stringify({ password }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+      editForm.reset();
+      toast({
+        title: "Code updated",
+        description: "User access code has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update user code.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRoleChange = (userId: string, newRole: string) => {
     updateUserRoleMutation.mutate({ userId, role: newRole });
   };
@@ -131,6 +179,17 @@ export default function UserManagement() {
       password: data.code
     };
     createUserMutation.mutate(userDataWithPassword);
+  };
+
+  const handleEditUser = (user: UserWithDetails) => {
+    setEditingUser(user);
+    editForm.reset({ code: '', confirmCode: '' });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdatePassword = (data: { code: string; confirmCode: string }) => {
+    if (!editingUser) return;
+    updatePasswordMutation.mutate({ userId: editingUser.id, password: data.code });
   };
 
   const filteredUsers = users.filter(user => {
@@ -409,6 +468,17 @@ export default function UserManagement() {
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    {/* Edit Code Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditUser(user)}
+                      data-testid={`button-edit-${user.id}`}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Code
+                    </Button>
+
                     {/* Role Selection */}
                     <Select 
                       value={user.role} 
@@ -441,6 +511,87 @@ export default function UserManagement() {
           ))
         )}
       </div>
+
+      {/* Edit User Code Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if (!open) {
+          setEditingUser(null);
+          editForm.reset();
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Access Code</DialogTitle>
+            <DialogDescription>
+              {editingUser && `Change the 4-digit access code for ${editingUser.username}.`}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleUpdatePassword)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New 4-Digit Code</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="text"
+                        placeholder="Enter new 4-digit code"
+                        maxLength={4}
+                        data-testid="input-edit-code"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="confirmCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Code</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="text"
+                        placeholder="Confirm new 4-digit code"
+                        maxLength={4}
+                        data-testid="input-edit-confirm-code"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingUser(null);
+                    editForm.reset();
+                  }}
+                  data-testid="button-cancel-edit"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updatePasswordMutation.isPending}
+                  data-testid="button-save-code"
+                >
+                  {updatePasswordMutation.isPending ? 'Saving...' : 'Save Code'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
