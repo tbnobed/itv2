@@ -416,50 +416,58 @@ export default function StreamModal({
               const video = videoRef.current;
               video.volume = 1;
               video.muted = isMuted;
+              
+              // Configure for low-latency live streaming
+              // Disable preservesPitch to allow audio to catch up faster
+              if ('preservesPitch' in video) {
+                (video as any).preservesPitch = false;
+              }
+              
+              video.playbackRate = 1.0;
+              
+              // Monitor for stalls and auto-reconnect if needed
+              let lastTime = 0;
+              let stallCount = 0;
+              const syncMonitor = setInterval(() => {
+                if (!video || video.paused) return;
+                
+                const currentTime = video.currentTime;
+                // If time hasn't advanced in 2 seconds, we might be stalled
+                if (currentTime === lastTime && currentTime > 0) {
+                  stallCount++;
+                  console.log(`WebRTC: Potential stall detected (count: ${stallCount})`);
+                  if (stallCount >= 2) {
+                    console.log('WebRTC: Multiple stalls - reconnecting stream');
+                    clearInterval(syncMonitor);
+                    // Trigger reconnection by calling disconnect and reconnect
+                    if (srsPlayerRef.current) {
+                      srsPlayerRef.current.close();
+                      srsPlayerRef.current = null;
+                    }
+                    // Re-connect after brief delay
+                    setTimeout(() => {
+                      if (videoRef.current && streamUrl) {
+                        connectWebRTC(streamUrl);
+                      }
+                    }, 500);
+                  }
+                } else {
+                  stallCount = 0;
+                }
+                lastTime = currentTime;
+              }, 2000);
+              
+              // Clean up monitor on unmount
+              const originalClose = srsPlayerRef.current?.close?.bind(srsPlayerRef.current);
+              if (srsPlayerRef.current && originalClose) {
+                srsPlayerRef.current.close = () => {
+                  clearInterval(syncMonitor);
+                  originalClose();
+                };
+              }
+              
               console.log(`WebRTC: Attempting play with muted=${isMuted}`);
               
-              // Handle stall/waiting events to resync A/V after network hiccups
-              let wasStalled = false;
-              let resyncTimeout: ReturnType<typeof setTimeout> | null = null;
-              
-              const attemptResync = () => {
-                if (resyncTimeout) return; // Already scheduled
-                resyncTimeout = setTimeout(() => {
-                  resyncTimeout = null;
-                  if (video && !video.paused) {
-                    console.log('WebRTC: Attempting A/V resync after stall');
-                    // Briefly mute/unmute can help resync audio buffer
-                    const wasMuted = video.muted;
-                    video.muted = true;
-                    requestAnimationFrame(() => {
-                      video.muted = wasMuted;
-                      console.log('WebRTC: Resync complete');
-                    });
-                  }
-                }, 100);
-              };
-              
-              const handleStall = () => {
-                console.log('WebRTC: Video stalled');
-                wasStalled = true;
-              };
-              
-              const handleWaiting = () => {
-                console.log('WebRTC: Video waiting for data');
-                wasStalled = true;
-              };
-              
-              const handlePlaying = () => {
-                console.log('WebRTC: Video resumed playing');
-                if (wasStalled) {
-                  wasStalled = false;
-                  attemptResync();
-                }
-              };
-              
-              video.addEventListener('stalled', handleStall);
-              video.addEventListener('waiting', handleWaiting);
-              video.addEventListener('playing', handlePlaying);
               
               video.play().then(() => {
                 console.log('WebRTC: AUTOPLAY SUCCESS!');
