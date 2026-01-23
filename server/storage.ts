@@ -23,6 +23,7 @@ export interface IStorage {
   updateUserStatus(id: string, isActive: string): Promise<boolean>;
   updateUserPassword(id: string, password: string): Promise<boolean>;
   isPasscodeInUse(passcode: string, excludeUserId?: string): Promise<boolean>;
+  deleteUser(id: string): Promise<boolean>;
   
   // Stream operations
   getAllStreams(): Promise<Stream[]>;
@@ -126,6 +127,10 @@ export class MemStorage implements IStorage {
       if (isPepperedMatch || isLegacyMatch) return true;
     }
     return false;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    return this.users.delete(id);
   }
 
   // Stream operations
@@ -695,6 +700,11 @@ export class DatabaseStorage implements IStorage {
       if (isPepperedMatch || isLegacyMatch) return true;
     }
     return false;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, id)).returning();
+    return result.length > 0;
   }
 
   // Stream operations
