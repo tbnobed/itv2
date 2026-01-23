@@ -371,21 +371,6 @@ export default function StreamModal({
         }
       }
 
-      // Configure jitter buffer for low latency on Fire TV
-      if (sdk.pc) {
-        // Set jitter buffer target to minimum for low latency
-        sdk.pc.ontrack = (event: RTCTrackEvent) => {
-          console.log('WebRTC track received:', event.track.kind);
-          const receiver = event.receiver;
-          
-          // Try to minimize jitter buffer for lower latency
-          if (receiver.jitterBufferTarget !== undefined) {
-            receiver.jitterBufferTarget = 0; // Minimum buffering
-            console.log('WebRTC: Set jitterBufferTarget to 0 for', event.track.kind);
-          }
-        };
-      }
-
       // Enhanced RTCPeerConnection event logging
       if (sdk.pc) {
         sdk.pc.oniceconnectionstatechange = () => {
