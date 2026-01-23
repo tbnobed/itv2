@@ -99,12 +99,14 @@ export default function StreamsListPage() {
     ...(streamData.uhd || []),
   ] : [];
 
-  // Filter streams based on search query
-  const filteredStreams = allStreams.filter(stream =>
-    stream.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    stream.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    stream.streamId.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort streams alphabetically/numerically by title
+  const filteredStreams = allStreams
+    .filter(stream =>
+      stream.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      stream.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      stream.streamId.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }));
 
   const getCategoryColor = (category: string) => {
     switch (category) {
