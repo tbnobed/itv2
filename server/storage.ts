@@ -115,10 +115,15 @@ export class MemStorage implements IStorage {
   }
 
   async isPasscodeInUse(passcode: string, excludeUserId?: string): Promise<boolean> {
+    const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
+    const pepperedPasscode = passcode + PASSCODE_PEPPER;
+    
     for (const user of this.users.values()) {
       if (excludeUserId && user.id === excludeUserId) continue;
-      const matches = await bcrypt.compare(passcode, user.password);
-      if (matches) return true;
+      // Check both peppered and legacy (non-peppered) formats
+      const isPepperedMatch = await bcrypt.compare(pepperedPasscode, user.password);
+      const isLegacyMatch = await bcrypt.compare(passcode, user.password);
+      if (isPepperedMatch || isLegacyMatch) return true;
     }
     return false;
   }
@@ -678,17 +683,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async isPasscodeInUse(passcode: string, excludeUserId?: string): Promise<boolean> {
+    const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
+    const pepperedPasscode = passcode + PASSCODE_PEPPER;
+    
     const allUsers = await db.select().from(users);
-    console.log(`[isPasscodeInUse] Checking passcode "${passcode}" against ${allUsers.length} users, excluding: ${excludeUserId || 'none'}`);
+    console.log(`[isPasscodeInUse] Checking passcode against ${allUsers.length} users, excluding: ${excludeUserId || 'none'}`);
     for (const user of allUsers) {
       if (excludeUserId && user.id === excludeUserId) {
         console.log(`[isPasscodeInUse] Skipping user ${user.username} (excluded)`);
         continue;
       }
-      console.log(`[isPasscodeInUse] Comparing against user ${user.username}, hash: ${user.password.substring(0, 20)}...`);
-      const matches = await bcrypt.compare(passcode, user.password);
-      console.log(`[isPasscodeInUse] Match result for ${user.username}: ${matches}`);
-      if (matches) return true;
+      // Check both peppered and legacy (non-peppered) formats
+      const isPepperedMatch = await bcrypt.compare(pepperedPasscode, user.password);
+      const isLegacyMatch = await bcrypt.compare(passcode, user.password);
+      console.log(`[isPasscodeInUse] User ${user.username}: peppered=${isPepperedMatch}, legacy=${isLegacyMatch}`);
+      if (isPepperedMatch || isLegacyMatch) return true;
     }
     return false;
   }
