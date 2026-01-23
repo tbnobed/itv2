@@ -352,23 +352,9 @@ export default function StreamModal({
       const sdk = SrsRtcWhipWhepAsync();
       srsPlayerRef.current = sdk;
       
-      // Set video source to the SDK stream with low-latency configuration
+      // Set video source to the SDK stream
       if (videoRef.current) {
-        const video = videoRef.current;
-        video.srcObject = sdk.stream;
-        
-        // Low-latency WebRTC configuration to keep A/V in sync
-        video.playsInline = true;
-        video.autoplay = true;
-        video.preload = 'none'; // Don't buffer ahead
-        
-        // Disable any browser-level buffering/smoothing
-        if ('mozPreservesPitch' in video) {
-          (video as any).mozPreservesPitch = false;
-        }
-        if ('webkitPreservesPitch' in video) {
-          (video as any).webkitPreservesPitch = false;
-        }
+        videoRef.current.srcObject = sdk.stream;
       }
 
       // Enhanced RTCPeerConnection event logging
