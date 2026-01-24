@@ -537,28 +537,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public APK version check endpoint (for app self-update)
-  app.get('/api/apk/version', async (req, res) => {
+  app.get('/api/version', async (req, res) => {
     try {
       const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
       if (!existsSync(apkPath)) {
         return res.status(404).json({ 
-          available: false,
-          message: 'No APK available' 
+          versionName: "0.0.0",
+          versionCode: 0,
+          downloadUrl: "",
+          releaseNotes: "No APK available"
         });
       }
       
       const stats = statSync(apkPath);
-      // Use file modification time as version identifier
+      // Use file modification time as version code
       const versionCode = Math.floor(stats.mtime.getTime() / 1000);
+      // Format version name from date: YYYY.MM.DD
+      const date = stats.mtime;
+      const versionName = `${date.getFullYear()}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getDate().toString().padStart(2, '0')}`;
+      
+      // Get host from request for absolute download URL
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+      const host = req.headers['host'] || 'itv2.obtv.io';
+      const downloadUrl = `${protocol}://${host}/api/download/firestick-apk`;
       
       res.json({
-        available: true,
+        versionName: versionName,
         versionCode: versionCode,
-        versionName: stats.mtime.toISOString().split('T')[0], // e.g., "2025-01-23"
-        size: stats.size,
-        lastModified: stats.mtime.toISOString(),
-        downloadUrl: '/api/download/firestick-apk'
+        downloadUrl: downloadUrl,
+        releaseNotes: `Updated ${stats.mtime.toISOString().split('T')[0]}`
       });
     } catch (error) {
       console.error('Error checking APK version:', error);
