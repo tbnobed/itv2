@@ -16,37 +16,26 @@ import { ObjectStorageService, registerObjectStorageRoutes } from "./replit_inte
 // APK validation function to prevent MIME spoofing
 function validateAPKFile(filePath: string): { isValid: boolean; error?: string } {
   try {
-    // Read full file and slice first 30 bytes to check magic bytes and basic ZIP structure
     const fullBuffer = readFileSync(filePath);
-    const buffer = fullBuffer.subarray(0, 30);
     
     // Check ZIP magic bytes (APK files are ZIP files)
-    if (buffer[0] !== 0x50 || buffer[1] !== 0x4B) {
+    if (fullBuffer[0] !== 0x50 || fullBuffer[1] !== 0x4B) {
       return { isValid: false, error: 'File is not a valid ZIP/APK format (missing ZIP magic bytes)' };
     }
     
     // Check for specific ZIP file signatures
-    if (!(buffer[2] === 0x03 && buffer[3] === 0x04) && // Regular ZIP file
-        !(buffer[2] === 0x05 && buffer[3] === 0x06) && // Empty ZIP
-        !(buffer[2] === 0x07 && buffer[3] === 0x08)) { // Spanned ZIP
+    if (!(fullBuffer[2] === 0x03 && fullBuffer[3] === 0x04) && // Regular ZIP file
+        !(fullBuffer[2] === 0x05 && fullBuffer[3] === 0x06) && // Empty ZIP
+        !(fullBuffer[2] === 0x07 && fullBuffer[3] === 0x08)) { // Spanned ZIP
       return { isValid: false, error: 'File has invalid ZIP file signature' };
     }
     
-    // Read a larger portion to look for AndroidManifest.xml signature
-    try {
-      const searchLength = Math.min(8192, fullBuffer.length);
-      const largerBuffer = fullBuffer.subarray(0, searchLength);
-      const content = largerBuffer.toString('binary');
-      
-      // Look for AndroidManifest.xml in the central directory or local file headers
-      // APK files should contain AndroidManifest.xml
-      if (!content.includes('AndroidManifest.xml') && 
-          !content.includes('META-INF/MANIFEST.MF')) {
-        return { isValid: false, error: 'File does not appear to be a valid APK (missing Android manifest signatures)' };
-      }
-    } catch (readError) {
-      // If we can't read more, but basic ZIP checks passed, allow it
-      console.warn('Could not perform extended APK validation, basic ZIP validation passed:', readError);
+    // Search entire file for AndroidManifest.xml (central directory is at END of ZIP)
+    const content = fullBuffer.toString('binary');
+    if (!content.includes('AndroidManifest.xml') && 
+        !content.includes('META-INF/') &&
+        !content.includes('classes.dex')) {
+      return { isValid: false, error: 'File does not appear to be a valid APK (missing Android manifest or dex files)' };
     }
     
     return { isValid: true };
