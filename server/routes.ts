@@ -2,7 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage, seedDatabase } from "./storage";
-import { insertStreamSchema, updateStreamSchema, insertStudioSchema, updateStudioSchema, insertUserSchema } from "@shared/schema";
+import { insertStreamSchema, updateStreamSchema, insertStudioSchema, updateStudioSchema, insertUserSchema, uploadApkSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth, requireAuth, requireAdmin, csrfProtection } from "./auth";
 import { SnapshotService } from "./SnapshotService";
@@ -11,6 +11,7 @@ import { existsSync, statSync, renameSync, unlinkSync, readFileSync } from "fs";
 import multer from "multer";
 import { promisify } from "util";
 import bcrypt from "bcrypt";
+import { ObjectStorageService, registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 // APK validation function to prevent MIME spoofing
 function validateAPKFile(filePath: string): { isValid: boolean; error?: string } {
@@ -539,9 +540,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public APK version check endpoint (for app self-update)
   app.get('/api/version', async (req, res) => {
     try {
-      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      const activeVersion = await storage.getActiveApkVersion();
       
-      if (!existsSync(apkPath)) {
+      if (!activeVersion) {
         return res.status(404).json({ 
           versionName: "0.0.0",
           versionCode: 0,
@@ -550,23 +551,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const stats = statSync(apkPath);
-      // Use file modification time as version code
-      const versionCode = Math.floor(stats.mtime.getTime() / 1000);
-      // Format version name from date: YYYY.MM.DD
-      const date = stats.mtime;
-      const versionName = `${date.getFullYear()}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getDate().toString().padStart(2, '0')}`;
-      
       // Get host from request for absolute download URL
       const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
       const host = req.headers['host'] || 'itv2.obtv.io';
       const downloadUrl = `${protocol}://${host}/api/download/firestick-apk`;
       
       res.json({
-        versionName: versionName,
-        versionCode: versionCode,
+        versionName: activeVersion.versionName,
+        versionCode: activeVersion.versionCode,
         downloadUrl: downloadUrl,
-        releaseNotes: `Updated ${stats.mtime.toISOString().split('T')[0]}`
+        releaseNotes: activeVersion.releaseNotes || `Version ${activeVersion.versionName}`
       });
     } catch (error) {
       console.error('Error checking APK version:', error);
@@ -577,33 +571,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // APK management endpoints (admin only)
   app.get('/api/admin/apk/info', requireAdmin, async (req, res) => {
     try {
-      // NUCLEAR option: Force unique response every time
-      const apkPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
+      const activeVersion = await storage.getActiveApkVersion();
       
       let payload: any;
-      if (!existsSync(apkPath)) {
+      if (!activeVersion) {
         payload = {
           exists: false,
           message: 'No APK file currently uploaded'
         };
       } else {
-        const stats = statSync(apkPath);
         payload = {
           exists: true,
-          filename: 'itv-obtv-firestick.apk',
-          size: stats.size,
-          sizeFormatted: formatFileSize(stats.size),
-          lastModified: stats.mtime.toISOString(),
-          lastModifiedFormatted: stats.mtime.toLocaleString()
+          filename: 'OBTV-FireStick.apk',
+          size: activeVersion.fileSize,
+          sizeFormatted: formatFileSize(activeVersion.fileSize),
+          versionName: activeVersion.versionName,
+          versionCode: activeVersion.versionCode,
+          releaseNotes: activeVersion.releaseNotes,
+          lastModified: activeVersion.createdAt,
+          lastModifiedFormatted: new Date(activeVersion.createdAt).toLocaleString()
         };
       }
       
       // Force unique content every single request
       payload.timestamp = Date.now();
       payload.requestId = Math.random().toString(36).slice(2);
-      payload.random = Math.random(); // Extra randomness
       
-      // Simple cache busting without aggressive headers
       res.status(200);
       res.set({
         'Content-Type': 'application/json; charset=utf-8',
@@ -619,150 +612,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/apk/upload', requireAdmin, csrfProtection, upload.single('apk'), async (req, res) => {
     let tempFilePath: string | undefined;
     
-    console.log('🚀 APK UPLOAD ATTEMPT STARTED');
-    console.log('📋 Upload Request Details:', {
-      headers: {
-        'content-type': req.headers['content-type'],
-        'content-length': req.headers['content-length'],
-        'user-agent': req.headers['user-agent']
-      },
-      method: req.method,
-      url: req.url,
-      sessionId: req.session.id,
-      authenticated: req.isAuthenticated(),
-      userId: req.user?.id
-    });
+    console.log('APK UPLOAD STARTED');
     
     try {
       const file = req.file;
       
-      console.log('📁 File Upload Info:', {
-        fileReceived: !!file
-      });
-      
       if (!file) {
-        console.log('❌ NO FILE - Upload failed: No file in request');
         return res.status(400).json({ error: 'No APK file uploaded' });
       }
       
-      console.log('📄 File Details:', {
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        tempPath: file.path,
-        fieldname: file.fieldname
-      });
+      // Parse version info from form data
+      const versionName = req.body.versionName || '1.0.0';
+      const versionCode = parseInt(req.body.versionCode) || 1;
+      const releaseNotes = req.body.releaseNotes || '';
+      
+      console.log('Version info:', { versionName, versionCode, releaseNotes });
       
       tempFilePath = file.path;
-      const targetPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       
       // Validate file size
-      console.log('🔍 Starting file validation checks...');
       if (file.size === 0) {
-        console.log('❌ VALIDATION FAILED - File is empty');
-        // Clean up temp file before returning error
-        try {
-          unlinkSync(tempFilePath);
-        } catch (cleanupError) {
-          console.error('Failed to cleanup empty temp file:', cleanupError);
-        }
+        try { unlinkSync(tempFilePath); } catch (e) {}
         return res.status(400).json({ error: 'Uploaded file is empty' });
       }
       
-      if (file.size > 100 * 1024 * 1024) { // 100MB
-        console.log('❌ VALIDATION FAILED - File too large:', file.size, 'bytes');
-        // Clean up temp file before returning error
-        try {
-          unlinkSync(tempFilePath);
-        } catch (cleanupError) {
-          console.error('Failed to cleanup oversized temp file:', cleanupError);
-        }
+      if (file.size > 100 * 1024 * 1024) {
+        try { unlinkSync(tempFilePath); } catch (e) {}
         return res.status(400).json({ error: 'File size exceeds 100MB limit' });
       }
       
-      // Validate file extension
       if (!file.originalname.toLowerCase().endsWith('.apk')) {
-        console.log('❌ VALIDATION FAILED - Invalid extension. File:', file.originalname);
-        // Clean up temp file before returning error
-        try {
-          unlinkSync(tempFilePath);
-        } catch (cleanupError) {
-          console.error('Failed to cleanup invalid extension temp file:', cleanupError);
-        }
+        try { unlinkSync(tempFilePath); } catch (e) {}
         return res.status(400).json({ error: 'File must have .apk extension' });
       }
       
-      console.log('✅ Basic validation passed - checking APK file structure...');
-      
-      // Validate APK file structure and magic bytes
+      // Validate APK file structure
       const validation = validateAPKFile(tempFilePath);
       if (!validation.isValid) {
-        console.log('❌ VALIDATION FAILED - APK structure invalid:', validation.error);
-        // Clean up temp file before returning error
-        try {
-          unlinkSync(tempFilePath);
-        } catch (cleanupError) {
-          console.error('Failed to cleanup invalid APK temp file:', cleanupError);
-        }
+        try { unlinkSync(tempFilePath); } catch (e) {}
         return res.status(400).json({ error: validation.error });
       }
       
-      console.log('✅ APK validation passed - moving file to target location...');
-      console.log('🗂️  Target path:', targetPath);
+      // Upload to object storage
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = `/apk/OBTV-FireStick-v${versionCode}.apk`;
       
-      // Atomically move temp file to final destination (this overwrites existing file safely)
-      // Using rename is atomic on Unix systems - no race condition window for downloads
+      // For now, also save to local filesystem for backward compatibility
+      // until object storage upload is fully implemented
+      const targetPath = join(process.cwd(), 'server', 'public', 'itv-obtv-firestick.apk');
       renameSync(tempFilePath, targetPath);
-      tempFilePath = undefined; // Clear reference since file is now moved
+      tempFilePath = undefined;
       
-      // Get file stats for response
-      const stats = statSync(targetPath);
-      
-      console.log(`✅ APK UPLOAD SUCCESSFUL: ${file.originalname} (${formatFileSize(file.size)})`);
-      console.log('📊 Final file stats:', {
-        size: stats.size,
-        lastModified: stats.mtime.toISOString(),
-        targetPath
+      // Save version metadata to database
+      const apkVersion = await storage.createApkVersion({
+        versionName,
+        versionCode,
+        releaseNotes,
+        objectPath: targetPath, // Use local path for now
+        fileSize: file.size,
+        isActive: 'true'
       });
+      
+      console.log(`APK UPLOAD SUCCESSFUL: v${versionName} (${versionCode})`);
       
       res.status(201).json({
         success: true,
         message: 'APK file uploaded successfully',
-        filename: 'itv-obtv-firestick.apk',
-        originalName: file.originalname,
-        size: stats.size,
-        sizeFormatted: formatFileSize(stats.size),
-        uploadedAt: new Date().toISOString()
+        filename: 'OBTV-FireStick.apk',
+        versionName: apkVersion.versionName,
+        versionCode: apkVersion.versionCode,
+        releaseNotes: apkVersion.releaseNotes,
+        size: file.size,
+        sizeFormatted: formatFileSize(file.size),
+        uploadedAt: apkVersion.createdAt
       });
       
-    } catch (error) {
-      console.log('💥 UPLOAD EXCEPTION OCCURRED');
-      console.error('🔴 Upload error details:', {
-        message: error?.message,
-        stack: error?.stack,
-        tempFilePath,
-        errorType: error?.constructor?.name
-      });
-      // Clean up temp file if upload failed
+    } catch (error: any) {
+      console.error('Upload error:', error?.message);
+      
       if (tempFilePath && existsSync(tempFilePath)) {
-        try {
-          unlinkSync(tempFilePath);
-        } catch (cleanupError) {
-          console.error('Failed to cleanup temp file:', cleanupError);
-        }
+        try { unlinkSync(tempFilePath); } catch (e) {}
       }
       
       if (error instanceof multer.MulterError) {
         if (error.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({ error: 'File size exceeds 100MB limit' });
-        } else if (error.code === 'LIMIT_FILE_COUNT') {
-          return res.status(400).json({ error: 'Only one file allowed' });
-        } else {
-          return res.status(400).json({ error: `Upload error: ${error.message}` });
         }
+        return res.status(400).json({ error: `Upload error: ${error.message}` });
       }
       
-      console.error('Error uploading APK file:', error);
       res.status(500).json({ error: 'Failed to upload APK file' });
     }
   });

@@ -32,6 +32,17 @@ export const studios = pgTable("studios", {
   feedCount: integer("feed_count").notNull().default(0),
 });
 
+export const apkVersions = pgTable("apk_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  versionName: text("version_name").notNull(),
+  versionCode: integer("version_code").notNull(),
+  releaseNotes: text("release_notes").notNull().default(""),
+  objectPath: text("object_path").notNull(),
+  fileSize: integer("file_size").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  isActive: text("is_active").notNull().default("true"),
+});
+
 // User schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -111,3 +122,19 @@ export const updateStudioSchema = insertStudioSchema.partial();
 
 export type InsertStudio = z.infer<typeof insertStudioSchema>;
 export type Studio = typeof studios.$inferSelect;
+
+// APK version schemas
+export const insertApkVersionSchema = createInsertSchema(apkVersions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const uploadApkSchema = z.object({
+  versionName: z.string().min(1, "Version name is required"),
+  versionCode: z.number().int().positive("Version code must be a positive integer"),
+  releaseNotes: z.string().optional().default(""),
+});
+
+export type InsertApkVersion = z.infer<typeof insertApkVersionSchema>;
+export type ApkVersion = typeof apkVersions.$inferSelect;
+export type UploadApkRequest = z.infer<typeof uploadApkSchema>;

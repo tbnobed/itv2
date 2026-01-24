@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
@@ -16,7 +19,8 @@ import {
   CheckCircle2, 
   Clock,
   HardDrive,
-  Calendar
+  Calendar,
+  Tag
 } from 'lucide-react';
 
 // CSRF token function (same as in queryClient.ts)
@@ -43,6 +47,9 @@ interface APKInfo {
   filename?: string;
   size?: number;
   sizeFormatted?: string;
+  versionName?: string;
+  versionCode?: number;
+  releaseNotes?: string;
   lastModified?: string;
   lastModifiedFormatted?: string;
   message?: string;
@@ -52,6 +59,10 @@ export default function ApkManagement() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [versionName, setVersionName] = useState('1.0.0');
+  const [versionCode, setVersionCode] = useState('1');
+  const [releaseNotes, setReleaseNotes] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -63,12 +74,20 @@ export default function ApkManagement() {
 
   // Upload APK mutation
   const uploadApkMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, versionName, versionCode, releaseNotes }: { 
+      file: File; 
+      versionName: string; 
+      versionCode: string;
+      releaseNotes: string;
+    }) => {
       setIsUploading(true);
       setUploadProgress(0);
 
       const formData = new FormData();
       formData.append('apk', file);
+      formData.append('versionName', versionName);
+      formData.append('versionCode', versionCode);
+      formData.append('releaseNotes', releaseNotes);
 
       // Get CSRF token first
       try {
@@ -121,6 +140,10 @@ export default function ApkManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/apk/info'] });
       setUploadProgress(0);
+      setSelectedFile(null);
+      setVersionName('1.0.0');
+      setVersionCode('1');
+      setReleaseNotes('');
       toast({
         title: "Upload successful",
         description: "APK file has been successfully uploaded and is now available for download.",
@@ -172,7 +195,35 @@ export default function ApkManagement() {
       return;
     }
 
-    uploadApkMutation.mutate(file);
+    setSelectedFile(file);
+  };
+
+  const handleUpload = () => {
+    if (!selectedFile) {
+      toast({
+        title: "No file selected",
+        description: "Please select an APK file first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const codeNum = parseInt(versionCode);
+    if (isNaN(codeNum) || codeNum < 1) {
+      toast({
+        title: "Invalid version code",
+        description: "Version code must be a positive number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    uploadApkMutation.mutate({ 
+      file: selectedFile, 
+      versionName, 
+      versionCode, 
+      releaseNotes 
+    });
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -281,8 +332,13 @@ export default function ApkManagement() {
                     <span className="font-medium" data-testid="text-apk-filename">
                       {apkInfo.filename}
                     </span>
-                    <Badge variant="default">Available</Badge>
+                    <Badge variant="default">v{apkInfo.versionName}</Badge>
+                    <Badge variant="secondary">Code: {apkInfo.versionCode}</Badge>
                   </div>
+                  
+                  {apkInfo.releaseNotes && (
+                    <p className="text-sm text-muted-foreground">{apkInfo.releaseNotes}</p>
+                  )}
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
@@ -293,16 +349,16 @@ export default function ApkManagement() {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span data-testid="text-apk-date">
-                        Modified: {apkInfo.lastModifiedFormatted}
+                      <Tag className="w-4 h-4" />
+                      <span data-testid="text-apk-version">
+                        Version: {apkInfo.versionName} ({apkInfo.versionCode})
                       </span>
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span data-testid="text-apk-relative-time">
-                        {formatDate(apkInfo.lastModified!)}
+                      <Calendar className="w-4 h-4" />
+                      <span data-testid="text-apk-date">
+                        Uploaded: {apkInfo.lastModifiedFormatted}
                       </span>
                     </div>
                   </div>
@@ -358,10 +414,54 @@ export default function ApkManagement() {
               </div>
             )}
 
+            {/* Version Info Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="versionName">Version Name</Label>
+                <Input
+                  id="versionName"
+                  placeholder="e.g. 1.0.0"
+                  value={versionName}
+                  onChange={(e) => setVersionName(e.target.value)}
+                  disabled={isUploading}
+                  data-testid="input-version-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="versionCode">Version Code</Label>
+                <Input
+                  id="versionCode"
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 1"
+                  value={versionCode}
+                  onChange={(e) => setVersionCode(e.target.value)}
+                  disabled={isUploading}
+                  data-testid="input-version-code"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Increment this number with each release. App will update if server version code is higher.
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="releaseNotes">Release Notes (optional)</Label>
+              <Textarea
+                id="releaseNotes"
+                placeholder="What's new in this version..."
+                value={releaseNotes}
+                onChange={(e) => setReleaseNotes(e.target.value)}
+                disabled={isUploading}
+                className="min-h-[80px]"
+                data-testid="input-release-notes"
+              />
+            </div>
+
             {/* Drag and Drop Area */}
             <div
               className={`
-                border-2 border-dashed rounded-lg p-8 text-center transition-colors
+                border-2 border-dashed rounded-lg p-6 text-center transition-colors
                 ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
                 ${isUploading ? 'opacity-50 pointer-events-none' : 'hover:border-primary/50 hover:bg-primary/5'}
               `}
@@ -371,35 +471,52 @@ export default function ApkManagement() {
               onDrop={handleDrop}
               data-testid="dropzone-apk"
             >
-              <div className="space-y-4">
-                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Upload className="w-6 h-6 text-primary" />
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-2">
-                    Drop your APK file here
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    or click the button below to browse
-                  </p>
-                  
-                  <Button
-                    onClick={handleButtonClick}
-                    disabled={isUploading}
-                    data-testid="button-select-apk"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {isUploading ? 'Uploading...' : 'Select APK File'}
-                  </Button>
-                </div>
-                
-                <div className="text-xs text-muted-foreground">
-                  <p>Supported format: .apk</p>
-                  <p>Maximum size: 100MB</p>
-                </div>
+              <div className="space-y-3">
+                {selectedFile ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <FileCheck className="w-6 h-6 text-green-500" />
+                    <span className="font-medium">{selectedFile.name}</span>
+                    <Badge variant="secondary">{formatFileSize(selectedFile.size)}</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedFile(null)}
+                      disabled={isUploading}
+                    >
+                      Change
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mx-auto w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Upload className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Drop your APK file here or</p>
+                      <Button
+                        variant="link"
+                        onClick={handleButtonClick}
+                        disabled={isUploading}
+                        data-testid="button-select-apk"
+                      >
+                        Browse files
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
+
+            {/* Upload Button */}
+            <Button
+              onClick={handleUpload}
+              disabled={isUploading || !selectedFile}
+              className="w-full"
+              data-testid="button-upload-apk"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {isUploading ? `Uploading... ${uploadProgress}%` : 'Upload APK'}
+            </Button>
 
             {/* Hidden file input */}
             <input

@@ -1,10 +1,10 @@
-import { type User, type InsertUser, type Stream, type InsertStream, type Studio, type InsertStudio, users, streams, studios } from "../shared/schema";
+import { type User, type InsertUser, type Stream, type InsertStream, type Studio, type InsertStudio, type ApkVersion, type InsertApkVersion, users, streams, studios, apkVersions } from "../shared/schema";
 import { randomUUID } from "crypto";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPgSimple from "connect-pg-simple";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 // modify the interface with any CRUD methods
@@ -40,6 +40,11 @@ export interface IStorage {
   createStudio(studio: InsertStudio): Promise<Studio>;
   updateStudio(id: string, studio: Partial<InsertStudio>): Promise<Studio | undefined>;
   deleteStudio(id: string): Promise<boolean>;
+  
+  // APK version operations
+  getActiveApkVersion(): Promise<ApkVersion | undefined>;
+  createApkVersion(apkVersion: InsertApkVersion): Promise<ApkVersion>;
+  getAllApkVersions(): Promise<ApkVersion[]>;
 }
 
 const MemoryStore = createMemoryStore(session);
@@ -608,6 +613,19 @@ export class MemStorage implements IStorage {
       this.streams.set(id, newStream);
     });
   }
+
+  // APK version operations (not supported in memory storage - requires DB)
+  async getActiveApkVersion(): Promise<ApkVersion | undefined> {
+    return undefined;
+  }
+
+  async createApkVersion(apkVersion: InsertApkVersion): Promise<ApkVersion> {
+    throw new Error("APK version operations require database storage");
+  }
+
+  async getAllApkVersions(): Promise<ApkVersion[]> {
+    return [];
+  }
 }
 
 // Database Storage Implementation
@@ -806,6 +824,32 @@ export class DatabaseStorage implements IStorage {
     
     const result = await db.delete(studios).where(eq(studios.id, id)).returning();
     return result.length > 0;
+  }
+
+  // APK version operations
+  async getActiveApkVersion(): Promise<ApkVersion | undefined> {
+    const [version] = await db
+      .select()
+      .from(apkVersions)
+      .where(eq(apkVersions.isActive, 'true'))
+      .orderBy(sql`${apkVersions.createdAt} DESC`)
+      .limit(1);
+    return version || undefined;
+  }
+
+  async createApkVersion(apkVersion: InsertApkVersion): Promise<ApkVersion> {
+    // Deactivate all previous versions
+    await db.update(apkVersions).set({ isActive: 'false' });
+    
+    const [version] = await db
+      .insert(apkVersions)
+      .values(apkVersion)
+      .returning();
+    return version;
+  }
+
+  async getAllApkVersions(): Promise<ApkVersion[]> {
+    return await db.select().from(apkVersions).orderBy(sql`${apkVersions.createdAt} DESC`);
   }
 }
 
