@@ -506,6 +506,37 @@ async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // Public APK version check endpoint (for app self-update)
+  app.get('/api/version', async (req, res) => {
+    try {
+      const activeVersion = await storage.getActiveApkVersion();
+      
+      if (!activeVersion) {
+        return res.status(404).json({ 
+          versionName: "0.0.0",
+          versionCode: 0,
+          downloadUrl: "",
+          releaseNotes: "No APK available"
+        });
+      }
+      
+      // Get host from request for absolute download URL
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+      const host = req.headers['host'] || 'itv2.obtv.io';
+      const downloadUrl = `${protocol}://${host}/api/download/firestick-apk`;
+      
+      res.json({
+        versionName: activeVersion.versionName,
+        versionCode: activeVersion.versionCode,
+        downloadUrl: downloadUrl,
+        releaseNotes: activeVersion.releaseNotes || `Version ${activeVersion.versionName}`
+      });
+    } catch (error) {
+      console.error('Error checking APK version:', error);
+      res.status(500).json({ error: 'Failed to check APK version' });
+    }
+  });
+
   // APK management endpoints (admin only)
   app.get('/api/admin/apk/info', requireAdmin, async (req, res) => {
     try {
