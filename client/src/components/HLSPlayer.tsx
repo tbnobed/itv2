@@ -307,44 +307,52 @@ export default function HLSPlayer({
           debug: false,
           enableWorker: true,
           lowLatencyMode: false,
-          backBufferLength: 30,           // Reduced for live streams
-          maxBufferLength: 20,            // Reduced for faster recovery
-          maxMaxBufferLength: 120,        // Reduced to prevent stale buffer
-          maxBufferSize: 30 * 1000 * 1000, // 30MB
-          maxBufferHole: 0.8,             // More tolerant of holes
+          backBufferLength: 30,
+          maxBufferLength: 20,
+          maxMaxBufferLength: 120,
+          maxBufferSize: 30 * 1000 * 1000,
+          maxBufferHole: 1.5,             // Very tolerant of holes
           highBufferWatchdogPeriod: 3,
-          nudgeOffset: 0.2,               // More aggressive nudging
-          nudgeMaxRetry: 5,               // More retries
-          maxFragLookUpTolerance: 0.5,    // More tolerant
+          nudgeOffset: 0.3,               // Aggressive nudging
+          nudgeMaxRetry: 10,              // Many retries
+          maxFragLookUpTolerance: 1.0,    // Very tolerant
           liveSyncDurationCount: 3,
-          liveMaxLatencyDurationCount: 8, // Reduced for live
-          liveDurationInfinity: true,     // Enable for live streams
-          liveBackBufferLength: 0,        // Don't keep back buffer for live
+          liveMaxLatencyDurationCount: 8,
+          liveDurationInfinity: true,
+          liveBackBufferLength: 0,
           enableSoftwareAES: true,
-          // Error recovery settings
-          fragLoadingTimeOut: 20000,      // Fragment loading timeout (20s)
-          fragLoadingMaxRetry: 6,         // Max fragment load retries
-          fragLoadingRetryDelay: 1000,    // Retry delay
-          fragLoadingMaxRetryTimeout: 64000, // Max retry timeout
-          manifestLoadingTimeOut: 10000,  // Manifest timeout
-          manifestLoadingMaxRetry: 4,     // Manifest retries
-          levelLoadingTimeOut: 10000,     // Level loading timeout
-          levelLoadingMaxRetry: 4,        // Level retries
-          // Adaptive Bitrate Configuration
+          // Error recovery - be very lenient
+          fragLoadingTimeOut: 30000,      // 30s timeout
+          fragLoadingMaxRetry: 10,        // Many retries
+          fragLoadingRetryDelay: 500,     // Fast retry
+          fragLoadingMaxRetryTimeout: 120000, // 2 min max
+          manifestLoadingTimeOut: 15000,
+          manifestLoadingMaxRetry: 6,
+          manifestLoadingRetryDelay: 500,
+          levelLoadingTimeOut: 15000,
+          levelLoadingMaxRetry: 6,
+          levelLoadingRetryDelay: 500,
+          // Lenient parsing
+          stretchShortVideoTrack: true,   // Handle short segments
+          forceKeyFrameOnDiscontinuity: true, // Handle discontinuities
+          // ABR - start low and be conservative
           abrEwmaFastLive: 3.0,
           abrEwmaSlowLive: 9.0,
           abrEwmaFastVoD: 3.0,
           abrEwmaSlowVoD: 9.0,
           abrEwmaDefaultEstimate: 500000,
-          abrBandWidthFactor: 0.9,        // More conservative
-          abrBandWidthUpFactor: 0.6,      // More conservative up-switching
+          abrBandWidthFactor: 0.8,        // Conservative
+          abrBandWidthUpFactor: 0.5,      // Very conservative up-switch
           abrMaxWithRealBitrate: false,
-          maxStarvationDelay: 4,
-          maxLoadingDelay: 4,
+          maxStarvationDelay: 6,
+          maxLoadingDelay: 6,
           minAutoBitrate: 0,
           emeEnabled: true,
-          // Start at lowest quality for faster initial load
-          startLevel: 0
+          startLevel: 0,
+          // XHR setup for potential CORS issues
+          xhrSetup: (xhr: XMLHttpRequest, url: string) => {
+            xhr.withCredentials = false;
+          }
         });
 
         hlsRef.current = hls;
