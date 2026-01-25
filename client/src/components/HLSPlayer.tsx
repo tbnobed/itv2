@@ -307,32 +307,44 @@ export default function HLSPlayer({
           debug: false,
           enableWorker: true,
           lowLatencyMode: false,
-          backBufferLength: 90,
-          maxBufferLength: 30,
-          maxMaxBufferLength: 600,
-          maxBufferSize: 60 * 1000 * 1000, // 60MB
-          maxBufferHole: 0.5,
-          highBufferWatchdogPeriod: 2,
-          nudgeOffset: 0.1,
-          nudgeMaxRetry: 3,
-          maxFragLookUpTolerance: 0.25,
+          backBufferLength: 30,           // Reduced for live streams
+          maxBufferLength: 20,            // Reduced for faster recovery
+          maxMaxBufferLength: 120,        // Reduced to prevent stale buffer
+          maxBufferSize: 30 * 1000 * 1000, // 30MB
+          maxBufferHole: 0.8,             // More tolerant of holes
+          highBufferWatchdogPeriod: 3,
+          nudgeOffset: 0.2,               // More aggressive nudging
+          nudgeMaxRetry: 5,               // More retries
+          maxFragLookUpTolerance: 0.5,    // More tolerant
           liveSyncDurationCount: 3,
-          liveMaxLatencyDurationCount: 10,
-          liveDurationInfinity: false,
+          liveMaxLatencyDurationCount: 8, // Reduced for live
+          liveDurationInfinity: true,     // Enable for live streams
+          liveBackBufferLength: 0,        // Don't keep back buffer for live
           enableSoftwareAES: true,
+          // Error recovery settings
+          fragLoadingTimeOut: 20000,      // Fragment loading timeout (20s)
+          fragLoadingMaxRetry: 6,         // Max fragment load retries
+          fragLoadingRetryDelay: 1000,    // Retry delay
+          fragLoadingMaxRetryTimeout: 64000, // Max retry timeout
+          manifestLoadingTimeOut: 10000,  // Manifest timeout
+          manifestLoadingMaxRetry: 4,     // Manifest retries
+          levelLoadingTimeOut: 10000,     // Level loading timeout
+          levelLoadingMaxRetry: 4,        // Level retries
           // Adaptive Bitrate Configuration
-          abrEwmaFastLive: 3.0,          // Fast EWMA for live streams
-          abrEwmaSlowLive: 9.0,          // Slow EWMA for live streams
-          abrEwmaFastVoD: 3.0,           // Fast EWMA for VoD
-          abrEwmaSlowVoD: 9.0,           // Slow EWMA for VoD
-          abrEwmaDefaultEstimate: 500000, // Default bandwidth estimate (500kbps)
-          abrBandWidthFactor: 0.95,      // Safety factor for bandwidth
-          abrBandWidthUpFactor: 0.7,     // Up-switching factor
-          abrMaxWithRealBitrate: false,  // Use real bitrate for switching
-          maxStarvationDelay: 4,         // Max starvation before quality switch
-          maxLoadingDelay: 4,            // Max loading delay before switch
-          minAutoBitrate: 0,             // Minimum auto bitrate (0 = no limit)
-          emeEnabled: true               // Enable encrypted media extensions
+          abrEwmaFastLive: 3.0,
+          abrEwmaSlowLive: 9.0,
+          abrEwmaFastVoD: 3.0,
+          abrEwmaSlowVoD: 9.0,
+          abrEwmaDefaultEstimate: 500000,
+          abrBandWidthFactor: 0.9,        // More conservative
+          abrBandWidthUpFactor: 0.6,      // More conservative up-switching
+          abrMaxWithRealBitrate: false,
+          maxStarvationDelay: 4,
+          maxLoadingDelay: 4,
+          minAutoBitrate: 0,
+          emeEnabled: true,
+          // Start at lowest quality for faster initial load
+          startLevel: 0
         });
 
         hlsRef.current = hls;
@@ -381,13 +393,18 @@ export default function HLSPlayer({
         });
 
         hls.on(Hls.Events.ERROR, (event: any, data: any) => {
-          console.error(`HLSPlayer[${streamId}]: HLS.js error:`, data);
+          console.error(`HLSPlayer[${streamId}]: HLS.js error:`, data.type, data.details, data);
           
           const hlsError = analyzeHLSError(data);
           setHlsError(hlsError);
           
+          // Handle specific recoverable errors
+          const isBufferError = data.details?.includes('BUFFER');
+          const isDemuxerError = data.details?.includes('DEMUXER') || data.details?.includes('PARSE');
+          const isFragError = data.details?.includes('FRAG');
+          
           if (data.fatal) {
-            console.error(`HLSPlayer[${streamId}]: Fatal HLS error`);
+            console.error(`HLSPlayer[${streamId}]: Fatal HLS error - type: ${data.type}, details: ${data.details}`);
             setConnectionStatus('failed');
             setIsLoading(false);
             onError?.(hlsError.message);
@@ -398,13 +415,29 @@ export default function HLSPlayer({
                 retryConnection();
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
-                console.log(`HLSPlayer[${streamId}]: Media error, attempting recovery`);
+                console.log(`HLSPlayer[${streamId}]: Media error, attempting recoverMediaError()`);
                 try {
                   hls.recoverMediaError();
+                  setConnectionStatus('connecting');
+                  setIsLoading(true);
                 } catch (recoveryError) {
-                  console.error(`HLSPlayer[${streamId}]: Recovery failed:`, recoveryError);
-                  retryConnection();
+                  console.error(`HLSPlayer[${streamId}]: recoverMediaError failed, trying swapAudioCodec`);
+                  try {
+                    hls.swapAudioCodec();
+                    hls.recoverMediaError();
+                    setConnectionStatus('connecting');
+                    setIsLoading(true);
+                  } catch (swapError) {
+                    console.error(`HLSPlayer[${streamId}]: All recovery failed:`, swapError);
+                    retryConnection();
+                  }
                 }
+                break;
+              case Hls.ErrorTypes.MUX_ERROR:
+                // Demuxer/muxer errors - destroy and fully reconnect
+                console.log(`HLSPlayer[${streamId}]: Mux error (likely demuxer parse), forcing full reconnect`);
+                cleanup();
+                setTimeout(() => connectToHLSStream(), 2000);
                 break;
               default:
                 console.log(`HLSPlayer[${streamId}]: Fatal error, retrying connection`);
@@ -412,7 +445,22 @@ export default function HLSPlayer({
                 break;
             }
           } else {
-            console.warn(`HLSPlayer[${streamId}]: Non-fatal HLS error, continuing playback`);
+            // Non-fatal errors - log but try soft recovery
+            console.warn(`HLSPlayer[${streamId}]: Non-fatal HLS error: ${data.details}`);
+            
+            // For demuxer/buffer errors, try to skip to live edge
+            if (isDemuxerError || isBufferError || isFragError) {
+              console.log(`HLSPlayer[${streamId}]: Attempting soft recovery for ${data.details}`);
+              try {
+                // Try to recover by seeking to live edge
+                if (video.buffered.length > 0) {
+                  const liveEdge = video.buffered.end(video.buffered.length - 1);
+                  video.currentTime = liveEdge - 0.5;
+                }
+              } catch (seekError) {
+                console.warn(`HLSPlayer[${streamId}]: Soft recovery seek failed:`, seekError);
+              }
+            }
           }
         });
 
