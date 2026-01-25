@@ -303,19 +303,39 @@ export default function HLSPlayer({
           hlsRef.current.destroy();
         }
 
-        // Minimal config - let hls.js use defaults
         const hls = new Hls({
-          debug: true, // Enable debug to capture detailed errors
+          debug: false,
           enableWorker: true,
-          // Live stream settings
+          lowLatencyMode: false,
+          backBufferLength: 30,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 120,
+          maxBufferSize: 60 * 1000 * 1000,
+          maxBufferHole: 0.5,
+          highBufferWatchdogPeriod: 3,
+          nudgeOffset: 0.1,
+          nudgeMaxRetry: 5,
+          maxFragLookUpTolerance: 0.25,
           liveSyncDurationCount: 3,
           liveMaxLatencyDurationCount: 10,
-          // More tolerant buffer handling
-          maxBufferHole: 0.5,
-          // Retry settings
+          liveDurationInfinity: true,
+          liveBackBufferLength: 0,
+          enableSoftwareAES: true,
+          fragLoadingTimeOut: 20000,
           fragLoadingMaxRetry: 6,
+          fragLoadingRetryDelay: 1000,
+          manifestLoadingTimeOut: 10000,
           manifestLoadingMaxRetry: 4,
-          levelLoadingMaxRetry: 4
+          manifestLoadingRetryDelay: 1000,
+          levelLoadingTimeOut: 10000,
+          levelLoadingMaxRetry: 4,
+          levelLoadingRetryDelay: 1000,
+          stretchShortVideoTrack: true,
+          forceKeyFrameOnDiscontinuity: true,
+          abrEwmaDefaultEstimate: 500000,
+          abrBandWidthFactor: 0.95,
+          abrBandWidthUpFactor: 0.7,
+          startLevel: -1,
         });
 
         hlsRef.current = hls;
