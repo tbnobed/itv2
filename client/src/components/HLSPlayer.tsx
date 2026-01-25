@@ -305,7 +305,7 @@ export default function HLSPlayer({
 
         // Minimal config - let hls.js use defaults
         const hls = new Hls({
-          debug: false,
+          debug: true, // Enable debug to capture detailed errors
           enableWorker: true,
           // Live stream settings
           liveSyncDurationCount: 3,
