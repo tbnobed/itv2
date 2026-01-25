@@ -303,56 +303,19 @@ export default function HLSPlayer({
           hlsRef.current.destroy();
         }
 
+        // Minimal config - let hls.js use defaults
         const hls = new Hls({
           debug: false,
           enableWorker: true,
-          lowLatencyMode: false,
-          backBufferLength: 30,
-          maxBufferLength: 20,
-          maxMaxBufferLength: 120,
-          maxBufferSize: 30 * 1000 * 1000,
-          maxBufferHole: 1.5,             // Very tolerant of holes
-          highBufferWatchdogPeriod: 3,
-          nudgeOffset: 0.3,               // Aggressive nudging
-          nudgeMaxRetry: 10,              // Many retries
-          maxFragLookUpTolerance: 1.0,    // Very tolerant
+          // Live stream settings
           liveSyncDurationCount: 3,
-          liveMaxLatencyDurationCount: 8,
-          liveDurationInfinity: true,
-          liveBackBufferLength: 0,
-          enableSoftwareAES: true,
-          // Error recovery - be very lenient
-          fragLoadingTimeOut: 30000,      // 30s timeout
-          fragLoadingMaxRetry: 10,        // Many retries
-          fragLoadingRetryDelay: 500,     // Fast retry
-          fragLoadingMaxRetryTimeout: 120000, // 2 min max
-          manifestLoadingTimeOut: 15000,
-          manifestLoadingMaxRetry: 6,
-          manifestLoadingRetryDelay: 500,
-          levelLoadingTimeOut: 15000,
-          levelLoadingMaxRetry: 6,
-          levelLoadingRetryDelay: 500,
-          // Lenient parsing
-          stretchShortVideoTrack: true,   // Handle short segments
-          forceKeyFrameOnDiscontinuity: true, // Handle discontinuities
-          // ABR - start low and be conservative
-          abrEwmaFastLive: 3.0,
-          abrEwmaSlowLive: 9.0,
-          abrEwmaFastVoD: 3.0,
-          abrEwmaSlowVoD: 9.0,
-          abrEwmaDefaultEstimate: 500000,
-          abrBandWidthFactor: 0.8,        // Conservative
-          abrBandWidthUpFactor: 0.5,      // Very conservative up-switch
-          abrMaxWithRealBitrate: false,
-          maxStarvationDelay: 6,
-          maxLoadingDelay: 6,
-          minAutoBitrate: 0,
-          emeEnabled: true,
-          startLevel: 0,
-          // XHR setup for potential CORS issues
-          xhrSetup: (xhr: XMLHttpRequest, url: string) => {
-            xhr.withCredentials = false;
-          }
+          liveMaxLatencyDurationCount: 10,
+          // More tolerant buffer handling
+          maxBufferHole: 0.5,
+          // Retry settings
+          fragLoadingMaxRetry: 6,
+          manifestLoadingMaxRetry: 4,
+          levelLoadingMaxRetry: 4
         });
 
         hlsRef.current = hls;
