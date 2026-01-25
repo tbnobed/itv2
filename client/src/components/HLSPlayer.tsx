@@ -50,8 +50,12 @@ export default function HLSPlayer({
   const [isAutoQuality, setIsAutoQuality] = useState(true);
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
-  const maxRetries = 5;
+  const maxRetries = 10; // Increased for live streams
   const globalAutoplayUnlockedRef = useRef(false);
+  const healthCheckIntervalRef = useRef<NodeJS.Timeout>();
+  const lastPlaybackTimeRef = useRef<number>(0);
+  const stallCountRef = useRef(0);
+  const maxStallsBeforeReconnect = 3;
 
   // Check HLS support
   useEffect(() => {
@@ -149,6 +153,11 @@ export default function HLSPlayer({
       retryTimeoutRef.current = undefined;
     }
 
+    if (healthCheckIntervalRef.current) {
+      clearInterval(healthCheckIntervalRef.current);
+      healthCheckIntervalRef.current = undefined;
+    }
+
     if (hlsRef.current) {
       try {
         hlsRef.current.destroy();
@@ -169,18 +178,22 @@ export default function HLSPlayer({
     setConnectionStatus('idle');
     setHlsError(null);
     retryCountRef.current = 0;
+    stallCountRef.current = 0;
+    lastPlaybackTimeRef.current = 0;
   }, [streamId]);
 
   // Retry connection with exponential backoff
   const retryConnection = useCallback(() => {
+    // For live streams, reset retry count after max is reached to allow infinite recovery
     if (retryCountRef.current >= maxRetries) {
-      console.log(`HLSPlayer[${streamId}]: Max retries reached, giving up`);
-      setConnectionStatus('failed');
-      setHlsError({
-        type: 'network',
-        message: 'Maximum retry attempts exceeded',
-        suggestion: 'Please check the stream URL and try again later'
-      });
+      console.log(`HLSPlayer[${streamId}]: Max retries reached, resetting counter for live stream recovery`);
+      retryCountRef.current = 0;
+      
+      // Wait longer before starting fresh retry cycle
+      retryTimeoutRef.current = setTimeout(() => {
+        cleanup();
+        setTimeout(() => connectToHLSStream(), 1000);
+      }, 15000); // 15 second pause before fresh retry cycle
       return;
     }
 
@@ -192,7 +205,7 @@ export default function HLSPlayer({
     retryTimeoutRef.current = setTimeout(() => {
       connectToHLSStream();
     }, delay);
-  }, [streamId]);
+  }, [streamId, cleanup]);
 
   // Connect to HLS stream
   const connectToHLSStream = useCallback(async (): Promise<(() => void) | undefined> => {
@@ -477,6 +490,78 @@ export default function HLSPlayer({
       console.log(`HLSPlayer[${streamId}]: Mute changed - muted=${isMuted}, volume=${isMuted ? 0 : 1}`);
     }
   }, [isMuted, isPlaying, streamId]);
+
+  // Health check - detect stalls and silent failures for long-running streams
+  useEffect(() => {
+    if (connectionStatus !== 'connected' || !isPlaying) {
+      // Clear health check if not connected or not playing
+      if (healthCheckIntervalRef.current) {
+        clearInterval(healthCheckIntervalRef.current);
+        healthCheckIntervalRef.current = undefined;
+      }
+      return;
+    }
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    console.log(`HLSPlayer[${streamId}]: Starting health check monitoring`);
+    lastPlaybackTimeRef.current = video.currentTime;
+    stallCountRef.current = 0;
+
+    // Reset retry count after 2 minutes of healthy playback
+    const resetRetryCountAfterHealthy = () => {
+      if (retryCountRef.current > 0) {
+        console.log(`HLSPlayer[${streamId}]: Stream healthy, resetting retry count`);
+        retryCountRef.current = 0;
+      }
+    };
+
+    // Check every 5 seconds
+    healthCheckIntervalRef.current = setInterval(() => {
+      if (!video || video.paused) return;
+
+      const currentTime = video.currentTime;
+      const timeDiff = currentTime - lastPlaybackTimeRef.current;
+      
+      // Check if playback position has advanced
+      if (timeDiff < 0.5) {
+        // Playback stalled
+        stallCountRef.current += 1;
+        console.warn(`HLSPlayer[${streamId}]: Playback stall detected (count: ${stallCountRef.current}/${maxStallsBeforeReconnect})`);
+        
+        if (stallCountRef.current >= maxStallsBeforeReconnect) {
+          console.error(`HLSPlayer[${streamId}]: Multiple stalls detected, forcing reconnect`);
+          stallCountRef.current = 0;
+          
+          // Force full reconnect
+          cleanup();
+          setTimeout(() => connectToHLSStream(), 2000);
+        } else {
+          // Try to recover by seeking slightly forward (live stream trick)
+          if (video.buffered.length > 0) {
+            const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+            if (bufferedEnd > currentTime + 1) {
+              console.log(`HLSPlayer[${streamId}]: Attempting seek recovery to ${bufferedEnd - 0.5}`);
+              video.currentTime = bufferedEnd - 0.5;
+            }
+          }
+        }
+      } else {
+        // Playback is progressing normally
+        stallCountRef.current = 0;
+        lastPlaybackTimeRef.current = currentTime;
+        resetRetryCountAfterHealthy();
+      }
+    }, 5000);
+
+    return () => {
+      if (healthCheckIntervalRef.current) {
+        clearInterval(healthCheckIntervalRef.current);
+        healthCheckIntervalRef.current = undefined;
+      }
+    };
+  }, [connectionStatus, isPlaying, streamId, cleanup]);
 
   // Ultra-aggressive autoplay when connected
   useEffect(() => {
