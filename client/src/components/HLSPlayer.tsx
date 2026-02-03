@@ -499,26 +499,26 @@ export default function HLSPlayer({
   useEffect(() => {
     console.log(`HLSPlayer[${streamId}]: Connection effect triggered. streamUrl=${streamUrl}, isHlsSupported=${isHlsSupported}`);
     
+    // Always clean up first when streamUrl or support changes
+    cleanup();
+    
     if (streamUrl && isHlsSupported) {
       console.log(`HLSPlayer[${streamId}]: Initializing HLS connection to ${streamUrl}`);
-      let cleanupFunction: (() => void) | undefined;
       
-      connectToHLSStream().then((cleanup) => {
-        cleanupFunction = cleanup;
-      });
+      // Small delay to ensure previous cleanup is complete
+      const timeoutId = setTimeout(() => {
+        connectToHLSStream();
+      }, 100);
       
       return () => {
         console.log(`HLSPlayer[${streamId}]: Effect cleanup - cleaning up connection`);
-        if (cleanupFunction && typeof cleanupFunction === 'function') {
-          cleanupFunction();
-        }
+        clearTimeout(timeoutId);
         cleanup();
       };
     } else {
       console.log(`HLSPlayer[${streamId}]: Cannot connect - streamUrl="${streamUrl}", isHlsSupported=${isHlsSupported}`);
-      cleanup();
     }
-  }, [streamUrl, isHlsSupported, streamId]);
+  }, [streamUrl, isHlsSupported, streamId, cleanup]);
 
   // Handle mute changes - sync video element with isMuted prop
   useEffect(() => {
