@@ -93,7 +93,13 @@ export async function apiRequest(
   
   // Parse JSON response for non-DELETE methods
   if (method !== 'DELETE') {
-    return await res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('JSON parse error for', url, '- Response text:', text);
+      throw new Error(`Failed to parse JSON response: ${text.substring(0, 100)}`);
+    }
   }
   
   return res;
