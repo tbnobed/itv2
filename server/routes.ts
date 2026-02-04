@@ -390,9 +390,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'This access code is already in use. Please choose a different 4-digit code.' });
       }
       
-      // Hash the password before storing
-      const bcrypt = await import('bcrypt');
-      const hashedPassword = await bcrypt.hash(validatedData.password, 12);
+      // Hash the password before storing (with pepper for security)
+      const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
+      const pepperedPassword = validatedData.password + PASSCODE_PEPPER;
+      const hashedPassword = await bcrypt.hash(pepperedPassword, 12);
       
       const userData = {
         ...validatedData,
@@ -490,7 +491,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'This access code is already in use. Please choose a different 4-digit code.' });
       }
       
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // Hash with pepper for security (must match login verification)
+      const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
+      const pepperedPassword = password + PASSCODE_PEPPER;
+      const hashedPassword = await bcrypt.hash(pepperedPassword, 10);
       const updated = await storage.updateUserPassword(id, hashedPassword);
       if (!updated) {
         return res.status(404).json({ error: 'User not found' });
