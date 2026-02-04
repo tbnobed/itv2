@@ -436,6 +436,54 @@ async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/admin/users/:id/password', requireAdmin, csrfProtection, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { password } = req.body;
+      
+      if (!password || typeof password !== 'string' || password.length !== 4 || !/^\d{4}$/.test(password)) {
+        return res.status(400).json({ error: 'Password must be a 4-digit code' });
+      }
+      
+      // Check if passcode is already in use by another user (excluding current user)
+      const passcodeInUse = await storage.isPasscodeInUse(password, id);
+      if (passcodeInUse) {
+        return res.status(400).json({ error: 'This access code is already in use. Please choose a different 4-digit code.' });
+      }
+      
+      // Hash with pepper for security (must match login verification)
+      const bcrypt = await import('bcrypt');
+      const PASSCODE_PEPPER = process.env.PASSCODE_PEPPER || 'obtv-universal-pepper-change-in-production';
+      const pepperedPassword = password + PASSCODE_PEPPER;
+      const hashedPassword = await bcrypt.hash(pepperedPassword, 10);
+      const updated = await storage.updateUserPassword(id, hashedPassword);
+      if (!updated) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating user password:', error);
+      res.status(500).json({ error: 'Failed to update user password' });
+    }
+  });
+
+  app.delete('/api/admin/users/:id', requireAdmin, csrfProtection, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteUser(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  });
+
   // Snapshot endpoints for server-side video preview generation
   if (snapshotService) {
     // Direct snapshot access with cache busting
